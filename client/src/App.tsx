@@ -1,43 +1,14 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import './App.css';
-import { DbConnection, ErrorContext, EventContext, Message, User } from './module_bindings';
+import { DbConnection, ErrorContext, EventContext, User } from './module_bindings';
 import { Identity } from '@clockworklabs/spacetimedb-sdk';
+import { JSX } from 'react/jsx-runtime';
 
 export type PrettyMessage = {
   senderName: string;
   text: string;
 };
 
-function useMessages(conn: DbConnection | null): Message[] {
-  const [messages, setMessages] = useState<Message[]>([]);
-
-  useEffect(() => {
-    if (!conn) return;
-    const onInsert = (_ctx: EventContext, message: Message) => {
-      setMessages(prev => [...prev, message]);
-    };
-    conn.db.message.onInsert(onInsert);
-
-    const onDelete = (_ctx: EventContext, message: Message) => {
-      setMessages(prev =>
-        prev.filter(
-          m =>
-            m.text !== message.text &&
-            m.sent !== message.sent &&
-            m.sender !== message.sender
-        )
-      );
-    };
-    conn.db.message.onDelete(onDelete);
-
-    return () => {
-      conn.db.message.removeOnInsert(onInsert);
-      conn.db.message.removeOnDelete(onDelete);
-    };
-  }, [conn]);
-
-  return messages;
-}
 
 function useUsers(conn: DbConnection | null): Map<string, User> {
   const [users, setUsers] = useState<Map<string, User>>(new Map());
@@ -75,11 +46,70 @@ function useUsers(conn: DbConnection | null): Map<string, User> {
   return users;
 }
 
+const CANVAS_WIDTH = 600;
+const CANVAS_HEIGHT = 600;
+
+// Draws a ball for each user at their x and y position
+const draw = (ctx: CanvasRenderingContext2D | null, users: Map<string, User>) => {
+  if (!ctx) return;
+
+  ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+  users.forEach(user => {
+    ctx.beginPath();
+    ctx.arc(user.x, user.y, 20, 0, Math.PI * 2);
+    ctx.fillStyle = 'blue';
+    ctx.fill();
+    ctx.closePath();
+  });
+};
+
+const useCanvas = (
+  draw: (ctx: CanvasRenderingContext2D | null, users: Map<string, User>) => void,
+  users: Map<string, User>
+) => {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current as HTMLCanvasElement | null;
+    if (!canvas) return;
+    const context = canvas.getContext('2d');
+    let animationFrameId: number;
+
+    const render = () => {
+      draw(context, users);
+      animationFrameId = window.requestAnimationFrame(render);
+    };
+    render();
+
+    return () => {
+      window.cancelAnimationFrame(animationFrameId);
+    };
+  }, [draw, users]);
+
+  return canvasRef;
+};
+
+const Canvas = (props: { draw: typeof draw; users: Map<string, User> }) => {
+  const { draw, users, ...rest } = props;
+  const canvasRef = useCanvas(draw, users);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      width={CANVAS_WIDTH}
+      height={CANVAS_HEIGHT}
+      {...rest}
+      className="nes-canvas"
+    />
+  );
+};
+
 function App() {
-  const [newName, setNewName] = useState('');
   const [connected, setConnected] = useState<boolean>(false);
   const [identity, setIdentity] = useState<Identity | null>(null);
   const [conn, setConn] = useState<DbConnection | null>(null);
+  const users = useUsers(conn);
 
   useEffect(() => {
     const subscribeToQueries = (conn: DbConnection, queries: string[]) => {
@@ -103,11 +133,8 @@ function App() {
         'Connected to SpacetimeDB with identity:',
         identity.toHexString()
       );
-      conn.reducers.onSendMessage(() => {
-        console.log('Message sent.');
-      });
 
-      subscribeToQueries(conn, ['SELECT * FROM message', 'SELECT * FROM user']);
+      subscribeToQueries(conn, ['SELECT * FROM user']);
     };
 
     const onDisconnect = () => {
@@ -130,21 +157,6 @@ function App() {
         .build()
     );
   }, []);
-  const messages = useMessages(conn);
-  const users = useUsers(conn);
-
-  const [settingName, setSettingName] = useState(false);
-  const [systemMessage, setSystemMessage] = useState('');
-  const [newMessage, setNewMessage] = useState('');
-
-  const prettyMessages: PrettyMessage[] = messages
-  .sort((a, b) => (a.sent > b.sent ? 1 : -1))
-  .map(message => ({
-    senderName:
-      users.get(message.sender.toHexString())?.name ||
-      message.sender.toHexString().substring(0, 8),
-    text: message.text,
-  }));
 
   if (!conn || !connected || !identity) {
     return (
@@ -154,88 +166,9 @@ function App() {
     );
   }
 
-  const name =
-    users.get(identity?.toHexString())?.name ||
-    identity?.toHexString().substring(0, 8) ||
-    'unknown';
-
-  const onSubmitNewName = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setSettingName(false);
-    conn.reducers.setName(newName);
-  };
-
-  const onMessageSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setNewMessage("");
-    conn.reducers.sendMessage(newMessage);
-  };
-
   return (
     <div className="App">
-      <div className="profile">
-        <h1>Profile</h1>
-        {!settingName ? (
-          <>
-            <p>{name}</p>
-            <button
-              onClick={() => {
-                setSettingName(true);
-                setNewName(name);
-              }}
-            >
-              Edit Name
-            </button>
-          </>
-        ) : (
-          <form onSubmit={onSubmitNewName}>
-            <input
-              type="text"
-              value={newName}
-              onChange={e => setNewName(e.target.value)}
-            />
-            <button type="submit">Submit</button>
-          </form>
-        )}
-      </div>
-      <div className="message">
-        <h1>Messages</h1>
-        {prettyMessages.length < 1 && <p>No messages</p>}
-        <div>
-          {prettyMessages.map((message, key) => (
-            <div key={key}>
-              <p>
-                <b>{message.senderName}</b>
-              </p>
-              <p>{message.text}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-      <div className="system" style={{ whiteSpace: 'pre-wrap' }}>
-        <h1>System</h1>
-        <div>
-          <p>{systemMessage}</p>
-        </div>
-      </div>
-      <div className="new-message">
-        <form
-          onSubmit={onMessageSubmit}
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            width: '50%',
-            margin: '0 auto',
-          }}
-        >
-          <h3>New Message</h3>
-          <textarea
-            value={newMessage}
-            onChange={e => setNewMessage(e.target.value)}
-          ></textarea>
-          <button type="submit">Send</button>
-        </form>
-      </div>
+      <Canvas draw={draw} users={users}/>
     </div>
   );
 }

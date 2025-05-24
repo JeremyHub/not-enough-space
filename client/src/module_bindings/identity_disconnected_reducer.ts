@@ -30,6 +30,7 @@ import {
   Timestamp,
   deepEqual,
 } from "@clockworklabs/spacetimedb-sdk";
+
 export type IdentityDisconnected = {};
 
 /**

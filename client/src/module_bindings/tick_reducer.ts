@@ -30,36 +30,34 @@ import {
   Timestamp,
   deepEqual,
 } from "@clockworklabs/spacetimedb-sdk";
-export type Message = {
-  sender: Identity,
-  sent: Timestamp,
-  text: string,
+
+import { TickSchedule as __TickSchedule } from "./tick_schedule_type";
+
+export type Tick = {
+  args: __TickSchedule,
 };
 
 /**
  * A namespace for generated helper functions.
  */
-export namespace Message {
+export namespace Tick {
   /**
   * A function which returns this type represented as an AlgebraicType.
   * This function is derived from the AlgebraicType used to generate this type.
   */
   export function getTypeScriptAlgebraicType(): AlgebraicType {
     return AlgebraicType.createProductType([
-      new ProductTypeElement("sender", AlgebraicType.createIdentityType()),
-      new ProductTypeElement("sent", AlgebraicType.createTimestampType()),
-      new ProductTypeElement("text", AlgebraicType.createStringType()),
+      new ProductTypeElement("args", __TickSchedule.getTypeScriptAlgebraicType()),
     ]);
   }
 
-  export function serialize(writer: BinaryWriter, value: Message): void {
-    Message.getTypeScriptAlgebraicType().serialize(writer, value);
+  export function serialize(writer: BinaryWriter, value: Tick): void {
+    Tick.getTypeScriptAlgebraicType().serialize(writer, value);
   }
 
-  export function deserialize(reader: BinaryReader): Message {
-    return Message.getTypeScriptAlgebraicType().deserialize(reader);
+  export function deserialize(reader: BinaryReader): Tick {
+    return Tick.getTypeScriptAlgebraicType().deserialize(reader);
   }
 
 }
-
 

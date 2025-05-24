@@ -36,28 +36,29 @@ import { ClientConnected } from "./client_connected_reducer.ts";
 export { ClientConnected };
 import { IdentityDisconnected } from "./identity_disconnected_reducer.ts";
 export { IdentityDisconnected };
-import { SendMessage } from "./send_message_reducer.ts";
-export { SendMessage };
 import { SetName } from "./set_name_reducer.ts";
 export { SetName };
+import { Tick } from "./tick_reducer.ts";
+export { Tick };
 
 // Import and reexport all table handle types
-import { MessageTableHandle } from "./message_table.ts";
-export { MessageTableHandle };
+import { TickScheduleTableHandle } from "./tick_schedule_table.ts";
+export { TickScheduleTableHandle };
 import { UserTableHandle } from "./user_table.ts";
 export { UserTableHandle };
 
 // Import and reexport all types
-import { Message } from "./message_type.ts";
-export { Message };
+import { TickSchedule } from "./tick_schedule_type.ts";
+export { TickSchedule };
 import { User } from "./user_type.ts";
 export { User };
 
 const REMOTE_MODULE = {
   tables: {
-    message: {
-      tableName: "message",
-      rowType: Message.getTypeScriptAlgebraicType(),
+    tick_schedule: {
+      tableName: "tick_schedule",
+      rowType: TickSchedule.getTypeScriptAlgebraicType(),
+      primaryKey: "scheduledId",
     },
     user: {
       tableName: "user",
@@ -74,13 +75,13 @@ const REMOTE_MODULE = {
       reducerName: "identity_disconnected",
       argsType: IdentityDisconnected.getTypeScriptAlgebraicType(),
     },
-    send_message: {
-      reducerName: "send_message",
-      argsType: SendMessage.getTypeScriptAlgebraicType(),
-    },
     set_name: {
       reducerName: "set_name",
       argsType: SetName.getTypeScriptAlgebraicType(),
+    },
+    tick: {
+      reducerName: "tick",
+      argsType: Tick.getTypeScriptAlgebraicType(),
     },
   },
   // Constructors which are used by the DbConnectionImpl to
@@ -111,8 +112,8 @@ const REMOTE_MODULE = {
 export type Reducer = never
 | { name: "ClientConnected", args: ClientConnected }
 | { name: "IdentityDisconnected", args: IdentityDisconnected }
-| { name: "SendMessage", args: SendMessage }
 | { name: "SetName", args: SetName }
+| { name: "Tick", args: Tick }
 ;
 
 export class RemoteReducers {
@@ -134,22 +135,6 @@ export class RemoteReducers {
     this.connection.offReducer("identity_disconnected", callback);
   }
 
-  sendMessage(text: string) {
-    const __args = { text };
-    let __writer = new BinaryWriter(1024);
-    SendMessage.getTypeScriptAlgebraicType().serialize(__writer, __args);
-    let __argsBuffer = __writer.getBuffer();
-    this.connection.callReducer("send_message", __argsBuffer, this.setCallReducerFlags.sendMessageFlags);
-  }
-
-  onSendMessage(callback: (ctx: ReducerEventContext, text: string) => void) {
-    this.connection.onReducer("send_message", callback);
-  }
-
-  removeOnSendMessage(callback: (ctx: ReducerEventContext, text: string) => void) {
-    this.connection.offReducer("send_message", callback);
-  }
-
   setName(name: string) {
     const __args = { name };
     let __writer = new BinaryWriter(1024);
@@ -166,17 +151,33 @@ export class RemoteReducers {
     this.connection.offReducer("set_name", callback);
   }
 
+  tick(args: TickSchedule) {
+    const __args = { args };
+    let __writer = new BinaryWriter(1024);
+    Tick.getTypeScriptAlgebraicType().serialize(__writer, __args);
+    let __argsBuffer = __writer.getBuffer();
+    this.connection.callReducer("tick", __argsBuffer, this.setCallReducerFlags.tickFlags);
+  }
+
+  onTick(callback: (ctx: ReducerEventContext, args: TickSchedule) => void) {
+    this.connection.onReducer("tick", callback);
+  }
+
+  removeOnTick(callback: (ctx: ReducerEventContext, args: TickSchedule) => void) {
+    this.connection.offReducer("tick", callback);
+  }
+
 }
 
 export class SetReducerFlags {
-  sendMessageFlags: CallReducerFlags = 'FullUpdate';
-  sendMessage(flags: CallReducerFlags) {
-    this.sendMessageFlags = flags;
-  }
-
   setNameFlags: CallReducerFlags = 'FullUpdate';
   setName(flags: CallReducerFlags) {
     this.setNameFlags = flags;
+  }
+
+  tickFlags: CallReducerFlags = 'FullUpdate';
+  tick(flags: CallReducerFlags) {
+    this.tickFlags = flags;
   }
 
 }
@@ -184,8 +185,8 @@ export class SetReducerFlags {
 export class RemoteTables {
   constructor(private connection: DbConnectionImpl) {}
 
-  get message(): MessageTableHandle {
-    return new MessageTableHandle(this.connection.clientCache.getOrCreateTable<Message>(REMOTE_MODULE.tables.message));
+  get tickSchedule(): TickScheduleTableHandle {
+    return new TickScheduleTableHandle(this.connection.clientCache.getOrCreateTable<TickSchedule>(REMOTE_MODULE.tables.tick_schedule));
   }
 
   get user(): UserTableHandle {

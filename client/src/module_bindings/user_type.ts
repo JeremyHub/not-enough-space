@@ -34,6 +34,10 @@ export type User = {
   identity: Identity,
   name: string | undefined,
   online: boolean,
+  x: number,
+  y: number,
+  dx: number,
+  dy: number,
 };
 
 /**
@@ -49,6 +53,10 @@ export namespace User {
       new ProductTypeElement("identity", AlgebraicType.createIdentityType()),
       new ProductTypeElement("name", AlgebraicType.createOptionType(AlgebraicType.createStringType())),
       new ProductTypeElement("online", AlgebraicType.createBoolType()),
+      new ProductTypeElement("x", AlgebraicType.createI32Type()),
+      new ProductTypeElement("y", AlgebraicType.createI32Type()),
+      new ProductTypeElement("dx", AlgebraicType.createI32Type()),
+      new ProductTypeElement("dy", AlgebraicType.createI32Type()),
     ]);
   }
 
