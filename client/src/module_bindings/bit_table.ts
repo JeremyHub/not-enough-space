@@ -30,26 +30,25 @@ import {
   Timestamp,
   deepEqual,
 } from "@clockworklabs/spacetimedb-sdk";
-import { User } from "./user_type";
+import { Bit } from "./bit_type";
 import { Color as __Color } from "./color_type";
-import { Direction as __Direction } from "./direction_type";
 
 import { EventContext, Reducer, RemoteReducers, RemoteTables } from ".";
 
 /**
- * Table handle for the table `user`.
+ * Table handle for the table `bit`.
  *
- * Obtain a handle from the [`user`] property on [`RemoteTables`],
- * like `ctx.db.user`.
+ * Obtain a handle from the [`bit`] property on [`RemoteTables`],
+ * like `ctx.db.bit`.
  *
  * Users are encouraged not to explicitly reference this type,
  * but to directly chain method calls,
- * like `ctx.db.user.on_insert(...)`.
+ * like `ctx.db.bit.on_insert(...)`.
  */
-export class UserTableHandle {
-  tableCache: TableCache<User>;
+export class BitTableHandle {
+  tableCache: TableCache<Bit>;
 
-  constructor(tableCache: TableCache<User>) {
+  constructor(tableCache: TableCache<Bit>) {
     this.tableCache = tableCache;
   }
 
@@ -57,53 +56,53 @@ export class UserTableHandle {
     return this.tableCache.count();
   }
 
-  iter(): Iterable<User> {
+  iter(): Iterable<Bit> {
     return this.tableCache.iter();
   }
   /**
-   * Access to the `identity` unique index on the table `user`,
+   * Access to the `bitId` unique index on the table `bit`,
    * which allows point queries on the field of the same name
-   * via the [`UserIdentityUnique.find`] method.
+   * via the [`BitBitIdUnique.find`] method.
    *
    * Users are encouraged not to explicitly reference this type,
    * but to directly chain method calls,
-   * like `ctx.db.user.identity().find(...)`.
+   * like `ctx.db.bit.bitId().find(...)`.
    *
-   * Get a handle on the `identity` unique index on the table `user`.
+   * Get a handle on the `bitId` unique index on the table `bit`.
    */
-  identity = {
-    // Find the subscribed row whose `identity` column value is equal to `col_val`,
+  bitId = {
+    // Find the subscribed row whose `bitId` column value is equal to `col_val`,
     // if such a row is present in the client cache.
-    find: (col_val: Identity): User | undefined => {
+    find: (col_val: bigint): Bit | undefined => {
       for (let row of this.tableCache.iter()) {
-        if (deepEqual(row.identity, col_val)) {
+        if (deepEqual(row.bitId, col_val)) {
           return row;
         }
       }
     },
   };
 
-  onInsert = (cb: (ctx: EventContext, row: User) => void) => {
+  onInsert = (cb: (ctx: EventContext, row: Bit) => void) => {
     return this.tableCache.onInsert(cb);
   }
 
-  removeOnInsert = (cb: (ctx: EventContext, row: User) => void) => {
+  removeOnInsert = (cb: (ctx: EventContext, row: Bit) => void) => {
     return this.tableCache.removeOnInsert(cb);
   }
 
-  onDelete = (cb: (ctx: EventContext, row: User) => void) => {
+  onDelete = (cb: (ctx: EventContext, row: Bit) => void) => {
     return this.tableCache.onDelete(cb);
   }
 
-  removeOnDelete = (cb: (ctx: EventContext, row: User) => void) => {
+  removeOnDelete = (cb: (ctx: EventContext, row: Bit) => void) => {
     return this.tableCache.removeOnDelete(cb);
   }
 
   // Updates are only defined for tables with primary keys.
-  onUpdate = (cb: (ctx: EventContext, oldRow: User, newRow: User) => void) => {
+  onUpdate = (cb: (ctx: EventContext, oldRow: Bit, newRow: Bit) => void) => {
     return this.tableCache.onUpdate(cb);
   }
 
-  removeOnUpdate = (cb: (ctx: EventContext, onRow: User, newRow: User) => void) => {
+  removeOnUpdate = (cb: (ctx: EventContext, onRow: Bit, newRow: Bit) => void) => {
     return this.tableCache.removeOnUpdate(cb);
   }}

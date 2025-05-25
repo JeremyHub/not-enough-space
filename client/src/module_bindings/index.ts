@@ -44,12 +44,16 @@ import { Tick } from "./tick_reducer.ts";
 export { Tick };
 
 // Import and reexport all table handle types
+import { BitTableHandle } from "./bit_table.ts";
+export { BitTableHandle };
 import { TickScheduleTableHandle } from "./tick_schedule_table.ts";
 export { TickScheduleTableHandle };
 import { UserTableHandle } from "./user_table.ts";
 export { UserTableHandle };
 
 // Import and reexport all types
+import { Bit } from "./bit_type.ts";
+export { Bit };
 import { Color } from "./color_type.ts";
 export { Color };
 import { Direction } from "./direction_type.ts";
@@ -61,6 +65,11 @@ export { User };
 
 const REMOTE_MODULE = {
   tables: {
+    bit: {
+      tableName: "bit",
+      rowType: Bit.getTypeScriptAlgebraicType(),
+      primaryKey: "bitId",
+    },
     tick_schedule: {
       tableName: "tick_schedule",
       rowType: TickSchedule.getTypeScriptAlgebraicType(),
@@ -216,6 +225,10 @@ export class SetReducerFlags {
 
 export class RemoteTables {
   constructor(private connection: DbConnectionImpl) {}
+
+  get bit(): BitTableHandle {
+    return new BitTableHandle(this.connection.clientCache.getOrCreateTable<Bit>(REMOTE_MODULE.tables.bit));
+  }
 
   get tickSchedule(): TickScheduleTableHandle {
     return new TickScheduleTableHandle(this.connection.clientCache.getOrCreateTable<TickSchedule>(REMOTE_MODULE.tables.tick_schedule));

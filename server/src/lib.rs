@@ -4,10 +4,15 @@ use spacetimedb::rand::Rng;
 const WORLD_WIDTH: i32 = 600;
 const WORLD_HEIGHT: i32 = 600;
 
-const ACCELERATION: f32 = 2.0;
+const ACCELERATION: f32 = 0.7;
 const BRAKING_FORCE: f32 = 0.9;
 const VELOCITY_MULTIPLIER: f32 = 0.1;
 const FRICTION: f32 = 0.99;
+
+const MIN_BITS: u64 = 30;
+const MIN_BIT_WORTH: f32 = 0.1;
+const MAX_BIT_WORTH: f32 = 2.0;
+const BIT_SPAWNRATE: u64 = 70;
 
 #[derive(SpacetimeType, Clone, Debug, PartialEq)]
 pub enum Direction {
@@ -40,6 +45,20 @@ pub struct User {
     dx: f32,
     dy: f32,
     direction: Option<Direction>,
+    color: Color,
+    health: i32,
+    size: i32,
+}
+
+#[table(name = bit, public)]
+pub struct Bit {
+    #[primary_key]
+    #[auto_inc]
+    bit_id: u64,
+    x: f32,
+    y: f32,
+    size: f32,
+    worth: f32,
     color: Color,
 }
 
@@ -94,7 +113,9 @@ pub fn client_connected(ctx: &ReducerContext) {
             dx: 0.0,
             dy: 0.0,
             direction: None,
-            color: Color{r: ctx.rng().gen_range(0..=255), g: ctx.rng().gen_range(0..=255), b: ctx.rng().gen_range(0..=255)}
+            color: Color{r: ctx.rng().gen_range(0..=255), g: ctx.rng().gen_range(0..=255), b: ctx.rng().gen_range(0..=255)},
+            health: 1,
+            size: 10,
         });
     }
 }
@@ -111,6 +132,32 @@ pub fn identity_disconnected(ctx: &ReducerContext) {
     }
 }
 
+
+fn spawn_bits(ctx: &ReducerContext, tick_id: u64) {
+    if tick_id % BIT_SPAWNRATE == 0 {
+        let current_count = ctx.db.bit().count();
+        if current_count < MIN_BITS {
+            let worth = ctx.rng().gen_range(MIN_BIT_WORTH..=MAX_BIT_WORTH);
+            let size = worth;
+            let x = ctx.rng().gen_range(0.0..=WORLD_WIDTH as f32);
+            let y = ctx.rng().gen_range(0.0..=WORLD_HEIGHT as f32);
+            let color = Color {
+                r: ctx.rng().gen_range(0..=255),
+                g: ctx.rng().gen_range(0..=255),
+                b: ctx.rng().gen_range(0..=255),
+            };
+            ctx.db.bit().insert(Bit {
+                bit_id: 0,
+                x,
+                y,
+                size,
+                worth,
+                color,
+            });
+        }
+    }
+}
+
 #[table(name = tick_schedule, scheduled(tick))]
 pub struct TickSchedule {
     #[primary_key]
@@ -119,13 +166,13 @@ pub struct TickSchedule {
     scheduled_at: ScheduleAt,
 }
 
-
 #[reducer]
 pub fn tick(ctx: &ReducerContext, _args: TickSchedule) -> Result<(), String> {
-    // Security: Only allow scheduler to call this reducer
     if ctx.sender != ctx.identity() {
         return Err("Reducer `tick` may only be invoked by the scheduler.".into());
     }
+
+    spawn_bits(ctx, _args.scheduled_id);
 
     for user in ctx.db.user().iter() {
         if user.online{
@@ -198,6 +245,7 @@ pub fn tick(ctx: &ReducerContext, _args: TickSchedule) -> Result<(), String> {
             });
         }
     }
+
     Ok(())
 }
 
@@ -208,5 +256,6 @@ pub fn init(ctx: &ReducerContext) -> Result<(), String> {
         scheduled_id: 0, // auto_inc
         scheduled_at: tick_interval.into(),
     });
+
     Ok(())
 }

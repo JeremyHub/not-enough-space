@@ -31,52 +31,41 @@ import {
   deepEqual,
 } from "@clockworklabs/spacetimedb-sdk";
 import { Color as __Color } from "./color_type";
-import { Direction as __Direction } from "./direction_type";
 
-export type User = {
-  identity: Identity,
-  name: string | undefined,
-  online: boolean,
+export type Bit = {
+  bitId: bigint,
   x: number,
   y: number,
-  dx: number,
-  dy: number,
-  direction: __Direction | undefined,
-  color: __Color,
-  health: number,
   size: number,
+  worth: number,
+  color: __Color,
 };
 
 /**
  * A namespace for generated helper functions.
  */
-export namespace User {
+export namespace Bit {
   /**
   * A function which returns this type represented as an AlgebraicType.
   * This function is derived from the AlgebraicType used to generate this type.
   */
   export function getTypeScriptAlgebraicType(): AlgebraicType {
     return AlgebraicType.createProductType([
-      new ProductTypeElement("identity", AlgebraicType.createIdentityType()),
-      new ProductTypeElement("name", AlgebraicType.createOptionType(AlgebraicType.createStringType())),
-      new ProductTypeElement("online", AlgebraicType.createBoolType()),
+      new ProductTypeElement("bitId", AlgebraicType.createU64Type()),
       new ProductTypeElement("x", AlgebraicType.createF32Type()),
       new ProductTypeElement("y", AlgebraicType.createF32Type()),
-      new ProductTypeElement("dx", AlgebraicType.createF32Type()),
-      new ProductTypeElement("dy", AlgebraicType.createF32Type()),
-      new ProductTypeElement("direction", AlgebraicType.createOptionType(__Direction.getTypeScriptAlgebraicType())),
+      new ProductTypeElement("size", AlgebraicType.createF32Type()),
+      new ProductTypeElement("worth", AlgebraicType.createF32Type()),
       new ProductTypeElement("color", __Color.getTypeScriptAlgebraicType()),
-      new ProductTypeElement("health", AlgebraicType.createI32Type()),
-      new ProductTypeElement("size", AlgebraicType.createI32Type()),
     ]);
   }
 
-  export function serialize(writer: BinaryWriter, value: User): void {
-    User.getTypeScriptAlgebraicType().serialize(writer, value);
+  export function serialize(writer: BinaryWriter, value: Bit): void {
+    Bit.getTypeScriptAlgebraicType().serialize(writer, value);
   }
 
-  export function deserialize(reader: BinaryReader): User {
-    return User.getTypeScriptAlgebraicType().deserialize(reader);
+  export function deserialize(reader: BinaryReader): Bit {
+    return Bit.getTypeScriptAlgebraicType().deserialize(reader);
   }
 
 }

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import './App.css';
-import { DbConnection, Direction, ErrorContext, EventContext, User } from './module_bindings';
+import { Bit, DbConnection, Direction, ErrorContext, EventContext, User } from './module_bindings';
 import { Identity } from '@clockworklabs/spacetimedb-sdk';
 import { JSX } from 'react/jsx-runtime';
 
@@ -46,27 +46,64 @@ function useUsers(conn: DbConnection | null): Map<string, User> {
   return users;
 }
 
+function useBits(conn: DbConnection | null): Array<Bit> {
+  const [bits, setBits] = useState<Array<Bit>>([]);
+
+  useEffect(() => {
+    if (!conn) return;
+    const onInsert = (_ctx: EventContext, bit: Bit) => {
+      setBits(prev => [...prev, bit]);
+    };
+    conn.db.bit.onInsert(onInsert);
+
+    const onUpdate = (_ctx: EventContext, oldBit: Bit, newBit: Bit) => {
+      setBits(prev => prev.map(bit => bit.bitId === oldBit.bitId ? newBit : bit));
+    };
+    conn.db.bit.onUpdate(onUpdate);
+
+    const onDelete = (_ctx: EventContext, bit: Bit) => {
+      setBits(prev => prev.filter(b => b.bitId !== bit.bitId));
+    };
+    conn.db.bit.onDelete(onDelete);
+
+    return () => {
+      conn.db.bit.removeOnInsert(onInsert);
+      conn.db.bit.removeOnUpdate(onUpdate);
+      conn.db.bit.removeOnDelete(onDelete);
+    };
+  }, [conn]);
+  return bits;
+}
+
 const CANVAS_WIDTH = 600;
 const CANVAS_HEIGHT = 600;
 
-// Draws a ball for each user at their x and y position
-const draw = (ctx: CanvasRenderingContext2D | null, users: Map<string, User>) => {
+const draw = (ctx: CanvasRenderingContext2D | null, users: Map<string, User>, bits: Array<Bit>) => {
   if (!ctx) return;
 
   ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
   users.forEach(user => {
     ctx.beginPath();
-    ctx.arc(user.x, user.y, 20, 0, Math.PI * 2);
+    ctx.arc(user.x, user.y, user.size, 0, Math.PI * 2);
     ctx.fillStyle = `rgba(${user.color.r}, ${user.color.g}, ${user.color.b}, 1)`; 
     ctx.fill();
     ctx.closePath();
   });
+
+  bits.forEach(bit => {
+    ctx.beginPath();
+    ctx.arc(bit.x, bit.y, bit.size, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(${bit.color.r}, ${bit.color.g}, ${bit.color.b}, 1)`; 
+    ctx.fill();
+    ctx.closePath();
+  })
 };
 
 const useCanvas = (
-  draw: (ctx: CanvasRenderingContext2D | null, users: Map<string, User>) => void,
-  users: Map<string, User>
+  draw: (ctx: CanvasRenderingContext2D | null, users: Map<string, User>, bits: Array<Bit>) => void,
+  users: Map<string, User>,
+  bits: Array<Bit>,
 ) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -77,7 +114,7 @@ const useCanvas = (
     let animationFrameId: number;
 
     const render = () => {
-      draw(context, users);
+      draw(context, users, bits);
       animationFrameId = window.requestAnimationFrame(render);
     };
     render();
@@ -90,9 +127,9 @@ const useCanvas = (
   return canvasRef;
 };
 
-const Canvas = (props: { draw: typeof draw; users: Map<string, User> }) => {
-  const { draw, users, ...rest } = props;
-  const canvasRef = useCanvas(draw, users);
+const Canvas = (props: { draw: typeof draw; users: Map<string, User>, bits: Array<Bit> }) => {
+  const { draw, users, bits, ...rest } = props;
+  const canvasRef = useCanvas(draw, users, bits);
 
   return (
     <canvas
@@ -111,6 +148,7 @@ function App() {
   const [conn, setConn] = useState<DbConnection | null>(null);
   const connectingRef = useRef(false);
   const users = useUsers(conn);
+  const bits = useBits(conn);
 
   useEffect(() => {
     if (connectingRef.current) return;
@@ -137,7 +175,7 @@ function App() {
           identity.toHexString()
         );
 
-        subscribeToQueries(conn, ["SELECT * FROM user where online=true;"]);
+        subscribeToQueries(conn, ["SELECT * FROM user where online=true;", "SELECT * FROM bit"]);
       };
 
       const onDisconnect = () => {
@@ -228,7 +266,7 @@ function App() {
 
   return (
     <div className="App">
-      <Canvas draw={draw} users={users}/>
+      <Canvas draw={draw} users={users} bits={bits}/>
     </div>
   );
 }
