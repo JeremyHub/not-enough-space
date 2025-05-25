@@ -9,10 +9,12 @@ const BRAKING_FORCE: f32 = 0.9;
 const VELOCITY_MULTIPLIER: f32 = 0.1;
 const FRICTION: f32 = 0.9;
 
-const MIN_BITS: u64 = 30;
+const MAX_AREA_PER_BIT: u64 = 1200;
+const MAX_BITS: u64 = ((WORLD_HEIGHT*WORLD_WIDTH) as u64)/MAX_AREA_PER_BIT;
 const MIN_BIT_WORTH: f32 = 0.1;
 const MAX_BIT_WORTH: f32 = 2.0;
-const BIT_SPAWNRATE: u64 = 70;
+const AREA_PER_BIT_SPAWN: f64 = 3600000.0;
+const BITS_SPAWNED_PER_TICK: f64 = ((1.0/AREA_PER_BIT_SPAWN))*((WORLD_HEIGHT*WORLD_WIDTH) as f64);
 
 #[derive(SpacetimeType, Clone, Debug, PartialEq)]
 pub enum Direction {
@@ -48,6 +50,10 @@ pub struct User {
     color: Color,
     health: f32,
     size: f32,
+}
+
+pub fn get_user_size(health: f32) -> f32 {
+    return ((50.0*(health.powi(2)))+health)/((health*health)+200000.0) + 10.0;
 }
 
 #[table(name = bit, public)]
@@ -115,7 +121,7 @@ pub fn client_connected(ctx: &ReducerContext) {
             direction: None,
             color: Color{r: ctx.rng().gen_range(0..=255), g: ctx.rng().gen_range(0..=255), b: ctx.rng().gen_range(0..=255)},
             health: 1.0,
-            size: 10.0,
+            size: get_user_size(1.0),
         });
     }
 }
@@ -134,9 +140,20 @@ pub fn identity_disconnected(ctx: &ReducerContext) {
 
 
 fn spawn_bits(ctx: &ReducerContext, tick_id: u64) {
-    if tick_id % BIT_SPAWNRATE == 0 {
-        let current_count = ctx.db.bit().count();
-        if current_count < MIN_BITS {
+    let current_num_bits = ctx.db.bit().count();
+    if current_num_bits < MAX_BITS {
+        let mut bits_to_spawn = 1;
+        if BITS_SPAWNED_PER_TICK >= 1.0 {
+            bits_to_spawn = BITS_SPAWNED_PER_TICK.round() as u64;
+            if bits_to_spawn + current_num_bits > MAX_BITS {
+                bits_to_spawn = MAX_BITS - current_num_bits;
+            }
+        } else {
+            if !(tick_id % (1.0/BITS_SPAWNED_PER_TICK).round() as u64 == 0) {
+                return
+            }
+        }
+        for _ in 0..bits_to_spawn {
             let worth = ctx.rng().gen_range(MIN_BIT_WORTH..=MAX_BIT_WORTH);
             let size = worth;
             let x = ctx.rng().gen_range(0.0..=WORLD_WIDTH as f32);
@@ -241,16 +258,14 @@ fn users_eat_bits(ctx: &ReducerContext) {
                     bits_to_eat.push(bit);
                 }
             }
-            let mut new_size = user.size;
             let mut new_health = user.health;
             for bit in bits_to_eat {
-                new_size += bit.size;
                 new_health += bit.worth;
                 ctx.db.bit().delete(bit);
             }
             ctx.db.user().identity().update(User {
-                size: new_size,
                 health: new_health,
+                size: get_user_size(new_health),
                 ..user
             });
         }

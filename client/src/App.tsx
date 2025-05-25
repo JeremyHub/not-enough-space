@@ -1,8 +1,7 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import './App.css';
 import { Bit, DbConnection, Direction, ErrorContext, EventContext, User } from './module_bindings';
 import { Identity } from '@clockworklabs/spacetimedb-sdk';
-import { JSX } from 'react/jsx-runtime';
 
 export type PrettyMessage = {
   senderName: string;
