@@ -22,6 +22,13 @@ pub enum Direction {
     Brake,
 }
 
+#[derive(SpacetimeType, Clone, Debug, PartialEq)]
+pub struct Color {
+    pub r: i32,
+    pub g: i32,
+    pub b: i32,
+}
+
 #[table(name = user, public)]
 pub struct User {
     #[primary_key]
@@ -33,6 +40,7 @@ pub struct User {
     dx: f32,
     dy: f32,
     direction: Option<Direction>,
+    color: Color,
 }
 
 #[reducer]
@@ -86,6 +94,7 @@ pub fn client_connected(ctx: &ReducerContext) {
             dx: 0.0,
             dy: 0.0,
             direction: None,
+            color: Color{r: ctx.rng().gen_range(0..=255), g: ctx.rng().gen_range(0..=255), b: ctx.rng().gen_range(0..=255)}
         });
     }
 }

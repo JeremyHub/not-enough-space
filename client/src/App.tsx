@@ -58,7 +58,7 @@ const draw = (ctx: CanvasRenderingContext2D | null, users: Map<string, User>) =>
   users.forEach(user => {
     ctx.beginPath();
     ctx.arc(user.x, user.y, 20, 0, Math.PI * 2);
-    ctx.fillStyle = 'blue';
+    ctx.fillStyle = `rgba(${user.color.r}, ${user.color.g}, ${user.color.b}, 1)`; 
     ctx.fill();
     ctx.closePath();
   });
@@ -153,7 +153,8 @@ function App() {
         DbConnection.builder()
           .withUri('ws://localhost:3000')
           .withModuleName('nes')
-          .withToken(localStorage.getItem('auth_token') || '')
+          // .withToken(localStorage.getItem('auth_token') || '')
+          .withToken('')
           .onConnect(onConnect)
           .onDisconnect(onDisconnect)
           .onConnectError(onConnectError)
@@ -176,14 +177,14 @@ function App() {
       const brake = pressed.has(' ');
 
       if (brake) return Direction.Brake as Direction;
-      if (up && right) return Direction.NE as Direction;
-      if (up && left) return Direction.NW as Direction;
-      if (down && right) return Direction.SE as Direction;
-      if (down && left) return Direction.SW as Direction;
-      if (up) return Direction.N as Direction;
-      if (down) return Direction.S as Direction;
-      if (left) return Direction.W as Direction;
-      if (right) return Direction.E as Direction;
+      if (up && right && !left && !down) return Direction.NE as Direction;
+      if (up && left && !right && !down) return Direction.NW as Direction;
+      if (down && right && !up && !left) return Direction.SE as Direction;
+      if (down && left && !up && !right) return Direction.SW as Direction;
+      if (left && !right) return Direction.W as Direction;
+      if (right && !left) return Direction.E as Direction;
+      if (up && !down) return Direction.N as Direction;
+      if (down && !up) return Direction.S as Direction;
       return undefined;
     };
 

@@ -31,6 +31,7 @@ import {
   deepEqual,
 } from "@clockworklabs/spacetimedb-sdk";
 import { Direction as __Direction } from "./direction_type";
+import { Color as __Color } from "./color_type";
 
 export type User = {
   identity: Identity,
@@ -41,6 +42,7 @@ export type User = {
   dx: number,
   dy: number,
   direction: __Direction | undefined,
+  color: __Color,
 };
 
 /**
@@ -61,6 +63,7 @@ export namespace User {
       new ProductTypeElement("dx", AlgebraicType.createF32Type()),
       new ProductTypeElement("dy", AlgebraicType.createF32Type()),
       new ProductTypeElement("direction", AlgebraicType.createOptionType(__Direction.getTypeScriptAlgebraicType())),
+      new ProductTypeElement("color", __Color.getTypeScriptAlgebraicType()),
     ]);
   }
 

@@ -50,6 +50,8 @@ import { UserTableHandle } from "./user_table.ts";
 export { UserTableHandle };
 
 // Import and reexport all types
+import { Color } from "./color_type.ts";
+export { Color };
 import { Direction } from "./direction_type.ts";
 export { Direction };
 import { TickSchedule } from "./tick_schedule_type.ts";
