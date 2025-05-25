@@ -77,22 +77,39 @@ function useBits(conn: DbConnection | null): Array<Bit> {
 const CANVAS_WIDTH = 600;
 const CANVAS_HEIGHT = 600;
 
-const draw = (ctx: CanvasRenderingContext2D | null, users: Map<string, User>, bits: Array<Bit>) => {
+type DrawProps = {
+  users: Map<string, User>;
+  bits: Array<Bit>;
+  identity: Identity;
+};
+
+function renderUser(ctx: CanvasRenderingContext2D, user: User, x: number, y: number) {
+  ctx.beginPath();
+  ctx.arc(x, y, user.size, 0, Math.PI * 2);
+  ctx.fillStyle = `rgba(${user.color.r}, ${user.color.g}, ${user.color.b}, 1)`;
+  ctx.fill();
+  ctx.closePath();
+}
+
+const draw = (ctx: CanvasRenderingContext2D | null, props: DrawProps) => {
+  const { users, bits, identity } = props;
   if (!ctx) return;
 
   ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
+  const self = users.get(identity.toHexString());
+  if (!self) return;
+  renderUser(ctx, self, CANVAS_WIDTH/2, CANVAS_HEIGHT/2);
+
   users.forEach(user => {
-    ctx.beginPath();
-    ctx.arc(user.x, user.y, user.size, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(${user.color.r}, ${user.color.g}, ${user.color.b}, 1)`; 
-    ctx.fill();
-    ctx.closePath();
+    if (user.identity.data !== identity.data) {
+      renderUser(ctx, user, user.x-self.x+(CANVAS_WIDTH/2), user.y-self.y+(CANVAS_HEIGHT/2))
+    }
   });
 
   bits.forEach(bit => {
     ctx.beginPath();
-    ctx.arc(bit.x, bit.y, bit.size, 0, Math.PI * 2);
+    ctx.arc(bit.x-self.x+(CANVAS_WIDTH/2), bit.y-self.y+(CANVAS_HEIGHT/2), bit.size, 0, Math.PI * 2);
     ctx.fillStyle = `rgba(${bit.color.r}, ${bit.color.g}, ${bit.color.b}, 1)`; 
     ctx.fill();
     ctx.closePath();
@@ -100,9 +117,8 @@ const draw = (ctx: CanvasRenderingContext2D | null, users: Map<string, User>, bi
 };
 
 const useCanvas = (
-  draw: (ctx: CanvasRenderingContext2D | null, users: Map<string, User>, bits: Array<Bit>) => void,
-  users: Map<string, User>,
-  bits: Array<Bit>,
+  draw: (ctx: CanvasRenderingContext2D | null, props: DrawProps) => void,
+  props: DrawProps,
 ) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -113,7 +129,7 @@ const useCanvas = (
     let animationFrameId: number;
 
     const render = () => {
-      draw(context, users, bits);
+      draw(context, props);
       animationFrameId = window.requestAnimationFrame(render);
     };
     render();
@@ -121,14 +137,14 @@ const useCanvas = (
     return () => {
       window.cancelAnimationFrame(animationFrameId);
     };
-  }, [draw, users]);
+  }, [draw, props]);
 
   return canvasRef;
 };
 
-const Canvas = (props: { draw: typeof draw; users: Map<string, User>, bits: Array<Bit> }) => {
-  const { draw, users, bits, ...rest } = props;
-  const canvasRef = useCanvas(draw, users, bits);
+const Canvas = (props: { draw: typeof draw; draw_props: DrawProps }) => {
+  const { draw, draw_props, ...rest } = props;
+  const canvasRef = useCanvas(draw, draw_props);
 
   return (
     <canvas
@@ -174,7 +190,7 @@ function App() {
           identity.toHexString()
         );
 
-        subscribeToQueries(conn, ["SELECT * FROM user where online=true;", "SELECT * FROM bit"]);
+        subscribeToQueries(conn, ["SELECT * FROM user;", "SELECT * FROM bit"]);
       };
 
       const onDisconnect = () => {
@@ -263,7 +279,7 @@ function App() {
 
   return (
     <div className="App">
-      <Canvas draw={draw} users={users} bits={bits}/>
+      <Canvas draw={draw} draw_props={{ users, bits, identity }} />
     </div>
   );
 }
