@@ -162,17 +162,18 @@ fn spawn_bits(ctx: &ReducerContext, tick_id: u64) {
 pub struct TickSchedule {
     #[primary_key]
     #[auto_inc]
-    scheduled_id: u64,
+    id: u64,
     scheduled_at: ScheduleAt,
 }
 
+
 #[reducer]
-pub fn tick(ctx: &ReducerContext, _args: TickSchedule) -> Result<(), String> {
+pub fn tick(ctx: &ReducerContext, tick_schedule: TickSchedule) -> Result<(), String> {
     if ctx.sender != ctx.identity() {
         return Err("Reducer `tick` may only be invoked by the scheduler.".into());
     }
 
-    spawn_bits(ctx, _args.scheduled_id);
+    spawn_bits(ctx, tick_schedule.id);
 
     for user in ctx.db.user().iter() {
         if user.online{
@@ -246,16 +247,22 @@ pub fn tick(ctx: &ReducerContext, _args: TickSchedule) -> Result<(), String> {
         }
     }
 
+    // Schedule the next tick by inserting a new row in the scheduling table
+    let tick_interval = TimeDuration::from_micros(60);
+    ctx.db.tick_schedule().insert(TickSchedule {
+        id: 0, // AutoInc
+        scheduled_at: ScheduleAt::Time(ctx.timestamp + tick_interval),
+    });
+
     Ok(())
 }
 
 #[reducer(init)]
 pub fn init(ctx: &ReducerContext) -> Result<(), String> {
-    let tick_interval = TimeDuration::from_micros(60);
+    // Schedule the first tick to run immediately
     ctx.db.tick_schedule().insert(TickSchedule {
-        scheduled_id: 0, // auto_inc
-        scheduled_at: tick_interval.into(),
+        id: 0, // AutoInc
+        scheduled_at: ScheduleAt::Time(ctx.timestamp),
     });
-
     Ok(())
 }
