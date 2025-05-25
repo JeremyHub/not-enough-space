@@ -30,48 +30,34 @@ import {
   Timestamp,
   deepEqual,
 } from "@clockworklabs/spacetimedb-sdk";
+
 import { Direction as __Direction } from "./direction_type";
 
-export type User = {
-  identity: Identity,
-  name: string | undefined,
-  online: boolean,
-  x: number,
-  y: number,
-  dx: number,
-  dy: number,
+export type SetDirection = {
   direction: __Direction | undefined,
 };
 
 /**
  * A namespace for generated helper functions.
  */
-export namespace User {
+export namespace SetDirection {
   /**
   * A function which returns this type represented as an AlgebraicType.
   * This function is derived from the AlgebraicType used to generate this type.
   */
   export function getTypeScriptAlgebraicType(): AlgebraicType {
     return AlgebraicType.createProductType([
-      new ProductTypeElement("identity", AlgebraicType.createIdentityType()),
-      new ProductTypeElement("name", AlgebraicType.createOptionType(AlgebraicType.createStringType())),
-      new ProductTypeElement("online", AlgebraicType.createBoolType()),
-      new ProductTypeElement("x", AlgebraicType.createF32Type()),
-      new ProductTypeElement("y", AlgebraicType.createF32Type()),
-      new ProductTypeElement("dx", AlgebraicType.createF32Type()),
-      new ProductTypeElement("dy", AlgebraicType.createF32Type()),
       new ProductTypeElement("direction", AlgebraicType.createOptionType(__Direction.getTypeScriptAlgebraicType())),
     ]);
   }
 
-  export function serialize(writer: BinaryWriter, value: User): void {
-    User.getTypeScriptAlgebraicType().serialize(writer, value);
+  export function serialize(writer: BinaryWriter, value: SetDirection): void {
+    SetDirection.getTypeScriptAlgebraicType().serialize(writer, value);
   }
 
-  export function deserialize(reader: BinaryReader): User {
-    return User.getTypeScriptAlgebraicType().deserialize(reader);
+  export function deserialize(reader: BinaryReader): SetDirection {
+    return SetDirection.getTypeScriptAlgebraicType().deserialize(reader);
   }
 
 }
-
 

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import './App.css';
-import { DbConnection, ErrorContext, EventContext, User } from './module_bindings';
+import { DbConnection, Direction, ErrorContext, EventContext, User } from './module_bindings';
 import { Identity } from '@clockworklabs/spacetimedb-sdk';
 import { JSX } from 'react/jsx-runtime';
 
@@ -109,54 +109,113 @@ function App() {
   const [connected, setConnected] = useState<boolean>(false);
   const [identity, setIdentity] = useState<Identity | null>(null);
   const [conn, setConn] = useState<DbConnection | null>(null);
+  const connectingRef = useRef(false);
   const users = useUsers(conn);
 
   useEffect(() => {
-    const subscribeToQueries = (conn: DbConnection, queries: string[]) => {
-      conn
-        ?.subscriptionBuilder()
-        .onApplied(() => {
-          console.log('SDK client cache initialized.');
-        })
-        .subscribe(queries);
-    };
+    if (connectingRef.current) return;
+    connectingRef.current = true;
+      const subscribeToQueries = (conn: DbConnection, queries: string[]) => {
+        conn
+          ?.subscriptionBuilder()
+          .onApplied(() => {
+            console.log('SDK client cache initialized.');
+          })
+          .subscribe(queries);
+      };
 
-    const onConnect = (
-      conn: DbConnection,
-      identity: Identity,
-      token: string
-    ) => {
-      setIdentity(identity);
-      setConnected(true);
-      localStorage.setItem('auth_token', token);
-      console.log(
-        'Connected to SpacetimeDB with identity:',
-        identity.toHexString()
+      const onConnect = (
+        conn: DbConnection,
+        identity: Identity,
+        token: string
+      ) => {
+        setIdentity(identity);
+        setConnected(true);
+        localStorage.setItem('auth_token', token);
+        console.log(
+          'Connected to SpacetimeDB with identity:',
+          identity.toHexString()
+        );
+
+        subscribeToQueries(conn, ["SELECT * FROM user where online=true;"]);
+      };
+
+      const onDisconnect = () => {
+        console.log('Disconnected from SpacetimeDB');
+        setConnected(false);
+      };
+
+      const onConnectError = (_ctx: ErrorContext, err: Error) => {
+        console.log('Error connecting to SpacetimeDB:', err);
+      };
+
+      setConn(
+        DbConnection.builder()
+          .withUri('ws://localhost:3000')
+          .withModuleName('nes')
+          .withToken(localStorage.getItem('auth_token') || '')
+          .onConnect(onConnect)
+          .onDisconnect(onDisconnect)
+          .onConnectError(onConnectError)
+          .build()
       );
-
-      subscribeToQueries(conn, ['SELECT * FROM user']);
-    };
-
-    const onDisconnect = () => {
-      console.log('Disconnected from SpacetimeDB');
-      setConnected(false);
-    };
-
-    const onConnectError = (_ctx: ErrorContext, err: Error) => {
-      console.log('Error connecting to SpacetimeDB:', err);
-    };
-
-    setConn(
-      DbConnection.builder()
-        .withUri('ws://localhost:3000')
-        .withModuleName('nes')
-        .withToken(localStorage.getItem('auth_token') || '')
-        .onConnect(onConnect)
-        .onDisconnect(onDisconnect)
-        .onConnectError(onConnectError)
-        .build()
-    );
   }, []);
+
+  useEffect(() => {
+    if (!conn) return;
+
+    // Track pressed keys
+    const pressed = new Set<string>();
+
+    // Map WASD to axis
+    const getDirection = (): Direction | undefined => {
+      const up = pressed.has('w');
+      const down = pressed.has('s');
+      const left = pressed.has('a');
+      const right = pressed.has('d');
+      const brake = pressed.has(' ');
+
+      if (brake) return Direction.Brake as Direction;
+      if (up && right) return Direction.NE as Direction;
+      if (up && left) return Direction.NW as Direction;
+      if (down && right) return Direction.SE as Direction;
+      if (down && left) return Direction.SW as Direction;
+      if (up) return Direction.N as Direction;
+      if (down) return Direction.S as Direction;
+      if (left) return Direction.W as Direction;
+      if (right) return Direction.E as Direction;
+      return undefined;
+    };
+
+    let lastDirection: Direction | undefined = undefined;
+
+    const updateDirection = () => {
+      const direction = getDirection();
+      if (direction !== lastDirection) {
+        conn.reducers.setDirection(direction);
+        lastDirection = direction;
+      }
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const key = e.key.toLowerCase();
+      pressed.add(key);
+      updateDirection();
+    };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      const key = e.key.toLowerCase();
+      pressed.delete(key);
+      updateDirection();
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, [conn]);
 
   if (!conn || !connected || !identity) {
     return (

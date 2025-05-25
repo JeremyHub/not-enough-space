@@ -1,7 +1,26 @@
-use spacetimedb::{table, reducer, Table, ReducerContext, Identity, TimeDuration, ScheduleAt};
+use spacetimedb::{table, reducer, Table, ReducerContext, Identity, TimeDuration, ScheduleAt, SpacetimeType};
+use spacetimedb::rand::Rng;
 
 const WORLD_WIDTH: i32 = 600;
 const WORLD_HEIGHT: i32 = 600;
+
+const ACCELERATION: f32 = 2.0;
+const BRAKING_FORCE: f32 = 0.9;
+const VELOCITY_MULTIPLIER: f32 = 0.1;
+const FRICTION: f32 = 0.99;
+
+#[derive(SpacetimeType, Clone, Debug, PartialEq)]
+pub enum Direction {
+    N,
+    NE,
+    E,
+    SE,
+    S,
+    SW,
+    W,
+    NW,
+    Brake,
+}
 
 #[table(name = user, public)]
 pub struct User {
@@ -9,10 +28,11 @@ pub struct User {
     identity: Identity,
     name: Option<String>,
     online: bool,
-    x: i32,
-    y: i32,
-    dx: i32,
-    dy: i32,
+    x: f32,
+    y: f32,
+    dx: f32,
+    dy: f32,
+    direction: Option<Direction>,
 }
 
 #[reducer]
@@ -36,12 +56,23 @@ fn validate_name(name: String) -> Result<String, String> {
     }
 }
 
+#[reducer]
+pub fn set_direction(ctx: &ReducerContext, direction: Option<Direction>) -> Result<(), String> {
+    if let Some(user) = ctx.db.user().identity().find(ctx.sender) {
+        ctx.db.user().identity().update(User { direction: direction, ..user });
+        Ok(())
+    } else {
+        Err("Cannot set name for unknown user".to_string())
+    }
+}
+
+
 #[reducer(client_connected)]
 // Called when a client connects to a SpacetimeDB database server
 pub fn client_connected(ctx: &ReducerContext) {
     if let Some(user) = ctx.db.user().identity().find(ctx.sender) {
         // If this is a returning user, i.e. we already have a `User` with this `Identity`,
-        // set `online: true`, but leave `name` and `identity` unchanged.
+        // set `online: true`.
         ctx.db.user().identity().update(User { online: true, ..user });
     } else {
         // If this is a new user, create a `User` row for the `Identity`,
@@ -50,10 +81,11 @@ pub fn client_connected(ctx: &ReducerContext) {
             name: None,
             identity: ctx.sender,
             online: true,
-            x: 0,
-            y: 50,
-            dx: 5,
-            dy: 5,
+            x: ctx.rng().gen_range(0..=WORLD_WIDTH) as f32,
+            y: ctx.rng().gen_range(0..=WORLD_HEIGHT) as f32,
+            dx: 0.0,
+            dy: 0.0,
+            direction: None,
         });
     }
 }
@@ -87,36 +119,75 @@ pub fn tick(ctx: &ReducerContext, _args: TickSchedule) -> Result<(), String> {
     }
 
     for user in ctx.db.user().iter() {
-        let mut new_x = user.x + user.dx;
-        let mut new_y = user.y + user.dy;
-        let mut new_dx = user.dx;
-        let mut new_dy = user.dy;
+        if user.online{
+            let mut new_dx: f32 = user.dx * FRICTION;
+            let mut new_dy: f32 = user.dy * FRICTION;
 
-        // Bounce off left/right walls
-        if new_x < 0 {
-            new_x = 0;
-            new_dx = -new_dx;
-        } else if new_x >= WORLD_WIDTH {
-            new_x = WORLD_WIDTH - 1;
-            new_dx = -new_dx;
+            match user.direction {
+                Some(Direction::N) => {
+                    new_dy -= ACCELERATION;
+                }
+                Some(Direction::NE) => {
+                    new_dy -= ACCELERATION;
+                    new_dx += ACCELERATION;
+                }
+                Some(Direction::E) => {
+                    new_dx += ACCELERATION;
+                }
+                Some(Direction::SE) => {
+                    new_dy += ACCELERATION;
+                    new_dx += ACCELERATION;
+                }
+                Some(Direction::S) => {
+                    new_dy += ACCELERATION;
+                }
+                Some(Direction::SW) => {
+                    new_dy += ACCELERATION;
+                    new_dx -= ACCELERATION;
+                }
+                Some(Direction::W) => {
+                    new_dx -= ACCELERATION;
+                }
+                Some(Direction::NW) => {
+                    new_dy -= ACCELERATION;
+                    new_dx -= ACCELERATION;
+                }
+                Some(Direction::Brake) => {
+                    new_dx *= BRAKING_FORCE;
+                    new_dy *= BRAKING_FORCE;
+                }
+                None => {}
+            }
+
+            let mut new_x = user.x + (user.dx * VELOCITY_MULTIPLIER);
+            let mut new_y = user.y + (user.dy * VELOCITY_MULTIPLIER);
+            
+            // Bounce off left/right walls
+            if new_x < 0.0 {
+                new_x = 0.0;
+                new_dx = -new_dx;
+            } else if new_x >= WORLD_WIDTH as f32 {
+                new_x = (WORLD_WIDTH - 1) as f32;
+                new_dx = -new_dx;
+            }
+    
+            // Bounce off top/bottom walls
+            if new_y < 0.0 {
+                new_y = 0.0;
+                new_dy = -new_dy;
+            } else if new_y >= WORLD_HEIGHT as f32 {
+                new_y = (WORLD_HEIGHT - 1) as f32;
+                new_dy = -new_dy;
+            }
+    
+            ctx.db.user().identity().update(User {
+                x: new_x,
+                y: new_y,
+                dx: new_dx,
+                dy: new_dy,
+                ..user
+            });
         }
-
-        // Bounce off top/bottom walls
-        if new_y < 0 {
-            new_y = 0;
-            new_dy = -new_dy;
-        } else if new_y >= WORLD_HEIGHT {
-            new_y = WORLD_HEIGHT - 1;
-            new_dy = -new_dy;
-        }
-
-        ctx.db.user().identity().update(User {
-            x: new_x,
-            y: new_y,
-            dx: new_dx,
-            dy: new_dy,
-            ..user
-        });
     }
     Ok(())
 }
