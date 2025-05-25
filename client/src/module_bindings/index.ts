@@ -38,8 +38,6 @@ import { IdentityDisconnected } from "./identity_disconnected_reducer.ts";
 export { IdentityDisconnected };
 import { SetDirection } from "./set_direction_reducer.ts";
 export { SetDirection };
-import { SetName } from "./set_name_reducer.ts";
-export { SetName };
 import { Tick } from "./tick_reducer.ts";
 export { Tick };
 
@@ -94,10 +92,6 @@ const REMOTE_MODULE = {
       reducerName: "set_direction",
       argsType: SetDirection.getTypeScriptAlgebraicType(),
     },
-    set_name: {
-      reducerName: "set_name",
-      argsType: SetName.getTypeScriptAlgebraicType(),
-    },
     tick: {
       reducerName: "tick",
       argsType: Tick.getTypeScriptAlgebraicType(),
@@ -132,7 +126,6 @@ export type Reducer = never
 | { name: "ClientConnected", args: ClientConnected }
 | { name: "IdentityDisconnected", args: IdentityDisconnected }
 | { name: "SetDirection", args: SetDirection }
-| { name: "SetName", args: SetName }
 | { name: "Tick", args: Tick }
 ;
 
@@ -171,22 +164,6 @@ export class RemoteReducers {
     this.connection.offReducer("set_direction", callback);
   }
 
-  setName(name: string) {
-    const __args = { name };
-    let __writer = new BinaryWriter(1024);
-    SetName.getTypeScriptAlgebraicType().serialize(__writer, __args);
-    let __argsBuffer = __writer.getBuffer();
-    this.connection.callReducer("set_name", __argsBuffer, this.setCallReducerFlags.setNameFlags);
-  }
-
-  onSetName(callback: (ctx: ReducerEventContext, name: string) => void) {
-    this.connection.onReducer("set_name", callback);
-  }
-
-  removeOnSetName(callback: (ctx: ReducerEventContext, name: string) => void) {
-    this.connection.offReducer("set_name", callback);
-  }
-
   tick(tickSchedule: TickSchedule) {
     const __args = { tickSchedule };
     let __writer = new BinaryWriter(1024);
@@ -209,11 +186,6 @@ export class SetReducerFlags {
   setDirectionFlags: CallReducerFlags = 'FullUpdate';
   setDirection(flags: CallReducerFlags) {
     this.setDirectionFlags = flags;
-  }
-
-  setNameFlags: CallReducerFlags = 'FullUpdate';
-  setName(flags: CallReducerFlags) {
-    this.setNameFlags = flags;
   }
 
   tickFlags: CallReducerFlags = 'FullUpdate';

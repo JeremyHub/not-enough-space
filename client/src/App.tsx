@@ -191,7 +191,7 @@ function App() {
           .withUri('ws://localhost:3000')
           .withModuleName('nes')
           // .withToken(localStorage.getItem('auth_token') || '')
-          .withToken('')
+          .withToken('') // use the above line instead for persisting connection across refreshes
           .onConnect(onConnect)
           .onDisconnect(onDisconnect)
           .onConnectError(onConnectError)
@@ -202,10 +202,8 @@ function App() {
   useEffect(() => {
     if (!conn) return;
 
-    // Track pressed keys
     const pressed = new Set<string>();
 
-    // Map WASD to axis
     const getDirection = (): Direction | undefined => {
       const up = pressed.has('w');
       const down = pressed.has('s');

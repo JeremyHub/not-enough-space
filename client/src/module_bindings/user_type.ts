@@ -35,7 +35,6 @@ import { Direction as __Direction } from "./direction_type";
 
 export type User = {
   identity: Identity,
-  name: string | undefined,
   online: boolean,
   x: number,
   y: number,
@@ -58,7 +57,6 @@ export namespace User {
   export function getTypeScriptAlgebraicType(): AlgebraicType {
     return AlgebraicType.createProductType([
       new ProductTypeElement("identity", AlgebraicType.createIdentityType()),
-      new ProductTypeElement("name", AlgebraicType.createOptionType(AlgebraicType.createStringType())),
       new ProductTypeElement("online", AlgebraicType.createBoolType()),
       new ProductTypeElement("x", AlgebraicType.createF32Type()),
       new ProductTypeElement("y", AlgebraicType.createF32Type()),

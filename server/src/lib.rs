@@ -40,7 +40,6 @@ pub struct Color {
 pub struct User {
     #[primary_key]
     identity: Identity,
-    name: Option<String>,
     online: bool,
     x: f32,
     y: f32,
@@ -69,27 +68,6 @@ pub struct Bit {
 }
 
 #[reducer]
-/// Clients invoke this reducer to set their user names.
-pub fn set_name(ctx: &ReducerContext, name: String) -> Result<(), String> {
-    let name = validate_name(name)?;
-    if let Some(user) = ctx.db.user().identity().find(ctx.sender) {
-        ctx.db.user().identity().update(User { name: Some(name), ..user });
-        Ok(())
-    } else {
-        Err("Cannot set name for unknown user".to_string())
-    }
-}
-
-/// Takes a name and checks if it's acceptable as a user's name.
-fn validate_name(name: String) -> Result<String, String> {
-    if name.is_empty() {
-        Err("Names must not be empty".to_string())
-    } else {
-        Ok(name)
-    }
-}
-
-#[reducer]
 pub fn set_direction(ctx: &ReducerContext, direction: Option<Direction>) -> Result<(), String> {
     if let Some(user) = ctx.db.user().identity().find(ctx.sender) {
         ctx.db.user().identity().update(User { direction: direction, ..user });
@@ -99,19 +77,12 @@ pub fn set_direction(ctx: &ReducerContext, direction: Option<Direction>) -> Resu
     }
 }
 
-
 #[reducer(client_connected)]
-// Called when a client connects to a SpacetimeDB database server
 pub fn client_connected(ctx: &ReducerContext) {
     if let Some(user) = ctx.db.user().identity().find(ctx.sender) {
-        // If this is a returning user, i.e. we already have a `User` with this `Identity`,
-        // set `online: true`.
         ctx.db.user().identity().update(User { online: true, ..user });
     } else {
-        // If this is a new user, create a `User` row for the `Identity`,
-        // which is online, but hasn't set a name.
         ctx.db.user().insert(User {
-            name: None,
             identity: ctx.sender,
             online: true,
             x: ctx.rng().gen_range(0..=WORLD_WIDTH) as f32,
@@ -127,13 +98,10 @@ pub fn client_connected(ctx: &ReducerContext) {
 }
 
 #[reducer(client_disconnected)]
-// Called when a client disconnects from SpacetimeDB database server
 pub fn identity_disconnected(ctx: &ReducerContext) {
     if let Some(user) = ctx.db.user().identity().find(ctx.sender) {
         ctx.db.user().identity().update(User { online: false, ..user });
     } else {
-        // This branch should be unreachable,
-        // as it doesn't make sense for a client to disconnect without connecting first.
         log::warn!("Disconnect event for unknown user with identity {:?}", ctx.sender);
     }
 }
@@ -220,22 +188,16 @@ fn update_users(ctx: &ReducerContext) {
             let mut new_x = user.x + (user.dx * VELOCITY_MULTIPLIER);
             let mut new_y = user.y + (user.dy * VELOCITY_MULTIPLIER);
             
-            // Bounce off left/right walls
             if new_x < 0.0 {
                 new_x = 0.0;
-                new_dx = -new_dx;
             } else if new_x >= WORLD_WIDTH as f32 {
                 new_x = (WORLD_WIDTH - 1) as f32;
-                new_dx = -new_dx;
             }
     
-            // Bounce off top/bottom walls
             if new_y < 0.0 {
                 new_y = 0.0;
-                new_dy = -new_dy;
             } else if new_y >= WORLD_HEIGHT as f32 {
                 new_y = (WORLD_HEIGHT - 1) as f32;
-                new_dy = -new_dy;
             }
     
             ctx.db.user().identity().update(User {
@@ -293,10 +255,9 @@ pub fn tick(ctx: &ReducerContext, tick_schedule: TickSchedule) -> Result<(), Str
 
     users_eat_bits(ctx);
 
-    // Schedule the next tick by inserting a new row in the scheduling table
     let tick_interval = TimeDuration::from_micros(60);
     ctx.db.tick_schedule().insert(TickSchedule {
-        id: 0, // AutoInc
+        id: 0,
         scheduled_at: ScheduleAt::Time(ctx.timestamp + tick_interval),
     });
 
@@ -305,9 +266,8 @@ pub fn tick(ctx: &ReducerContext, tick_schedule: TickSchedule) -> Result<(), Str
 
 #[reducer(init)]
 pub fn init(ctx: &ReducerContext) -> Result<(), String> {
-    // Schedule the first tick to run immediately
     ctx.db.tick_schedule().insert(TickSchedule {
-        id: 0, // AutoInc
+        id: 0,
         scheduled_at: ScheduleAt::Time(ctx.timestamp),
     });
     Ok(())
