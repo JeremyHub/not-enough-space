@@ -73,7 +73,7 @@ const REMOTE_MODULE = {
     tick_schedule: {
       tableName: "tick_schedule",
       rowType: TickSchedule.getTypeScriptAlgebraicType(),
-      primaryKey: "scheduledId",
+      primaryKey: "id",
     },
     user: {
       tableName: "user",
@@ -187,19 +187,19 @@ export class RemoteReducers {
     this.connection.offReducer("set_name", callback);
   }
 
-  tick(args: TickSchedule) {
-    const __args = { args };
+  tick(tickSchedule: TickSchedule) {
+    const __args = { tickSchedule };
     let __writer = new BinaryWriter(1024);
     Tick.getTypeScriptAlgebraicType().serialize(__writer, __args);
     let __argsBuffer = __writer.getBuffer();
     this.connection.callReducer("tick", __argsBuffer, this.setCallReducerFlags.tickFlags);
   }
 
-  onTick(callback: (ctx: ReducerEventContext, args: TickSchedule) => void) {
+  onTick(callback: (ctx: ReducerEventContext, tickSchedule: TickSchedule) => void) {
     this.connection.onReducer("tick", callback);
   }
 
-  removeOnTick(callback: (ctx: ReducerEventContext, args: TickSchedule) => void) {
+  removeOnTick(callback: (ctx: ReducerEventContext, tickSchedule: TickSchedule) => void) {
     this.connection.offReducer("tick", callback);
   }
 

@@ -34,7 +34,7 @@ import {
 import { TickSchedule as __TickSchedule } from "./tick_schedule_type";
 
 export type Tick = {
-  args: __TickSchedule,
+  tickSchedule: __TickSchedule,
 };
 
 /**
@@ -47,7 +47,7 @@ export namespace Tick {
   */
   export function getTypeScriptAlgebraicType(): AlgebraicType {
     return AlgebraicType.createProductType([
-      new ProductTypeElement("args", __TickSchedule.getTypeScriptAlgebraicType()),
+      new ProductTypeElement("tickSchedule", __TickSchedule.getTypeScriptAlgebraicType()),
     ]);
   }
 

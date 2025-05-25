@@ -4,10 +4,10 @@ use spacetimedb::rand::Rng;
 const WORLD_WIDTH: i32 = 600;
 const WORLD_HEIGHT: i32 = 600;
 
-const ACCELERATION: f32 = 0.7;
+const ACCELERATION: f32 = 4.0;
 const BRAKING_FORCE: f32 = 0.9;
 const VELOCITY_MULTIPLIER: f32 = 0.1;
-const FRICTION: f32 = 0.99;
+const FRICTION: f32 = 0.9;
 
 const MIN_BITS: u64 = 30;
 const MIN_BIT_WORTH: f32 = 0.1;
@@ -46,8 +46,8 @@ pub struct User {
     dy: f32,
     direction: Option<Direction>,
     color: Color,
-    health: i32,
-    size: i32,
+    health: f32,
+    size: f32,
 }
 
 #[table(name = bit, public)]
@@ -114,8 +114,8 @@ pub fn client_connected(ctx: &ReducerContext) {
             dy: 0.0,
             direction: None,
             color: Color{r: ctx.rng().gen_range(0..=255), g: ctx.rng().gen_range(0..=255), b: ctx.rng().gen_range(0..=255)},
-            health: 1,
-            size: 10,
+            health: 1.0,
+            size: 10.0,
         });
     }
 }
@@ -158,23 +158,7 @@ fn spawn_bits(ctx: &ReducerContext, tick_id: u64) {
     }
 }
 
-#[table(name = tick_schedule, scheduled(tick))]
-pub struct TickSchedule {
-    #[primary_key]
-    #[auto_inc]
-    id: u64,
-    scheduled_at: ScheduleAt,
-}
-
-
-#[reducer]
-pub fn tick(ctx: &ReducerContext, tick_schedule: TickSchedule) -> Result<(), String> {
-    if ctx.sender != ctx.identity() {
-        return Err("Reducer `tick` may only be invoked by the scheduler.".into());
-    }
-
-    spawn_bits(ctx, tick_schedule.id);
-
+fn update_users(ctx: &ReducerContext) {
     for user in ctx.db.user().iter() {
         if user.online{
             let mut new_dx: f32 = user.dx * FRICTION;
@@ -246,6 +230,53 @@ pub fn tick(ctx: &ReducerContext, tick_schedule: TickSchedule) -> Result<(), Str
             });
         }
     }
+}
+
+fn users_eat_bits(ctx: &ReducerContext) {
+    for user in ctx.db.user().iter() {
+        if user.online {
+            let mut bits_to_eat = Vec::new();
+            for bit in ctx.db.bit().iter() {
+                if ((user.x - bit.x).powi(2) + (user.y - bit.y).powi(2)).sqrt() <= bit.size + user.size {
+                    bits_to_eat.push(bit);
+                }
+            }
+            let mut new_size = user.size;
+            let mut new_health = user.health;
+            for bit in bits_to_eat {
+                new_size += bit.size;
+                new_health += bit.worth;
+                ctx.db.bit().delete(bit);
+            }
+            ctx.db.user().identity().update(User {
+                size: new_size,
+                health: new_health,
+                ..user
+            });
+        }
+    }
+}
+
+#[table(name = tick_schedule, scheduled(tick))]
+pub struct TickSchedule {
+    #[primary_key]
+    #[auto_inc]
+    id: u64,
+    scheduled_at: ScheduleAt,
+}
+
+
+#[reducer]
+pub fn tick(ctx: &ReducerContext, tick_schedule: TickSchedule) -> Result<(), String> {
+    if ctx.sender != ctx.identity() {
+        return Err("Reducer `tick` may only be invoked by the scheduler.".into());
+    }
+
+    spawn_bits(ctx, tick_schedule.id);
+
+    update_users(ctx);
+
+    users_eat_bits(ctx);
 
     // Schedule the next tick by inserting a new row in the scheduling table
     let tick_interval = TimeDuration::from_micros(60);

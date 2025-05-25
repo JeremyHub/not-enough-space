@@ -31,7 +31,7 @@ import {
   deepEqual,
 } from "@clockworklabs/spacetimedb-sdk";
 export type TickSchedule = {
-  scheduledId: bigint,
+  id: bigint,
   scheduledAt: { tag: "Interval", value: TimeDuration } | { tag: "Time", value: Timestamp },
 };
 
@@ -45,7 +45,7 @@ export namespace TickSchedule {
   */
   export function getTypeScriptAlgebraicType(): AlgebraicType {
     return AlgebraicType.createProductType([
-      new ProductTypeElement("scheduledId", AlgebraicType.createU64Type()),
+      new ProductTypeElement("id", AlgebraicType.createU64Type()),
       new ProductTypeElement("scheduledAt", AlgebraicType.createScheduleAtType()),
     ]);
   }

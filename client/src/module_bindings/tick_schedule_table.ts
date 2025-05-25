@@ -58,22 +58,22 @@ export class TickScheduleTableHandle {
     return this.tableCache.iter();
   }
   /**
-   * Access to the `scheduledId` unique index on the table `tick_schedule`,
+   * Access to the `id` unique index on the table `tick_schedule`,
    * which allows point queries on the field of the same name
-   * via the [`TickScheduleScheduledIdUnique.find`] method.
+   * via the [`TickScheduleIdUnique.find`] method.
    *
    * Users are encouraged not to explicitly reference this type,
    * but to directly chain method calls,
-   * like `ctx.db.tickSchedule.scheduledId().find(...)`.
+   * like `ctx.db.tickSchedule.id().find(...)`.
    *
-   * Get a handle on the `scheduledId` unique index on the table `tick_schedule`.
+   * Get a handle on the `id` unique index on the table `tick_schedule`.
    */
-  scheduledId = {
-    // Find the subscribed row whose `scheduledId` column value is equal to `col_val`,
+  id = {
+    // Find the subscribed row whose `id` column value is equal to `col_val`,
     // if such a row is present in the client cache.
     find: (col_val: bigint): TickSchedule | undefined => {
       for (let row of this.tableCache.iter()) {
-        if (deepEqual(row.scheduledId, col_val)) {
+        if (deepEqual(row.id, col_val)) {
           return row;
         }
       }

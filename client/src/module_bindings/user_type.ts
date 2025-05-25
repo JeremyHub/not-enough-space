@@ -66,8 +66,8 @@ export namespace User {
       new ProductTypeElement("dy", AlgebraicType.createF32Type()),
       new ProductTypeElement("direction", AlgebraicType.createOptionType(__Direction.getTypeScriptAlgebraicType())),
       new ProductTypeElement("color", __Color.getTypeScriptAlgebraicType()),
-      new ProductTypeElement("health", AlgebraicType.createI32Type()),
-      new ProductTypeElement("size", AlgebraicType.createI32Type()),
+      new ProductTypeElement("health", AlgebraicType.createF32Type()),
+      new ProductTypeElement("size", AlgebraicType.createF32Type()),
     ]);
   }
 
