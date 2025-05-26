@@ -3,15 +3,12 @@ import './App.css';
 import { Bit, DbConnection, Direction, ErrorContext, EventContext, User } from './module_bindings';
 import { Identity } from '@clockworklabs/spacetimedb-sdk';
 
-export type PrettyMessage = {
-  senderName: string;
-  text: string;
-};
-
+const CANVAS_WIDTH = 600;
+const CANVAS_HEIGHT = 600;
+const RENDER_BUFFER = 10;
 
 function useUsers(conn: DbConnection | null): Map<string, User> {
   const [users, setUsers] = useState<Map<string, User>>(new Map());
-
   useEffect(() => {
     if (!conn) return;
     const onInsert = (_ctx: EventContext, user: User) => {
@@ -73,9 +70,6 @@ function useBits(conn: DbConnection | null): Array<Bit> {
   }, [conn]);
   return bits;
 }
-
-const CANVAS_WIDTH = 600;
-const CANVAS_HEIGHT = 600;
 
 type DrawProps = {
   users: Map<string, User>;
@@ -165,19 +159,28 @@ function App() {
   const users = useUsers(conn);
   const self = identity ? users.get(identity.toHexString()) : null;
   const bits = useBits(conn);
+  const [quriedX, setQuriedX] = useState<number | null>(null);
+  const [quriedY, setQuriedY] = useState<number | null>(null);
 
   const [bitSubscription, setBitSubscription] = useState<any | null>(null);
 
   function subscribeToNearbyBits(conn: DbConnection, x: number, y: number) {
-    bitSubscription?.unsubscribe();
 
-    const query = `SELECT * FROM bit WHERE x < ${Math.round(x) + CANVAS_WIDTH / 2} AND x > ${Math.round(x) - CANVAS_WIDTH / 2} AND y < ${Math.round(y) + CANVAS_HEIGHT / 2} AND y > ${Math.round(y) - CANVAS_HEIGHT / 2};`;
+    if (quriedX && quriedY && (Math.abs(quriedX-x) < RENDER_BUFFER && Math.abs(quriedY-y) < RENDER_BUFFER)) {
+      return
+    }
+
+    setQuriedX(Math.round(x));
+    setQuriedY(Math.round(y));
+  
+    const query = `SELECT * FROM bit WHERE x < ${Math.round(x) + RENDER_BUFFER + CANVAS_WIDTH / 2} AND x > ${Math.round(x) - RENDER_BUFFER - CANVAS_WIDTH / 2} AND y < ${Math.round(y) + RENDER_BUFFER + CANVAS_HEIGHT / 2} AND y > ${Math.round(y) - RENDER_BUFFER - CANVAS_HEIGHT / 2};`;
 
     const handle = conn
       .subscriptionBuilder()
       .subscribe([query]);
 
     setBitSubscription(handle);
+    bitSubscription?.unsubscribe();
   }
   useEffect(() => {
     if (conn && self) {

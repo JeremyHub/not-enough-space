@@ -44,6 +44,8 @@ export { Tick };
 // Import and reexport all table handle types
 import { BitTableHandle } from "./bit_table.ts";
 export { BitTableHandle };
+import { TickMetaTableHandle } from "./tick_meta_table.ts";
+export { TickMetaTableHandle };
 import { TickScheduleTableHandle } from "./tick_schedule_table.ts";
 export { TickScheduleTableHandle };
 import { UserTableHandle } from "./user_table.ts";
@@ -56,6 +58,8 @@ import { Color } from "./color_type.ts";
 export { Color };
 import { Direction } from "./direction_type.ts";
 export { Direction };
+import { TickMeta } from "./tick_meta_type.ts";
+export { TickMeta };
 import { TickSchedule } from "./tick_schedule_type.ts";
 export { TickSchedule };
 import { User } from "./user_type.ts";
@@ -67,6 +71,11 @@ const REMOTE_MODULE = {
       tableName: "bit",
       rowType: Bit.getTypeScriptAlgebraicType(),
       primaryKey: "bitId",
+    },
+    tick_meta: {
+      tableName: "tick_meta",
+      rowType: TickMeta.getTypeScriptAlgebraicType(),
+      primaryKey: "id",
     },
     tick_schedule: {
       tableName: "tick_schedule",
@@ -200,6 +209,10 @@ export class RemoteTables {
 
   get bit(): BitTableHandle {
     return new BitTableHandle(this.connection.clientCache.getOrCreateTable<Bit>(REMOTE_MODULE.tables.bit));
+  }
+
+  get tickMeta(): TickMetaTableHandle {
+    return new TickMetaTableHandle(this.connection.clientCache.getOrCreateTable<TickMeta>(REMOTE_MODULE.tables.tick_meta));
   }
 
   get tickSchedule(): TickScheduleTableHandle {

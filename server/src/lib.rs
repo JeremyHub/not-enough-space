@@ -1,8 +1,8 @@
 use spacetimedb::{table, reducer, Table, ReducerContext, Identity, TimeDuration, ScheduleAt, SpacetimeType};
 use spacetimedb::rand::Rng;
 
-const WORLD_WIDTH: i32 = 6000;
-const WORLD_HEIGHT: i32 = 6000;
+const WORLD_WIDTH: i32 = 10000;
+const WORLD_HEIGHT: i32 = 10000;
 
 const TICK_TIME: i64 = 20000;
 
@@ -12,12 +12,12 @@ const VELOCITY_MULTIPLIER: f32 = 0.1;
 const FRICTION: f32 = 0.9;
 
 const MAX_AREA_PER_BIT: u64 = 1200;
-const MAX_BITS: u64 = ((WORLD_HEIGHT*WORLD_WIDTH) as u64)/MAX_AREA_PER_BIT;
+const MAX_BITS: u64 = (WORLD_HEIGHT as u64 *WORLD_WIDTH as u64)/MAX_AREA_PER_BIT;
 const MIN_BIT_WORTH: f32 = 0.1;
 const MAX_BIT_WORTH: f32 = 2.0;
 const MAX_BIT_SIZE: f32 = MAX_BIT_WORTH;
 const AREA_PER_BIT_SPAWN: f64 = 36000.0;
-const BITS_SPAWNED_PER_TICK: f64 = ((1.0/AREA_PER_BIT_SPAWN))*((WORLD_HEIGHT*WORLD_WIDTH) as f64);
+const BITS_SPAWNED_PER_TICK: f64 = ((1.0/AREA_PER_BIT_SPAWN))*(WORLD_HEIGHT as f64*WORLD_WIDTH as f64);
 
 #[derive(SpacetimeType, Clone, Debug, PartialEq)]
 pub enum Direction {
@@ -44,7 +44,9 @@ pub struct User {
     #[primary_key]
     identity: Identity,
     online: bool,
+    #[index(btree)]
     x: f32,
+    #[index(btree)]
     y: f32,
     dx: f32,
     dy: f32,
@@ -64,7 +66,9 @@ pub struct Bit {
     #[primary_key]
     #[auto_inc]
     bit_id: u64,
+    #[index(btree)]
     x: i32,
+    #[index(btree)]
     y: i32,
     size: f32,
     worth: f32,
@@ -272,6 +276,9 @@ pub fn tick(ctx: &ReducerContext, tick_schedule: TickSchedule) -> Result<(), Str
         let elapsed = ctx.timestamp.time_duration_since(meta.last_tick).unwrap().to_micros();
         next_tick_schedule = TICK_TIME-elapsed;
         ctx.db.tick_meta().id().update(TickMeta { id: 0, last_tick: ctx.timestamp });
+        if elapsed > TICK_TIME*2 {
+            log::info!("Tick {} at {}ms after last tick", tick_schedule.id, elapsed);
+        }
     } else {
         ctx.db.tick_meta().insert(TickMeta { id: 0, last_tick: ctx.timestamp });
         log::info!("First tick!");
