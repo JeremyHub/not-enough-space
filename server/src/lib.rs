@@ -47,9 +47,7 @@ pub struct User {
     #[primary_key]
     identity: Identity,
     online: bool,
-    #[index(btree)]
     x: f32,
-    #[index(btree)]
     y: f32,
     dx: f32,
     dy: f32,
@@ -64,9 +62,7 @@ pub struct Bot {
     #[primary_key]
     #[auto_inc]
     bot_id: u64,
-    #[index(btree)]
     x: i32,
-    #[index(btree)]
     y: i32,
     dx: f32,
     dy: f32,
@@ -86,9 +82,7 @@ pub struct Bit {
     #[primary_key]
     #[auto_inc]
     bit_id: u64,
-    #[index(btree)]
     x: i32,
-    #[index(btree)]
     y: i32,
     size: f32,
     worth: f32,
