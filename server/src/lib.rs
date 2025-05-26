@@ -4,7 +4,7 @@ use spacetimedb::rand::Rng;
 const WORLD_WIDTH: i32 = 6000;
 const WORLD_HEIGHT: i32 = 6000;
 
-const TICK_TIME: i64 = 2000;
+const TICK_TIME: i64 = 20000;
 
 const ACCELERATION: f32 = 4.0;
 const BRAKING_FORCE: f32 = 0.9;
@@ -246,6 +246,14 @@ pub struct TickSchedule {
     scheduled_at: ScheduleAt,
 }
 
+#[table(name = tick_meta)]
+pub struct TickMeta {
+    #[primary_key]
+    id: u64,
+    last_tick: spacetimedb::Timestamp,
+}
+
+
 #[reducer]
 pub fn tick(ctx: &ReducerContext, tick_schedule: TickSchedule) -> Result<(), String> {
     if ctx.sender != ctx.identity() {
@@ -257,10 +265,22 @@ pub fn tick(ctx: &ReducerContext, tick_schedule: TickSchedule) -> Result<(), Str
     update_users(ctx);
     
     users_eat_bits(ctx);
+    
+    let last_tick = ctx.db.tick_meta().id().find(0);
+    let mut next_tick_schedule = TICK_TIME;
+    if let Some(meta) = last_tick {
+        let elapsed = ctx.timestamp.time_duration_since(meta.last_tick).unwrap().to_micros();
+        next_tick_schedule = TICK_TIME-elapsed;
+        ctx.db.tick_meta().id().update(TickMeta { id: 0, last_tick: ctx.timestamp });
+    } else {
+        ctx.db.tick_meta().insert(TickMeta { id: 0, last_tick: ctx.timestamp });
+        log::info!("First tick!");
+    }
 
+    let tick_interval = TimeDuration::from_micros(next_tick_schedule);
     ctx.db.tick_schedule().insert(TickSchedule {
         id: 0,
-        scheduled_at: ScheduleAt::Time(ctx.timestamp + TimeDuration::from_micros(TICK_TIME)),
+        scheduled_at: ScheduleAt::Time(ctx.timestamp + tick_interval),
     });
 
     Ok(())
