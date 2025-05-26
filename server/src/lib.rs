@@ -1,8 +1,8 @@
 use spacetimedb::{table, reducer, Table, ReducerContext, Identity, TimeDuration, ScheduleAt, SpacetimeType};
 use spacetimedb::rand::Rng;
 
-const WORLD_WIDTH: i32 = 600;
-const WORLD_HEIGHT: i32 = 600;
+const WORLD_WIDTH: i32 = 6000;
+const WORLD_HEIGHT: i32 = 6000;
 
 const ACCELERATION: f32 = 4.0;
 const BRAKING_FORCE: f32 = 0.9;
@@ -13,6 +13,7 @@ const MAX_AREA_PER_BIT: u64 = 1200;
 const MAX_BITS: u64 = ((WORLD_HEIGHT*WORLD_WIDTH) as u64)/MAX_AREA_PER_BIT;
 const MIN_BIT_WORTH: f32 = 0.1;
 const MAX_BIT_WORTH: f32 = 2.0;
+const MAX_BIT_SIZE: f32 = MAX_BIT_WORTH;
 const AREA_PER_BIT_SPAWN: f64 = 3600000.0;
 const BITS_SPAWNED_PER_TICK: f64 = ((1.0/AREA_PER_BIT_SPAWN))*((WORLD_HEIGHT*WORLD_WIDTH) as f64);
 
@@ -55,13 +56,14 @@ pub fn get_user_size(health: f32) -> f32 {
     return ((50.0*(health.powi(2)))+health)/((health*health)+200000.0) + 10.0;
 }
 
-#[table(name = bit, public)]
+#[table(name = bit, public,
+    index(name = bit_position, btree(columns = [x, y])))]
 pub struct Bit {
     #[primary_key]
     #[auto_inc]
     bit_id: u64,
-    x: f32,
-    y: f32,
+    x: i32,
+    y: i32,
     size: f32,
     worth: f32,
     color: Color,
@@ -124,8 +126,8 @@ fn spawn_bits(ctx: &ReducerContext, tick_id: u64) {
         for _ in 0..bits_to_spawn {
             let worth = ctx.rng().gen_range(MIN_BIT_WORTH..=MAX_BIT_WORTH);
             let size = worth;
-            let x = ctx.rng().gen_range(0.0..=WORLD_WIDTH as f32);
-            let y = ctx.rng().gen_range(0.0..=WORLD_HEIGHT as f32);
+            let x = ctx.rng().gen_range(0..=WORLD_WIDTH);
+            let y = ctx.rng().gen_range(0..=WORLD_HEIGHT);
             let color = Color {
                 r: ctx.rng().gen_range(0..=255),
                 g: ctx.rng().gen_range(0..=255),
@@ -215,8 +217,8 @@ fn users_eat_bits(ctx: &ReducerContext) {
     for user in ctx.db.user().iter() {
         if user.online {
             let mut bits_to_eat = Vec::new();
-            for bit in ctx.db.bit().iter() {
-                if ((user.x - bit.x).powi(2) + (user.y - bit.y).powi(2)).sqrt() <= bit.size + user.size {
+            for bit in ctx.db.bit().bit_position().filter((user.x.round() as i32)-((user.size+MAX_BIT_SIZE).round() as i32)..(user.x.round() as i32)+((user.size+MAX_BIT_SIZE).round() as i32)) {
+                if ((user.x - bit.x as f32).powi(2) + (user.y - bit.y as f32).powi(2)).sqrt() <= bit.size + user.size {
                     bits_to_eat.push(bit);
                 }
             }
@@ -242,6 +244,13 @@ pub struct TickSchedule {
     scheduled_at: ScheduleAt,
 }
 
+#[table(name = tick_meta)]
+pub struct TickMeta {
+    #[primary_key]
+    id: u64,
+    last_tick: spacetimedb::Timestamp,
+}
+
 
 #[reducer]
 pub fn tick(ctx: &ReducerContext, tick_schedule: TickSchedule) -> Result<(), String> {
@@ -249,11 +258,22 @@ pub fn tick(ctx: &ReducerContext, tick_schedule: TickSchedule) -> Result<(), Str
         return Err("Reducer `tick` may only be invoked by the scheduler.".into());
     }
 
+    let last_tick = ctx.db.tick_meta().id().find(0);
+    if let Some(meta) = last_tick {
+        let elapsed = ctx.timestamp.time_duration_since(meta.last_tick).unwrap().to_micros();
+        log::info!("{}", elapsed);
+        ctx.db.tick_meta().id().update(TickMeta { id: 0, last_tick: ctx.timestamp });
+    } else {
+        ctx.db.tick_meta().insert(TickMeta { id: 0, last_tick: ctx.timestamp });
+        log::info!("First tick!");
+    }
+
     spawn_bits(ctx, tick_schedule.id);
 
     update_users(ctx);
 
     users_eat_bits(ctx);
+
 
     let tick_interval = TimeDuration::from_micros(60);
     ctx.db.tick_schedule().insert(TickSchedule {

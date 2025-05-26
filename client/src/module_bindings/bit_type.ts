@@ -52,8 +52,8 @@ export namespace Bit {
   export function getTypeScriptAlgebraicType(): AlgebraicType {
     return AlgebraicType.createProductType([
       new ProductTypeElement("bitId", AlgebraicType.createU64Type()),
-      new ProductTypeElement("x", AlgebraicType.createF32Type()),
-      new ProductTypeElement("y", AlgebraicType.createF32Type()),
+      new ProductTypeElement("x", AlgebraicType.createI32Type()),
+      new ProductTypeElement("y", AlgebraicType.createI32Type()),
       new ProductTypeElement("size", AlgebraicType.createF32Type()),
       new ProductTypeElement("worth", AlgebraicType.createF32Type()),
       new ProductTypeElement("color", __Color.getTypeScriptAlgebraicType()),
