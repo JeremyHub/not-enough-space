@@ -266,10 +266,10 @@ fn update_character<C: Character>(character: &C) -> CharacterUpdate {
     let mut new_x = character.x() + (character.dx() * VELOCITY_MULTIPLIER);
     let mut new_y = character.y() + (character.dy() * VELOCITY_MULTIPLIER);
 
-    if new_x < 0.0 { new_x = 0.0; }
+    if new_x < 0.0 { new_x = 1.0; }
     else if new_x >= WORLD_WIDTH as f32 { new_x = (WORLD_WIDTH - 1) as f32; }
 
-    if new_y < 0.0 { new_y = 0.0; }
+    if new_y < 0.0 { new_y = 1.0; }
     else if new_y >= WORLD_HEIGHT as f32 { new_y = (WORLD_HEIGHT - 1) as f32; }
 
     CharacterUpdate { x: new_x, y: new_y, dx: new_dx, dy: new_dy }
