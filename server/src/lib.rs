@@ -16,7 +16,7 @@ const MAX_BITS: u64 = ((WORLD_HEIGHT*WORLD_WIDTH) as u64)/MAX_AREA_PER_BIT;
 const MIN_BIT_WORTH: f32 = 0.1;
 const MAX_BIT_WORTH: f32 = 2.0;
 const MAX_BIT_SIZE: f32 = MAX_BIT_WORTH;
-const AREA_PER_BIT_SPAWN: f64 = 3600.0;
+const AREA_PER_BIT_SPAWN: f64 = 3600000.0;
 const BITS_SPAWNED_PER_TICK: f64 = ((1.0/AREA_PER_BIT_SPAWN))*((WORLD_HEIGHT*WORLD_WIDTH) as f64);
 
 #[derive(SpacetimeType, Clone, Debug, PartialEq)]
