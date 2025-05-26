@@ -22,6 +22,8 @@ const BITS_SPAWNED_PER_TICK: f64 = ((1.0/AREA_PER_BIT_SPAWN))*(WORLD_HEIGHT as f
 const STARTING_BOTS: u64 = 5000;
 const NUM_BOTS_UPDATE_DIRECTION_PER_TICK: u64 = STARTING_BOTS/10;
 
+const UPDATE_OFFLINE_PLAYERS: bool = true;
+
 #[derive(SpacetimeType, Clone, Debug, PartialEq)]
 pub enum Direction {
     N,
@@ -62,6 +64,7 @@ pub struct Bot {
     #[primary_key]
     #[auto_inc]
     bot_id: u64,
+    #[index(btree)]
     x: i32,
     y: i32,
     dx: f32,
@@ -76,12 +79,12 @@ pub fn get_user_size(health: f32) -> f32 {
     return ((50.0*(health.powi(2)))+health)/((health*health)+200000.0) + 10.0;
 }
 
-#[table(name = bit, public,
-    index(name = bit_position, btree(columns = [x, y])))]
+#[table(name = bit, public)]
 pub struct Bit {
     #[primary_key]
     #[auto_inc]
     bit_id: u64,
+    #[index(btree)]
     x: i32,
     y: i32,
     size: f32,
@@ -240,7 +243,7 @@ struct CharacterUpdate {
     dy: f32,
 }
 
-fn update_character<C: Character>(character: &C) -> CharacterUpdate {
+fn move_character<C: Character>(character: &C, handle_wrapping: bool) -> CharacterUpdate {
     let mut new_dx: f32 = character.dx() * FRICTION;
     let mut new_dy: f32 = character.dy() * FRICTION;
 
@@ -257,8 +260,25 @@ fn update_character<C: Character>(character: &C) -> CharacterUpdate {
         None => {}
     }
 
-    let mut new_x = character.x() + (character.dx() * VELOCITY_MULTIPLIER);
-    let mut new_y = character.y() + (character.dy() * VELOCITY_MULTIPLIER);
+    let after_move_x = character.x() + (character.dx() * VELOCITY_MULTIPLIER);
+    let after_move_y = character.y() + (character.dy() * VELOCITY_MULTIPLIER);
+
+    let new_x;
+    let new_y;
+
+    if handle_wrapping {
+        (new_x, new_y) = wrap_coords(after_move_x, after_move_y);
+    } else {
+        new_x = after_move_x;
+        new_y = after_move_y;
+    }
+
+    CharacterUpdate { x: new_x, y: new_y, dx: new_dx, dy: new_dy }
+}
+
+fn wrap_coords(x: f32, y: f32) -> (f32, f32) {
+    let mut new_x = x;
+    let mut new_y = y;
 
     if new_x < 0.0 { new_x = WORLD_WIDTH as f32 - new_x; }
     else if new_x >= WORLD_WIDTH as f32 { new_x = new_x - WORLD_WIDTH as f32; }
@@ -266,13 +286,50 @@ fn update_character<C: Character>(character: &C) -> CharacterUpdate {
     if new_y < 0.0 { new_y = WORLD_HEIGHT as f32 - new_y; }
     else if new_y >= WORLD_HEIGHT as f32 { new_y = new_y - WORLD_HEIGHT as f32; }
 
-    CharacterUpdate { x: new_x, y: new_y, dx: new_dx, dy: new_dy }
+    (new_x, new_y)
+}
+
+fn wrap_character<C: Character>(character: &C) -> CharacterUpdate {
+
+    let (new_x, new_y) = wrap_coords(character.x(), character.y());
+
+    CharacterUpdate {
+        x: new_x,
+        y: new_y,
+        dx: character.dx(),
+        dy: character.dy(),
+    }
 }
 
 fn update_users(ctx: &ReducerContext) {
+    // move users
     for user in ctx.db.user().iter() {
-        if user.online {
-            let upd = update_character(&user);
+        if user.online || UPDATE_OFFLINE_PLAYERS {
+            let upd = move_character(&user, false);
+            ctx.db.user().identity().update(User {
+                x: upd.x,
+                y: upd.y,
+                dx: upd.dx,
+                dy: upd.dy,
+                ..user
+            });
+        }
+    }
+    // handle user:user and user:bot collisions
+    const max_bot_size: f32 = 100.0;
+    for user in ctx.db.user().iter() {
+        if user.online || UPDATE_OFFLINE_PLAYERS {
+            for bot in ctx.db.bot().x().filter((user.x.round() as i32)-((user.size+max_bot_size).round() as i32)..(user.x.round() as i32)+((user.size+max_bot_size).round() as i32)) {
+                if ((user.x - bot.x as f32).powi(2) + (user.y - bot.y as f32).powi(2)).sqrt() <= bot.size + user.size {
+                    ctx.db.bot().delete(bot);
+                }
+            }
+        }
+    }
+    // handle character wrapping
+    for user in ctx.db.user().iter() {
+        if user.online || UPDATE_OFFLINE_PLAYERS {
+            let upd = wrap_character(&user);
             ctx.db.user().identity().update(User {
                 x: upd.x,
                 y: upd.y,
@@ -285,8 +342,9 @@ fn update_users(ctx: &ReducerContext) {
 }
 
 fn update_bots(ctx: &ReducerContext) {
+    update_bot_directions(ctx, NUM_BOTS_UPDATE_DIRECTION_PER_TICK);
     for bot in ctx.db.bot().iter() {
-        let upd = update_character(&bot);
+        let upd = move_character(&bot, true);
         ctx.db.bot().bot_id().update(Bot {
             x: upd.x as i32,
             y: upd.y as i32,
@@ -299,9 +357,9 @@ fn update_bots(ctx: &ReducerContext) {
 
 fn users_eat_bits(ctx: &ReducerContext) {
     for user in ctx.db.user().iter() {
-        if user.online {
+        if user.online || UPDATE_OFFLINE_PLAYERS{
             let mut bits_to_eat = Vec::new();
-            for bit in ctx.db.bit().bit_position().filter((user.x.round() as i32)-((user.size+MAX_BIT_SIZE).round() as i32)..(user.x.round() as i32)+((user.size+MAX_BIT_SIZE).round() as i32)) {
+            for bit in ctx.db.bit().x().filter((user.x.round() as i32)-((user.size+MAX_BIT_SIZE).round() as i32)..(user.x.round() as i32)+((user.size+MAX_BIT_SIZE).round() as i32)) {
                 if ((user.x - bit.x as f32).powi(2) + (user.y - bit.y as f32).powi(2)).sqrt() <= bit.size + user.size {
                     bits_to_eat.push(bit);
                 }
@@ -344,12 +402,12 @@ pub fn tick(ctx: &ReducerContext, tick_schedule: TickSchedule) -> Result<(), Str
 
     spawn_bits(ctx, tick_schedule.id);
     
-    update_users(ctx);
     update_bots(ctx);
+
+    update_users(ctx);
     
     users_eat_bits(ctx);
 
-    update_bot_directions(ctx, NUM_BOTS_UPDATE_DIRECTION_PER_TICK);
     
     let last_tick = ctx.db.tick_meta().id().find(0);
     let mut next_tick_schedule = TICK_TIME;
