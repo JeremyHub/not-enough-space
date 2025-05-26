@@ -19,6 +19,9 @@ const MAX_BIT_SIZE: f32 = MAX_BIT_WORTH;
 const AREA_PER_BIT_SPAWN: f64 = 36000.0;
 const BITS_SPAWNED_PER_TICK: f64 = ((1.0/AREA_PER_BIT_SPAWN))*(WORLD_HEIGHT as f64*WORLD_WIDTH as f64);
 
+const STARTING_BOTS: u64 = 5000;
+const NUM_BOTS_UPDATE_DIRECTION_PER_TICK: u64 = STARTING_BOTS/10;
+
 #[derive(SpacetimeType, Clone, Debug, PartialEq)]
 pub enum Direction {
     N,
@@ -352,7 +355,7 @@ pub fn tick(ctx: &ReducerContext, tick_schedule: TickSchedule) -> Result<(), Str
     
     users_eat_bits(ctx);
 
-    update_bot_directions(ctx, 5);
+    update_bot_directions(ctx, NUM_BOTS_UPDATE_DIRECTION_PER_TICK);
     
     let last_tick = ctx.db.tick_meta().id().find(0);
     let mut next_tick_schedule = TICK_TIME;
@@ -379,7 +382,7 @@ pub fn tick(ctx: &ReducerContext, tick_schedule: TickSchedule) -> Result<(), Str
 
 #[reducer(init)]
 pub fn init(ctx: &ReducerContext) -> Result<(), String> {
-    spawn_bots(ctx, 1000);
+    spawn_bots(ctx, STARTING_BOTS);
     ctx.db.tick_schedule().insert(TickSchedule {
         id: 0,
         scheduled_at: ScheduleAt::Time(ctx.timestamp),
