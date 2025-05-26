@@ -1,11 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import './App.css';
-import { Bit, Bot, DbConnection, Direction, ErrorContext, EventContext, User } from './module_bindings';
+import { Bit, Bot, Color, DbConnection, Direction, ErrorContext, EventContext, User } from './module_bindings';
 import { Identity } from '@clockworklabs/spacetimedb-sdk';
 
 const CANVAS_WIDTH = 600;
 const CANVAS_HEIGHT = 600;
-const RENDER_BUFFER = 10;
+const RENDER_BUFFER = 100;
+
+const WORLD_WIDTH = 10000;
+const WORLD_HEIGHT = 10000;
 
 function useUsers(conn: DbConnection | null): Map<string, User> {
   const [users, setUsers] = useState<Map<string, User>>(new Map());
@@ -107,12 +110,53 @@ type DrawProps = {
   identity: Identity;
 };
 
-function renderUser(ctx: CanvasRenderingContext2D, user: User, x: number, y: number) {
+function renderCircle(ctx: CanvasRenderingContext2D, size: number, x: number, y: number, color: Color) {
   ctx.beginPath();
-  ctx.arc(x, y, user.size, 0, Math.PI * 2);
-  ctx.fillStyle = `rgba(${user.color.r}, ${user.color.g}, ${user.color.b}, 1)`;
+  ctx.arc(x, y, size, 0, Math.PI * 2);
+  ctx.fillStyle = `rgba(${color.r}, ${color.g}, ${color.b}, 1)`;
   ctx.fill();
   ctx.closePath();
+}
+
+function renderWithWrap(
+  renderFn: (x: number, y: number) => void,
+  self: User,
+  x: number,
+  y: number,
+) {
+  let new_x: number = x;
+  let new_y: number = y;
+  // Check if you are near left edge
+  if (self.x < CANVAS_WIDTH/2) {
+    // check if thing we are rendering is past left edge
+    if (x > CANVAS_WIDTH+RENDER_BUFFER) {
+      new_x = x-WORLD_WIDTH;
+    }
+  }
+  // Check if you are near right edge
+  if (self.x > WORLD_WIDTH - CANVAS_WIDTH / 2) {
+    // check if thing we are rendering is past right edge
+    if (x < -RENDER_BUFFER) {
+      new_x = x + WORLD_WIDTH;
+    }
+  }
+  // Check if you are near top edge
+  if (self.y < CANVAS_HEIGHT / 2) {
+    // check if thing we are rendering is past top edge
+    if (y > CANVAS_HEIGHT + RENDER_BUFFER) {
+      new_y = y - WORLD_HEIGHT;
+    }
+  }
+  // Check if you are near bottom edge
+  if (self.y > WORLD_HEIGHT - CANVAS_HEIGHT / 2) {
+    // check if thing we are rendering is past bottom edge
+    if (y < -RENDER_BUFFER) {
+      new_y = y + WORLD_HEIGHT;
+    }
+  }
+
+  // Render the object at the new coordinates
+  renderFn(new_x, new_y);
 }
 
 const draw = (ctx: CanvasRenderingContext2D | null, props: DrawProps) => {
@@ -123,29 +167,45 @@ const draw = (ctx: CanvasRenderingContext2D | null, props: DrawProps) => {
 
   const self = users.get(identity.toHexString());
   if (!self) return;
-  renderUser(ctx, self, CANVAS_WIDTH/2, CANVAS_HEIGHT/2);
+
+  renderCircle(ctx, self.size, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2, self.color);
+
+  const toScreen = (obj: { x: number; y: number }) => ({
+    x: obj.x - self.x + CANVAS_WIDTH / 2,
+    y: obj.y - self.y + CANVAS_HEIGHT / 2,
+  });
 
   users.forEach(user => {
     if (user.identity.data !== identity.data) {
-      renderUser(ctx, user, user.x-self.x+(CANVAS_WIDTH/2), user.y-self.y+(CANVAS_HEIGHT/2))
+      const { x, y } = toScreen(user);
+      renderWithWrap(
+        (px, py) => renderCircle(ctx, user.size, px, py, user.color),
+        self,
+        x,
+        y,
+      );
     }
   });
 
   bots.forEach(bot => {
-    ctx.beginPath();
-    ctx.arc(bot.x-self.x+(CANVAS_WIDTH/2), bot.y-self.y+(CANVAS_HEIGHT/2), bot.size, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(${bot.color.r}, ${bot.color.g}, ${bot.color.b}, 1)`;
-    ctx.fill();
-    ctx.closePath();
+    const { x, y } = toScreen(bot);
+    renderWithWrap(
+      (px, py) => renderCircle(ctx, bot.size, px, py, bot.color),
+      self,
+      x,
+      y,
+    );
   });
 
   bits.forEach(bit => {
-    ctx.beginPath();
-    ctx.arc(bit.x-self.x+(CANVAS_WIDTH/2), bit.y-self.y+(CANVAS_HEIGHT/2), bit.size, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(${bit.color.r}, ${bit.color.g}, ${bit.color.b}, 1)`; 
-    ctx.fill();
-    ctx.closePath();
-  })
+    const { x, y } = toScreen(bit);
+    renderWithWrap(
+      (px, py) => renderCircle(ctx, bit.size, px, py, bit.color),
+      self,
+      x,
+      y,
+    );
+  });
 };
 
 const useCanvas = (
@@ -203,7 +263,7 @@ function App() {
 
   const [bitSubscription, setBitSubscription] = useState<any | null>(null);
 
-  function subscribeToNearbyBits(conn: DbConnection, x: number, y: number) {
+  function subscribeToNearbyObjs(conn: DbConnection, x: number, y: number) {
 
     if (quriedX && quriedY && (Math.abs(quriedX-x) < RENDER_BUFFER && Math.abs(quriedY-y) < RENDER_BUFFER)) {
       return
@@ -212,20 +272,32 @@ function App() {
     setQuriedX(Math.round(x));
     setQuriedY(Math.round(y));
   
-    const baseQuery = `WHERE x < ${Math.round(x) + RENDER_BUFFER + CANVAS_WIDTH / 2} AND x > ${Math.round(x) - RENDER_BUFFER - CANVAS_WIDTH / 2} AND y < ${Math.round(y) + RENDER_BUFFER + CANVAS_HEIGHT / 2} AND y > ${Math.round(y) - RENDER_BUFFER - CANVAS_HEIGHT / 2};`;
+    const withinScreenQuery = `x < ${Math.round(x) + RENDER_BUFFER + CANVAS_WIDTH / 2} AND x > ${Math.round(x) - RENDER_BUFFER - CANVAS_WIDTH / 2} AND y < ${Math.round(y) + RENDER_BUFFER + CANVAS_HEIGHT / 2} AND y > ${Math.round(y) - RENDER_BUFFER - CANVAS_HEIGHT / 2}`
+    
+    const leftEdgeQuery = (x-RENDER_BUFFER < CANVAS_WIDTH/2) ? ` OR (x > ${WORLD_WIDTH - ((CANVAS_WIDTH/2)+RENDER_BUFFER-Math.round(x))} AND (y > ${Math.round(y) - ((CANVAS_HEIGHT/2)+RENDER_BUFFER)}) AND (y < ${Math.round(y) + ((CANVAS_HEIGHT/2)+RENDER_BUFFER)}))` : "";
+    const rightEdgeQuery = (x+RENDER_BUFFER > WORLD_WIDTH - (CANVAS_WIDTH/2)) ? ` OR (x < ${((CANVAS_WIDTH/2)+RENDER_BUFFER+Math.round(x)) - WORLD_WIDTH} AND (y > ${Math.round(y) - ((CANVAS_HEIGHT/2)+RENDER_BUFFER)}) AND (y < ${Math.round(y) + ((CANVAS_HEIGHT/2)+RENDER_BUFFER)}))` : "";
+    const topEdgeQuery = (y-RENDER_BUFFER < CANVAS_HEIGHT/2) ? ` OR (y > ${WORLD_HEIGHT - ((CANVAS_HEIGHT/2)+RENDER_BUFFER-Math.round(y))} AND (x > ${Math.round(x) - ((CANVAS_WIDTH/2)+RENDER_BUFFER)}) AND (x < ${Math.round(x) + ((CANVAS_WIDTH/2)+RENDER_BUFFER)}))` : "";
+    const bottomEdgeQuery = (y+RENDER_BUFFER > WORLD_HEIGHT - (CANVAS_HEIGHT/2)) ? ` OR (y < ${((CANVAS_HEIGHT/2)+RENDER_BUFFER+Math.round(y)) - WORLD_HEIGHT} AND (x > ${Math.round(x) - ((CANVAS_WIDTH/2)+RENDER_BUFFER)}) AND (x < ${Math.round(x) + ((CANVAS_WIDTH/2)+RENDER_BUFFER)}))` : "";
+    const topLeftCornerQuery = (x-RENDER_BUFFER < CANVAS_WIDTH/2 && y-RENDER_BUFFER < CANVAS_HEIGHT/2) ? ` OR (x > ${WORLD_WIDTH - ((CANVAS_WIDTH/2)+RENDER_BUFFER-Math.round(x))} AND y > ${WORLD_HEIGHT - ((CANVAS_HEIGHT/2)+RENDER_BUFFER-Math.round(y))})` : "";
+    const topRightCornerQuery = (x+RENDER_BUFFER > WORLD_WIDTH - (CANVAS_WIDTH/2) && y-RENDER_BUFFER < CANVAS_HEIGHT/2) ? ` OR (x < ${((CANVAS_WIDTH/2)+RENDER_BUFFER+Math.round(x)) - WORLD_WIDTH} AND y > ${WORLD_HEIGHT - ((CANVAS_HEIGHT/2)+RENDER_BUFFER-Math.round(y))})` : "";
+    const bottomLeftCornerQuery = (x-RENDER_BUFFER < CANVAS_WIDTH/2 && y+RENDER_BUFFER > WORLD_HEIGHT - (CANVAS_HEIGHT/2)) ? ` OR (x > ${WORLD_WIDTH - ((CANVAS_WIDTH/2)+RENDER_BUFFER-Math.round(x))} AND y < ${((CANVAS_HEIGHT/2)+RENDER_BUFFER+Math.round(y)) - WORLD_HEIGHT})` : "";
+    const bottomRightCornerQuery = (x+RENDER_BUFFER > WORLD_WIDTH - (CANVAS_WIDTH/2) && y+RENDER_BUFFER > WORLD_HEIGHT - (CANVAS_HEIGHT/2)) ? ` OR (x < ${((CANVAS_WIDTH/2)+RENDER_BUFFER+Math.round(x)) - WORLD_WIDTH} AND y < ${((CANVAS_HEIGHT/2)+RENDER_BUFFER+Math.round(y)) - WORLD_HEIGHT})` : "";
+
+    const baseQuery = `WHERE (${withinScreenQuery}${leftEdgeQuery}${rightEdgeQuery}${topEdgeQuery}${bottomEdgeQuery}${topLeftCornerQuery}${topRightCornerQuery}${bottomLeftCornerQuery}${bottomRightCornerQuery})`;
     const bitQuery = "SELECT * FROM bit " + baseQuery;
     const botQuery = "SELECT * FROM bot " + baseQuery;
+    const userQuery = "SELECT * FROM user " + baseQuery;
 
     const handle = conn
       .subscriptionBuilder()
-      .subscribe([bitQuery, botQuery]);
+      .subscribe([bitQuery, botQuery, userQuery]);
 
     setBitSubscription(handle);
     bitSubscription?.unsubscribe();
   }
   useEffect(() => {
     if (conn && self) {
-      subscribeToNearbyBits(conn, self.x, self.y);
+      subscribeToNearbyObjs(conn, self.x, self.y);
     }
   }, [conn, self?.x, self?.y]);
 
@@ -254,7 +326,7 @@ function App() {
           identity.toHexString()
         );
 
-        subscribeToQueries(conn, ["SELECT * FROM user;"]);
+        subscribeToQueries(conn, [`SELECT * FROM user WHERE identity = '${identity.toHexString()}';`]);
       };
 
       const onDisconnect = () => {
