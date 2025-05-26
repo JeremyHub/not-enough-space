@@ -56,6 +56,23 @@ pub struct User {
     size: f32,
 }
 
+#[table(name = bot, public)]
+pub struct Bot {
+    #[primary_key]
+    #[auto_inc]
+    bot_id: u64,
+    #[index(btree)]
+    x: i32,
+    #[index(btree)]
+    y: i32,
+    dx: f32,
+    dy: f32,
+    direction: Option<Direction>,
+    color: Color,
+    health: f32,
+    size: f32,
+}
+
 pub fn get_user_size(health: f32) -> f32 {
     return ((50.0*(health.powi(2)))+health)/((health*health)+200000.0) + 10.0;
 }
@@ -151,71 +168,135 @@ fn spawn_bits(ctx: &ReducerContext, tick_id: u64) {
     }
 }
 
+fn spawn_bots(ctx: &ReducerContext, num_bots: u64) {
+    for _ in 0..num_bots {
+        let x = ctx.rng().gen_range(0..=WORLD_WIDTH);
+        let y = ctx.rng().gen_range(0..=WORLD_HEIGHT);
+        let color = Color {
+            r: ctx.rng().gen_range(0..=255),
+            g: ctx.rng().gen_range(0..=255),
+            b: ctx.rng().gen_range(0..=255),
+        };
+        ctx.db.bot().insert(Bot {
+            bot_id: 0,
+            x,
+            y,
+            dx: 0.0,
+            dy: 0.0,
+            direction: None,
+            color,
+            health: 1.0,
+            size: 1.0,
+        });
+    }
+}
+
+fn update_bot_directions(ctx: &ReducerContext, bots_to_update: u64) {
+    let directions = [
+        Direction::N, Direction::NE, Direction::E, Direction::SE,
+        Direction::S, Direction::SW, Direction::W, Direction::NW, Direction::Brake,
+    ];
+    let total_bots = ctx.db.bot().count();
+    if total_bots == 0 { return; }
+    for _ in 0..bots_to_update.min(total_bots) {
+        let idx = ctx.rng().gen_range(0..total_bots);
+        let dir = directions[ctx.rng().gen_range(0..directions.len())].clone();
+        let bot = ctx.db.bot().bot_id().find(idx);
+        if bot.is_none() {
+            continue;
+        }
+        ctx.db.bot().bot_id().update(Bot {
+            direction: Some(dir),
+            ..bot.expect("asdf")
+        });
+    }
+}
+
+trait Character {
+    fn x(&self) -> f32;
+    fn y(&self) -> f32;
+    fn dx(&self) -> f32;
+    fn dy(&self) -> f32;
+    fn direction(&self) -> &Option<Direction>;
+}
+
+impl Character for User {
+    fn x(&self) -> f32 { self.x }
+    fn y(&self) -> f32 { self.y }
+    fn dx(&self) -> f32 { self.dx }
+    fn dy(&self) -> f32 { self.dy }
+    fn direction(&self) -> &Option<Direction> { &self.direction }
+}
+
+impl Character for Bot {
+    fn x(&self) -> f32 { self.x as f32 }
+    fn y(&self) -> f32 { self.y as f32 }
+    fn dx(&self) -> f32 { self.dx }
+    fn dy(&self) -> f32 { self.dy }
+    fn direction(&self) -> &Option<Direction> { &self.direction }
+}
+
+struct CharacterUpdate {
+    x: f32,
+    y: f32,
+    dx: f32,
+    dy: f32,
+}
+
+fn update_character<C: Character>(character: &C) -> CharacterUpdate {
+    let mut new_dx: f32 = character.dx() * FRICTION;
+    let mut new_dy: f32 = character.dy() * FRICTION;
+
+    match character.direction() {
+        Some(Direction::N) => new_dy -= ACCELERATION,
+        Some(Direction::NE) => { new_dy -= ACCELERATION; new_dx += ACCELERATION; }
+        Some(Direction::E) => new_dx += ACCELERATION,
+        Some(Direction::SE) => { new_dy += ACCELERATION; new_dx += ACCELERATION; }
+        Some(Direction::S) => new_dy += ACCELERATION,
+        Some(Direction::SW) => { new_dy += ACCELERATION; new_dx -= ACCELERATION; }
+        Some(Direction::W) => new_dx -= ACCELERATION,
+        Some(Direction::NW) => { new_dy -= ACCELERATION; new_dx -= ACCELERATION; }
+        Some(Direction::Brake) => { new_dx *= BRAKING_FORCE; new_dy *= BRAKING_FORCE; }
+        None => {}
+    }
+
+    let mut new_x = character.x() + (character.dx() * VELOCITY_MULTIPLIER);
+    let mut new_y = character.y() + (character.dy() * VELOCITY_MULTIPLIER);
+
+    if new_x < 0.0 { new_x = 0.0; }
+    else if new_x >= WORLD_WIDTH as f32 { new_x = (WORLD_WIDTH - 1) as f32; }
+
+    if new_y < 0.0 { new_y = 0.0; }
+    else if new_y >= WORLD_HEIGHT as f32 { new_y = (WORLD_HEIGHT - 1) as f32; }
+
+    CharacterUpdate { x: new_x, y: new_y, dx: new_dx, dy: new_dy }
+}
+
 fn update_users(ctx: &ReducerContext) {
     for user in ctx.db.user().iter() {
-        if user.online{
-            let mut new_dx: f32 = user.dx * FRICTION;
-            let mut new_dy: f32 = user.dy * FRICTION;
-
-            match user.direction {
-                Some(Direction::N) => {
-                    new_dy -= ACCELERATION;
-                }
-                Some(Direction::NE) => {
-                    new_dy -= ACCELERATION;
-                    new_dx += ACCELERATION;
-                }
-                Some(Direction::E) => {
-                    new_dx += ACCELERATION;
-                }
-                Some(Direction::SE) => {
-                    new_dy += ACCELERATION;
-                    new_dx += ACCELERATION;
-                }
-                Some(Direction::S) => {
-                    new_dy += ACCELERATION;
-                }
-                Some(Direction::SW) => {
-                    new_dy += ACCELERATION;
-                    new_dx -= ACCELERATION;
-                }
-                Some(Direction::W) => {
-                    new_dx -= ACCELERATION;
-                }
-                Some(Direction::NW) => {
-                    new_dy -= ACCELERATION;
-                    new_dx -= ACCELERATION;
-                }
-                Some(Direction::Brake) => {
-                    new_dx *= BRAKING_FORCE;
-                    new_dy *= BRAKING_FORCE;
-                }
-                None => {}
-            }
-
-            let mut new_x = user.x + (user.dx * VELOCITY_MULTIPLIER);
-            let mut new_y = user.y + (user.dy * VELOCITY_MULTIPLIER);
-            
-            if new_x < 0.0 {
-                new_x = 0.0;
-            } else if new_x >= WORLD_WIDTH as f32 {
-                new_x = (WORLD_WIDTH - 1) as f32;
-            }
-    
-            if new_y < 0.0 {
-                new_y = 0.0;
-            } else if new_y >= WORLD_HEIGHT as f32 {
-                new_y = (WORLD_HEIGHT - 1) as f32;
-            }
-    
+        if user.online {
+            let upd = update_character(&user);
             ctx.db.user().identity().update(User {
-                x: new_x,
-                y: new_y,
-                dx: new_dx,
-                dy: new_dy,
+                x: upd.x,
+                y: upd.y,
+                dx: upd.dx,
+                dy: upd.dy,
                 ..user
             });
         }
+    }
+}
+
+fn update_bots(ctx: &ReducerContext) {
+    for bot in ctx.db.bot().iter() {
+        let upd = update_character(&bot);
+        ctx.db.bot().bot_id().update(Bot {
+            x: upd.x as i32,
+            y: upd.y as i32,
+            dx: upd.dx,
+            dy: upd.dy,
+            ..bot
+        });
     }
 }
 
@@ -267,8 +348,11 @@ pub fn tick(ctx: &ReducerContext, tick_schedule: TickSchedule) -> Result<(), Str
     spawn_bits(ctx, tick_schedule.id);
     
     update_users(ctx);
+    update_bots(ctx);
     
     users_eat_bits(ctx);
+
+    update_bot_directions(ctx, 5);
     
     let last_tick = ctx.db.tick_meta().id().find(0);
     let mut next_tick_schedule = TICK_TIME;
@@ -295,6 +379,7 @@ pub fn tick(ctx: &ReducerContext, tick_schedule: TickSchedule) -> Result<(), Str
 
 #[reducer(init)]
 pub fn init(ctx: &ReducerContext) -> Result<(), String> {
+    spawn_bots(ctx, 1000);
     ctx.db.tick_schedule().insert(TickSchedule {
         id: 0,
         scheduled_at: ScheduleAt::Time(ctx.timestamp),

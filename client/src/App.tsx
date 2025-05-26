@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import './App.css';
-import { Bit, DbConnection, Direction, ErrorContext, EventContext, User } from './module_bindings';
+import { Bit, Bot, DbConnection, Direction, ErrorContext, EventContext, User } from './module_bindings';
 import { Identity } from '@clockworklabs/spacetimedb-sdk';
 
 const CANVAS_WIDTH = 600;
@@ -42,6 +42,35 @@ function useUsers(conn: DbConnection | null): Map<string, User> {
   return users;
 }
 
+function useBots(conn: DbConnection | null): Array<Bot> {
+  const [bots, setBots] = useState<Array<Bot>>([]);
+
+  useEffect(() => {
+    if (!conn) return;
+    const onInsert = (_ctx: EventContext, bot: Bot) => {
+      setBots(prev => [...prev, bot]);
+    };
+    conn.db.bot.onInsert(onInsert);
+
+    const onUpdate = (_ctx: EventContext, oldBot: Bot, newBot: Bot) => {
+      setBots(prev => prev.map(bot => bot.botId === oldBot.botId ? newBot : bot));
+    };
+    conn.db.bot.onUpdate(onUpdate);
+
+    const onDelete = (_ctx: EventContext, bot: Bot) => {
+      setBots(prev => prev.filter(b => b.botId !== bot.botId));
+    };
+    conn.db.bot.onDelete(onDelete);
+
+    return () => {
+      conn.db.bot.removeOnInsert(onInsert);
+      conn.db.bot.removeOnUpdate(onUpdate);
+      conn.db.bot.removeOnDelete(onDelete);
+    };
+  }, [conn]);
+  return bots;
+}
+
 function useBits(conn: DbConnection | null): Array<Bit> {
   const [bits, setBits] = useState<Array<Bit>>([]);
 
@@ -74,6 +103,7 @@ function useBits(conn: DbConnection | null): Array<Bit> {
 type DrawProps = {
   users: Map<string, User>;
   bits: Array<Bit>;
+  bots: Array<Bot>;
   identity: Identity;
 };
 
@@ -86,7 +116,7 @@ function renderUser(ctx: CanvasRenderingContext2D, user: User, x: number, y: num
 }
 
 const draw = (ctx: CanvasRenderingContext2D | null, props: DrawProps) => {
-  const { users, bits, identity } = props;
+  const { users, bits, bots, identity } = props;
   if (!ctx) return;
 
   ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
@@ -99,6 +129,14 @@ const draw = (ctx: CanvasRenderingContext2D | null, props: DrawProps) => {
     if (user.identity.data !== identity.data) {
       renderUser(ctx, user, user.x-self.x+(CANVAS_WIDTH/2), user.y-self.y+(CANVAS_HEIGHT/2))
     }
+  });
+
+  bots.forEach(bot => {
+    ctx.beginPath();
+    ctx.arc(bot.x-self.x+(CANVAS_WIDTH/2), bot.y-self.y+(CANVAS_HEIGHT/2), bot.size, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(${bot.color.r}, ${bot.color.g}, ${bot.color.b}, 1)`;
+    ctx.fill();
+    ctx.closePath();
   });
 
   bits.forEach(bit => {
@@ -159,6 +197,7 @@ function App() {
   const users = useUsers(conn);
   const self = identity ? users.get(identity.toHexString()) : null;
   const bits = useBits(conn);
+  const bots = useBots(conn);
   const [quriedX, setQuriedX] = useState<number | null>(null);
   const [quriedY, setQuriedY] = useState<number | null>(null);
 
@@ -173,11 +212,13 @@ function App() {
     setQuriedX(Math.round(x));
     setQuriedY(Math.round(y));
   
-    const query = `SELECT * FROM bit WHERE x < ${Math.round(x) + RENDER_BUFFER + CANVAS_WIDTH / 2} AND x > ${Math.round(x) - RENDER_BUFFER - CANVAS_WIDTH / 2} AND y < ${Math.round(y) + RENDER_BUFFER + CANVAS_HEIGHT / 2} AND y > ${Math.round(y) - RENDER_BUFFER - CANVAS_HEIGHT / 2};`;
+    const baseQuery = `WHERE x < ${Math.round(x) + RENDER_BUFFER + CANVAS_WIDTH / 2} AND x > ${Math.round(x) - RENDER_BUFFER - CANVAS_WIDTH / 2} AND y < ${Math.round(y) + RENDER_BUFFER + CANVAS_HEIGHT / 2} AND y > ${Math.round(y) - RENDER_BUFFER - CANVAS_HEIGHT / 2};`;
+    const bitQuery = "SELECT * FROM bit " + baseQuery;
+    const botQuery = "SELECT * FROM bot " + baseQuery;
 
     const handle = conn
       .subscriptionBuilder()
-      .subscribe([query]);
+      .subscribe([bitQuery, botQuery]);
 
     setBitSubscription(handle);
     bitSubscription?.unsubscribe();
@@ -302,7 +343,7 @@ function App() {
 
   return (
     <div className="App">
-      <Canvas draw={draw} draw_props={{ users, bits, identity }} />
+      <Canvas draw={draw} draw_props={{ users, bits, bots, identity }} />
     </div>
   );
 }
