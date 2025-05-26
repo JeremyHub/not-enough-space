@@ -21,6 +21,7 @@ const BITS_SPAWNED_PER_TICK: f64 = ((1.0/AREA_PER_BIT_SPAWN))*(WORLD_HEIGHT as f
 
 const STARTING_BOTS: u64 = 5000;
 const NUM_BOTS_UPDATE_DIRECTION_PER_TICK: u64 = STARTING_BOTS/10;
+const MAX_BOT_SIZE: i32 = 3;
 
 const UPDATE_OFFLINE_PLAYERS: bool = true;
 
@@ -177,6 +178,7 @@ fn spawn_bots(ctx: &ReducerContext, num_bots: u64) {
             g: ctx.rng().gen_range(0..=255),
             b: ctx.rng().gen_range(0..=255),
         };
+        let size = ctx.rng().gen_range(1..=MAX_BOT_SIZE);
         ctx.db.bot().insert(Bot {
             bot_id: 0,
             x,
@@ -185,8 +187,8 @@ fn spawn_bots(ctx: &ReducerContext, num_bots: u64) {
             dy: 0.0,
             direction: None,
             color,
-            health: 1.0,
-            size: 1.0,
+            health: size as f32,
+            size: size as f32,
         });
     }
 }
@@ -316,10 +318,9 @@ fn update_users(ctx: &ReducerContext) {
         }
     }
     // handle user:user and user:bot collisions
-    const max_bot_size: f32 = 100.0;
     for user in ctx.db.user().iter() {
         if user.online || UPDATE_OFFLINE_PLAYERS {
-            for bot in ctx.db.bot().x().filter((user.x.round() as i32)-((user.size+max_bot_size).round() as i32)..(user.x.round() as i32)+((user.size+max_bot_size).round() as i32)) {
+            for bot in ctx.db.bot().x().filter((user.x.round() as i32)-((user.size+MAX_BOT_SIZE as f32).round() as i32)..(user.x.round() as i32)+((user.size+MAX_BOT_SIZE as f32).round() as i32)) {
                 if ((user.x - bot.x as f32).powi(2) + (user.y - bot.y as f32).powi(2)).sqrt() <= bot.size + user.size {
                     ctx.db.bot().delete(bot);
                 }
