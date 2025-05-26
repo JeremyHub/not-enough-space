@@ -4,7 +4,7 @@ use spacetimedb::rand::Rng;
 const WORLD_WIDTH: i32 = 6000;
 const WORLD_HEIGHT: i32 = 6000;
 
-const TICK_TIME: i64 = 2000;
+const TICK_TIME: i64 = 6000;
 
 const ACCELERATION: f32 = 4.0;
 const BRAKING_FORCE: f32 = 0.9;

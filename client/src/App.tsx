@@ -163,7 +163,27 @@ function App() {
   const [conn, setConn] = useState<DbConnection | null>(null);
   const connectingRef = useRef(false);
   const users = useUsers(conn);
+  const self = identity ? users.get(identity.toHexString()) : null;
   const bits = useBits(conn);
+
+  const [bitSubscription, setBitSubscription] = useState<any | null>(null);
+
+  function subscribeToNearbyBits(conn: DbConnection, x: number, y: number) {
+    bitSubscription?.unsubscribe();
+
+    const query = `SELECT * FROM bit WHERE x < ${Math.round(x) + CANVAS_WIDTH / 2} AND x > ${Math.round(x) - CANVAS_WIDTH / 2} AND y < ${Math.round(y) + CANVAS_HEIGHT / 2} AND y > ${Math.round(y) - CANVAS_HEIGHT / 2};`;
+
+    const handle = conn
+      .subscriptionBuilder()
+      .subscribe([query]);
+
+    setBitSubscription(handle);
+  }
+  useEffect(() => {
+    if (conn && self) {
+      subscribeToNearbyBits(conn, self.x, self.y);
+    }
+  }, [conn, self?.x, self?.y]);
 
   useEffect(() => {
     if (connectingRef.current) return;
@@ -190,7 +210,7 @@ function App() {
           identity.toHexString()
         );
 
-        subscribeToQueries(conn, ["SELECT * FROM user;", "SELECT * FROM bit"]);
+        subscribeToQueries(conn, ["SELECT * FROM user;"]);
       };
 
       const onDisconnect = () => {
