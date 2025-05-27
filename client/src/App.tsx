@@ -445,43 +445,45 @@ function App() {
       pressed.delete(key);
       updateDirection();
     };
+    
+    // TODO: mouse events cause lag because the direction changes too often
 
-    const handleMouseDown = (e: MouseEvent) => {
-      mouseDown = true;
-      const rect = (e.target as HTMLCanvasElement).getBoundingClientRect();
-      mouseX = e.clientX - rect.left;
-      mouseY = e.clientY - rect.top;
-      updateDirection();
-    };
+    // const handleMouseDown = (e: MouseEvent) => {
+    //   mouseDown = true;
+    //   const rect = (e.target as HTMLCanvasElement).getBoundingClientRect();
+    //   mouseX = e.clientX - rect.left;
+    //   mouseY = e.clientY - rect.top;
+    //   updateDirection();
+    // };
 
-    const handleMouseUp = () => {
-      mouseDown = false;
-      updateDirection();
-    };
+    // const handleMouseUp = () => {
+    //   mouseDown = false;
+    //   updateDirection();
+    // };
 
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!mouseDown) return;
-      const rect = (e.target as HTMLCanvasElement).getBoundingClientRect();
-      mouseX = e.clientX - rect.left;
-      mouseY = e.clientY - rect.top;
-      updateDirection();
-    };
+    // const handleMouseMove = (e: MouseEvent) => {
+    //   if (!mouseDown) return;
+    //   const rect = (e.target as HTMLCanvasElement).getBoundingClientRect();
+    //   mouseX = e.clientX - rect.left;
+    //   mouseY = e.clientY - rect.top;
+    //   updateDirection();
+    // };
 
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
 
-    window.addEventListener('mousedown', (e) => handleMouseDown(e as MouseEvent));
-    window.addEventListener('mouseup', handleMouseUp);
-    window.addEventListener('mouseleave', handleMouseUp);
-    window.addEventListener('mousemove', (e) => handleMouseMove(e as MouseEvent));
+    // window.addEventListener('mousedown', (e) => handleMouseDown(e as MouseEvent));
+    // window.addEventListener('mouseup', handleMouseUp);
+    // window.addEventListener('mouseleave', handleMouseUp);
+    // window.addEventListener('mousemove', (e) => handleMouseMove(e as MouseEvent));
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
-      window.removeEventListener('mousedown', (e) => handleMouseDown(e as MouseEvent));
-      window.removeEventListener('mouseup', handleMouseUp);
-      window.removeEventListener('mouseleave', handleMouseUp);
-      window.removeEventListener('mousemove', (e) => handleMouseMove(e as MouseEvent));
+      // window.removeEventListener('mousedown', (e) => handleMouseDown(e as MouseEvent));
+      // window.removeEventListener('mouseup', handleMouseUp);
+      // window.removeEventListener('mouseleave', handleMouseUp);
+      // window.removeEventListener('mousemove', (e) => handleMouseMove(e as MouseEvent));
     };
   }, [conn]);
 

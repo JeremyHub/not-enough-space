@@ -6,7 +6,7 @@ const WORLD_HEIGHT: i32 = 10000;
 
 const TICK_TIME: i64 = 20000;
 
-const ACCELERATION: f32 = 4.0;
+const USER_ACCELERATION: f32 = 4.0;
 const VELOCITY_MULTIPLIER: f32 = 0.1;
 const FRICTION: f32 = 0.9;
 
@@ -22,6 +22,7 @@ const STARTING_BOTS: u64 = 5000;
 const NUM_BOTS_UPDATE_DIRECTION_PER_TICK: u64 = STARTING_BOTS/10;
 const MAX_BOT_SIZE: i32 = 3;
 const BOT_DRIFT: f32 = 0.5;
+const BOT_ACCELERATION: f32 = 4.0;
 
 const UPDATE_OFFLINE_PLAYERS: bool = true;
 
@@ -64,6 +65,7 @@ pub struct Bot {
     color: Color,
     health: f32,
     size: f32,
+    orbiting: Option<Identity>,
 }
 
 pub fn get_user_size(health: f32) -> f32 {
@@ -185,24 +187,41 @@ fn spawn_bots(ctx: &ReducerContext, num_bots: u64) {
             color,
             health: size as f32,
             size: size as f32,
+            orbiting: None,
         });
     }
 }
 
 fn update_bot_directions(ctx: &ReducerContext, bots_to_update: u64) {
-    let total_bots = ctx.db.bot().count();
+    let total_bots = ctx.db.bot().iter().filter(|b| b.orbiting.is_none() ).count() as u64;
     if total_bots == 0 { return; }
     for _ in 0..bots_to_update.min(total_bots) {
         let idx = ctx.rng().gen_range(0..total_bots);
         let bot = ctx.db.bot().bot_id().find(idx);
-        if bot.is_none() {
-            continue;
+        if let Some(bot_ref) = bot.as_ref() {
+            if let Some(user_id) = bot_ref.orbiting {
+                let user = ctx.db.user().identity().find(user_id);
+                if let Some(user) = user {
+                    let dir_vec_x = user.x - bot_ref.x as f32;
+                    let dir_vec_y = user.y - bot_ref.y as f32;
+                    let dir_length = (dir_vec_x.powi(2) + dir_vec_y.powi(2)).sqrt();
+                    if dir_length > 0.0 {
+                        ctx.db.bot().bot_id().update(Bot {
+                            dir_vec_x: (dir_vec_x / dir_length),
+                            dir_vec_y: (dir_vec_y / dir_length),
+                            ..bot.expect("cuzijustfuckingcheckeditbruhread")
+                        });
+                        continue;
+                    }
+                }
+            } else {
+                ctx.db.bot().bot_id().update(Bot {
+                    dir_vec_x: ((ctx.rng().gen_range(0..=100) as f32/100 as f32) * 2.0) - BOT_DRIFT,
+                    dir_vec_y: ((ctx.rng().gen_range(0..=100) as f32/100 as f32) * 2.0) - BOT_DRIFT,
+                    ..bot.expect("cuzijustfuckingcheckeditbruhread")
+                });
+            }
         }
-        ctx.db.bot().bot_id().update(Bot {
-            dir_vec_x: ((ctx.rng().gen_range(0..=100) as f32/100 as f32) * 2.0) - BOT_DRIFT,
-            dir_vec_y: ((ctx.rng().gen_range(0..=100) as f32/100 as f32) * 2.0) - BOT_DRIFT,
-            ..bot.expect("cuzijustfuckingcheckeditbruhread")
-        });
     }
 }
 
@@ -240,15 +259,15 @@ struct CharacterUpdate {
     dy: f32,
 }
 
-fn move_character<C: Character>(character: &C, handle_wrapping: bool) -> CharacterUpdate {
+fn move_character<C: Character>(character: &C, acceleration: f32, handle_wrapping: bool) -> CharacterUpdate {
     let mut new_dx: f32 = character.dx() * FRICTION;
     let mut new_dy: f32 = character.dy() * FRICTION;
 
     if character.dir_vec_x() != 0.0 || character.dir_vec_y() != 0.0 {
         let dir_length = (character.dir_vec_x().powi(2) + character.dir_vec_y().powi(2)).sqrt();
         if dir_length > 0.0 {
-            new_dx += (character.dir_vec_x() / dir_length) * ACCELERATION;
-            new_dy += (character.dir_vec_y() / dir_length) * ACCELERATION;
+            new_dx += (character.dir_vec_x() / dir_length) * acceleration;
+            new_dy += (character.dir_vec_y() / dir_length) * acceleration;
         }
     }
 
@@ -297,7 +316,7 @@ fn update_users(ctx: &ReducerContext) {
     // move users
     for user in ctx.db.user().iter() {
         if user.online || UPDATE_OFFLINE_PLAYERS {
-            let upd = move_character(&user, false);
+            let upd = move_character(&user, USER_ACCELERATION, false);
             ctx.db.user().identity().update(User {
                 x: upd.x,
                 y: upd.y,
@@ -312,7 +331,10 @@ fn update_users(ctx: &ReducerContext) {
         if user.online || UPDATE_OFFLINE_PLAYERS {
             for bot in ctx.db.bot().x().filter((user.x.round() as i32)-((user.size+MAX_BOT_SIZE as f32).round() as i32)..(user.x.round() as i32)+((user.size+MAX_BOT_SIZE as f32).round() as i32)) {
                 if ((user.x - bot.x as f32).powi(2) + (user.y - bot.y as f32).powi(2)).sqrt() <= bot.size + user.size {
-                    ctx.db.bot().delete(bot);
+                    ctx.db.bot().bot_id().update(Bot {
+                        orbiting: Some(user.identity),
+                        ..bot
+                    });
                 }
             }
         }
@@ -335,7 +357,7 @@ fn update_users(ctx: &ReducerContext) {
 fn update_bots(ctx: &ReducerContext) {
     update_bot_directions(ctx, NUM_BOTS_UPDATE_DIRECTION_PER_TICK);
     for bot in ctx.db.bot().iter() {
-        let upd = move_character(&bot, true);
+        let upd = move_character(&bot, BOT_ACCELERATION, true);
         ctx.db.bot().bot_id().update(Bot {
             x: upd.x as i32,
             y: upd.y as i32,

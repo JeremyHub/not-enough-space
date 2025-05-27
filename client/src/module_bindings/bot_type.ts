@@ -43,6 +43,7 @@ export type Bot = {
   color: __Color,
   health: number,
   size: number,
+  orbiting: Identity | undefined,
 };
 
 /**
@@ -65,6 +66,7 @@ export namespace Bot {
       new ProductTypeElement("color", __Color.getTypeScriptAlgebraicType()),
       new ProductTypeElement("health", AlgebraicType.createF32Type()),
       new ProductTypeElement("size", AlgebraicType.createF32Type()),
+      new ProductTypeElement("orbiting", AlgebraicType.createOptionType(AlgebraicType.createIdentityType())),
     ]);
   }
 
