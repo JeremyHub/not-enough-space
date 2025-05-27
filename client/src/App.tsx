@@ -168,6 +168,40 @@ const draw = (ctx: CanvasRenderingContext2D | null, props: DrawProps) => {
   const self = users.get(identity.toHexString());
   if (!self) return;
 
+  const GRID_SIZE = 60
+
+  ctx.strokeStyle = 'rgba(200,200,200,0.3)';
+  ctx.lineWidth = 0.08;
+
+  const worldLeft = self.x - CANVAS_WIDTH / 2;
+  const worldTop = self.y - CANVAS_HEIGHT / 2;
+
+  let firstGridX = Math.floor(worldLeft / GRID_SIZE) * GRID_SIZE;
+  for (
+    let x = firstGridX;
+    x < worldLeft + CANVAS_WIDTH;
+    x += GRID_SIZE
+  ) {
+    const screenX = x - worldLeft;
+    ctx.beginPath();
+    ctx.moveTo(screenX, 0);
+    ctx.lineTo(screenX, CANVAS_HEIGHT);
+    ctx.stroke();
+  }
+
+  let firstGridY = Math.floor(worldTop / GRID_SIZE) * GRID_SIZE;
+  for (
+    let y = firstGridY;
+    y < worldTop + CANVAS_HEIGHT;
+    y += GRID_SIZE
+  ) {
+    const screenY = y - worldTop;
+    ctx.beginPath();
+    ctx.moveTo(0, screenY);
+    ctx.lineTo(CANVAS_WIDTH, screenY);
+    ctx.stroke();
+  }
+
   renderCircle(ctx, self.size, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2, self.color);
 
   const toScreen = (obj: { x: number; y: number }) => ({

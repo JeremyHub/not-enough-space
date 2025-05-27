@@ -11,7 +11,7 @@ const BRAKING_FORCE: f32 = 0.9;
 const VELOCITY_MULTIPLIER: f32 = 0.1;
 const FRICTION: f32 = 0.9;
 
-const MAX_AREA_PER_BIT: u64 = 1200;
+const MAX_AREA_PER_BIT: u64 = 5000;
 const MAX_BITS: u64 = (WORLD_HEIGHT as u64 *WORLD_WIDTH as u64)/MAX_AREA_PER_BIT;
 const MIN_BIT_WORTH: f32 = 0.1;
 const MAX_BIT_WORTH: f32 = 2.0;
