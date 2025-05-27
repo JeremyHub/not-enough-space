@@ -404,7 +404,7 @@ function App() {
         const dy = mouseY - centerY;
         const len = Math.sqrt(dx * dx + dy * dy);
         if (len > 0) {
-          return { dirVecX: Math.round(dx / len), dirVecY: Math.round(dy / len) };
+          return { dirVecX:dx / len, dirVecY:dy / len };
         }
         return { dirVecX: 0, dirVecY: 0 };
       }
