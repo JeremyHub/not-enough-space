@@ -31,32 +31,32 @@ import {
   deepEqual,
 } from "@clockworklabs/spacetimedb-sdk";
 
-import { Direction as __Direction } from "./direction_type";
-
-export type SetDirection = {
-  direction: __Direction | undefined,
+export type SetDirVec = {
+  dirVecX: number,
+  dirVecY: number,
 };
 
 /**
  * A namespace for generated helper functions.
  */
-export namespace SetDirection {
+export namespace SetDirVec {
   /**
   * A function which returns this type represented as an AlgebraicType.
   * This function is derived from the AlgebraicType used to generate this type.
   */
   export function getTypeScriptAlgebraicType(): AlgebraicType {
     return AlgebraicType.createProductType([
-      new ProductTypeElement("direction", AlgebraicType.createOptionType(__Direction.getTypeScriptAlgebraicType())),
+      new ProductTypeElement("dirVecX", AlgebraicType.createF32Type()),
+      new ProductTypeElement("dirVecY", AlgebraicType.createF32Type()),
     ]);
   }
 
-  export function serialize(writer: BinaryWriter, value: SetDirection): void {
-    SetDirection.getTypeScriptAlgebraicType().serialize(writer, value);
+  export function serialize(writer: BinaryWriter, value: SetDirVec): void {
+    SetDirVec.getTypeScriptAlgebraicType().serialize(writer, value);
   }
 
-  export function deserialize(reader: BinaryReader): SetDirection {
-    return SetDirection.getTypeScriptAlgebraicType().deserialize(reader);
+  export function deserialize(reader: BinaryReader): SetDirVec {
+    return SetDirVec.getTypeScriptAlgebraicType().deserialize(reader);
   }
 
 }

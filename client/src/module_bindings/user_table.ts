@@ -32,7 +32,6 @@ import {
 } from "@clockworklabs/spacetimedb-sdk";
 import { User } from "./user_type";
 import { Color as __Color } from "./color_type";
-import { Direction as __Direction } from "./direction_type";
 
 import { EventContext, Reducer, RemoteReducers, RemoteTables } from ".";
 

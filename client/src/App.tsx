@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import './App.css';
-import { Bit, Bot, Color, DbConnection, Direction, ErrorContext, EventContext, User } from './module_bindings';
+import { Bit, Bot, Color, DbConnection, ErrorContext, EventContext, User } from './module_bindings';
 import { Identity } from '@clockworklabs/spacetimedb-sdk';
 
 const CANVAS_WIDTH = 1000;
@@ -390,32 +390,32 @@ function App() {
 
     const pressed = new Set<string>();
 
-    const getDirection = (): Direction | undefined => {
+    const getDirection = (): { dirVecX: number, dirVecY: number} => {
       const up = pressed.has('w');
       const down = pressed.has('s');
       const left = pressed.has('a');
       const right = pressed.has('d');
-      const brake = pressed.has(' ');
 
-      if (brake) return Direction.Brake as Direction;
-      if (up && right && !left && !down) return Direction.NE as Direction;
-      if (up && left && !right && !down) return Direction.NW as Direction;
-      if (down && right && !up && !left) return Direction.SE as Direction;
-      if (down && left && !up && !right) return Direction.SW as Direction;
-      if (left && !right) return Direction.W as Direction;
-      if (right && !left) return Direction.E as Direction;
-      if (up && !down) return Direction.N as Direction;
-      if (down && !up) return Direction.S as Direction;
-      return undefined;
+      if (up && right && !left && !down) return { dirVecX: 1, dirVecY: -1 };
+      if (up && left && !right && !down) return { dirVecX: -1, dirVecY: -1 };
+      if (down && right && !up && !left) return { dirVecX: 1, dirVecY: 1 };
+      if (down && left && !up && !right) return { dirVecX: -1, dirVecY: 1 };
+      if (left && !right) return { dirVecX: -1, dirVecY: 0 };
+      if (right && !left) return { dirVecX: 1, dirVecY: 0 };
+      if (up && !down) return { dirVecX: 0, dirVecY: -1 };
+      if (down && !up) return { dirVecX: 0, dirVecY: 1 };
+      return { dirVecX: 0, dirVecY: 0};
     };
 
-    let lastDirection: Direction | undefined = undefined;
+    let lastDirVecX: number | undefined = undefined
+    let lastDirVecY: number | undefined = undefined
 
     const updateDirection = () => {
-      const direction = getDirection();
-      if (direction !== lastDirection) {
-        conn.reducers.setDirection(direction);
-        lastDirection = direction;
+      const {dirVecX, dirVecY} = getDirection();
+      if (dirVecX !== lastDirVecX || dirVecY !== lastDirVecY) {
+        conn.reducers.setDirVec(dirVecX, dirVecY);
+        lastDirVecX = dirVecX;
+        lastDirVecY = dirVecY;
       }
     };
 

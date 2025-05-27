@@ -7,7 +7,6 @@ const WORLD_HEIGHT: i32 = 10000;
 const TICK_TIME: i64 = 20000;
 
 const ACCELERATION: f32 = 4.0;
-const BRAKING_FORCE: f32 = 0.9;
 const VELOCITY_MULTIPLIER: f32 = 0.1;
 const FRICTION: f32 = 0.9;
 
@@ -22,21 +21,10 @@ const BITS_SPAWNED_PER_TICK: f64 = ((1.0/AREA_PER_BIT_SPAWN))*(WORLD_HEIGHT as f
 const STARTING_BOTS: u64 = 5000;
 const NUM_BOTS_UPDATE_DIRECTION_PER_TICK: u64 = STARTING_BOTS/10;
 const MAX_BOT_SIZE: i32 = 3;
+const BOT_DRIFT: f32 = 0.5;
 
 const UPDATE_OFFLINE_PLAYERS: bool = true;
 
-#[derive(SpacetimeType, Clone, Debug, PartialEq)]
-pub enum Direction {
-    N,
-    NE,
-    E,
-    SE,
-    S,
-    SW,
-    W,
-    NW,
-    Brake,
-}
 
 #[derive(SpacetimeType, Clone, Debug, PartialEq)]
 pub struct Color {
@@ -54,7 +42,8 @@ pub struct User {
     y: f32,
     dx: f32,
     dy: f32,
-    direction: Option<Direction>,
+    dir_vec_x: f32,
+    dir_vec_y: f32,
     color: Color,
     health: f32,
     size: f32,
@@ -70,7 +59,8 @@ pub struct Bot {
     y: i32,
     dx: f32,
     dy: f32,
-    direction: Option<Direction>,
+    dir_vec_x: f32,
+    dir_vec_y: f32,
     color: Color,
     health: f32,
     size: f32,
@@ -94,12 +84,16 @@ pub struct Bit {
 }
 
 #[reducer]
-pub fn set_direction(ctx: &ReducerContext, direction: Option<Direction>) -> Result<(), String> {
+pub fn set_dir_vec(ctx: &ReducerContext, dir_vec_x: f32, dir_vec_y: f32) -> Result<(), String> {
     if let Some(user) = ctx.db.user().identity().find(ctx.sender) {
-        ctx.db.user().identity().update(User { direction: direction, ..user });
+        ctx.db.user().identity().update(User { 
+            dir_vec_x,
+            dir_vec_y,
+            ..user
+        });
         Ok(())
     } else {
-        Err("Cannot set name for unknown user".to_string())
+        Err("Cannot set dir vec for unknown user".to_string())
     }
 }
 
@@ -115,7 +109,8 @@ pub fn client_connected(ctx: &ReducerContext) {
             y: ctx.rng().gen_range(0..=WORLD_HEIGHT) as f32,
             dx: 0.0,
             dy: 0.0,
-            direction: None,
+            dir_vec_x: 0.0,
+            dir_vec_y: 0.0,
             color: Color{r: ctx.rng().gen_range(0..=255), g: ctx.rng().gen_range(0..=255), b: ctx.rng().gen_range(0..=255)},
             health: 1.0,
             size: get_user_size(1.0),
@@ -185,7 +180,8 @@ fn spawn_bots(ctx: &ReducerContext, num_bots: u64) {
             y,
             dx: 0.0,
             dy: 0.0,
-            direction: None,
+            dir_vec_x: 0.0,
+            dir_vec_y: 0.0,
             color,
             health: size as f32,
             size: size as f32,
@@ -194,22 +190,18 @@ fn spawn_bots(ctx: &ReducerContext, num_bots: u64) {
 }
 
 fn update_bot_directions(ctx: &ReducerContext, bots_to_update: u64) {
-    let directions = [
-        Direction::N, Direction::NE, Direction::E, Direction::SE,
-        Direction::S, Direction::SW, Direction::W, Direction::NW, Direction::Brake,
-    ];
     let total_bots = ctx.db.bot().count();
     if total_bots == 0 { return; }
     for _ in 0..bots_to_update.min(total_bots) {
         let idx = ctx.rng().gen_range(0..total_bots);
-        let dir = directions[ctx.rng().gen_range(0..directions.len())].clone();
         let bot = ctx.db.bot().bot_id().find(idx);
         if bot.is_none() {
             continue;
         }
         ctx.db.bot().bot_id().update(Bot {
-            direction: Some(dir),
-            ..bot.expect("asdf")
+            dir_vec_x: ((ctx.rng().gen_range(0..=100) as f32/100 as f32) * 2.0) - BOT_DRIFT,
+            dir_vec_y: ((ctx.rng().gen_range(0..=100) as f32/100 as f32) * 2.0) - BOT_DRIFT,
+            ..bot.expect("cuzijustfuckingcheckeditbruhread")
         });
     }
 }
@@ -219,7 +211,8 @@ trait Character {
     fn y(&self) -> f32;
     fn dx(&self) -> f32;
     fn dy(&self) -> f32;
-    fn direction(&self) -> &Option<Direction>;
+    fn dir_vec_x(&self) -> f32;
+    fn dir_vec_y(&self) -> f32;
 }
 
 impl Character for User {
@@ -227,7 +220,8 @@ impl Character for User {
     fn y(&self) -> f32 { self.y }
     fn dx(&self) -> f32 { self.dx }
     fn dy(&self) -> f32 { self.dy }
-    fn direction(&self) -> &Option<Direction> { &self.direction }
+    fn dir_vec_x(&self) -> f32 { self.dir_vec_x }
+    fn dir_vec_y(&self) -> f32 { self.dir_vec_y }
 }
 
 impl Character for Bot {
@@ -235,7 +229,8 @@ impl Character for Bot {
     fn y(&self) -> f32 { self.y as f32 }
     fn dx(&self) -> f32 { self.dx }
     fn dy(&self) -> f32 { self.dy }
-    fn direction(&self) -> &Option<Direction> { &self.direction }
+    fn dir_vec_x(&self) -> f32 { self.dir_vec_x }
+    fn dir_vec_y(&self) -> f32 { self.dir_vec_y }
 }
 
 struct CharacterUpdate {
@@ -249,17 +244,12 @@ fn move_character<C: Character>(character: &C, handle_wrapping: bool) -> Charact
     let mut new_dx: f32 = character.dx() * FRICTION;
     let mut new_dy: f32 = character.dy() * FRICTION;
 
-    match character.direction() {
-        Some(Direction::N) => new_dy -= ACCELERATION,
-        Some(Direction::NE) => { new_dy -= ACCELERATION; new_dx += ACCELERATION; }
-        Some(Direction::E) => new_dx += ACCELERATION,
-        Some(Direction::SE) => { new_dy += ACCELERATION; new_dx += ACCELERATION; }
-        Some(Direction::S) => new_dy += ACCELERATION,
-        Some(Direction::SW) => { new_dy += ACCELERATION; new_dx -= ACCELERATION; }
-        Some(Direction::W) => new_dx -= ACCELERATION,
-        Some(Direction::NW) => { new_dy -= ACCELERATION; new_dx -= ACCELERATION; }
-        Some(Direction::Brake) => { new_dx *= BRAKING_FORCE; new_dy *= BRAKING_FORCE; }
-        None => {}
+    if character.dir_vec_x() != 0.0 || character.dir_vec_y() != 0.0 {
+        let dir_length = (character.dir_vec_x().powi(2) + character.dir_vec_y().powi(2)).sqrt();
+        if dir_length > 0.0 {
+            new_dx += (character.dir_vec_x() / dir_length) * ACCELERATION;
+            new_dy += (character.dir_vec_y() / dir_length) * ACCELERATION;
+        }
     }
 
     let after_move_x = character.x() + (character.dx() * VELOCITY_MULTIPLIER);

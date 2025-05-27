@@ -31,7 +31,6 @@ import {
   deepEqual,
 } from "@clockworklabs/spacetimedb-sdk";
 import { Color as __Color } from "./color_type";
-import { Direction as __Direction } from "./direction_type";
 
 export type Bot = {
   botId: bigint,
@@ -39,7 +38,8 @@ export type Bot = {
   y: number,
   dx: number,
   dy: number,
-  direction: __Direction | undefined,
+  dirVecX: number,
+  dirVecY: number,
   color: __Color,
   health: number,
   size: number,
@@ -60,7 +60,8 @@ export namespace Bot {
       new ProductTypeElement("y", AlgebraicType.createI32Type()),
       new ProductTypeElement("dx", AlgebraicType.createF32Type()),
       new ProductTypeElement("dy", AlgebraicType.createF32Type()),
-      new ProductTypeElement("direction", AlgebraicType.createOptionType(__Direction.getTypeScriptAlgebraicType())),
+      new ProductTypeElement("dirVecX", AlgebraicType.createF32Type()),
+      new ProductTypeElement("dirVecY", AlgebraicType.createF32Type()),
       new ProductTypeElement("color", __Color.getTypeScriptAlgebraicType()),
       new ProductTypeElement("health", AlgebraicType.createF32Type()),
       new ProductTypeElement("size", AlgebraicType.createF32Type()),

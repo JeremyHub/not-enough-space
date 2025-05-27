@@ -36,8 +36,8 @@ import { ClientConnected } from "./client_connected_reducer.ts";
 export { ClientConnected };
 import { IdentityDisconnected } from "./identity_disconnected_reducer.ts";
 export { IdentityDisconnected };
-import { SetDirection } from "./set_direction_reducer.ts";
-export { SetDirection };
+import { SetDirVec } from "./set_dir_vec_reducer.ts";
+export { SetDirVec };
 import { Tick } from "./tick_reducer.ts";
 export { Tick };
 
@@ -60,8 +60,6 @@ import { Bot } from "./bot_type.ts";
 export { Bot };
 import { Color } from "./color_type.ts";
 export { Color };
-import { Direction } from "./direction_type.ts";
-export { Direction };
 import { TickMeta } from "./tick_meta_type.ts";
 export { TickMeta };
 import { TickSchedule } from "./tick_schedule_type.ts";
@@ -106,9 +104,9 @@ const REMOTE_MODULE = {
       reducerName: "identity_disconnected",
       argsType: IdentityDisconnected.getTypeScriptAlgebraicType(),
     },
-    set_direction: {
-      reducerName: "set_direction",
-      argsType: SetDirection.getTypeScriptAlgebraicType(),
+    set_dir_vec: {
+      reducerName: "set_dir_vec",
+      argsType: SetDirVec.getTypeScriptAlgebraicType(),
     },
     tick: {
       reducerName: "tick",
@@ -143,7 +141,7 @@ const REMOTE_MODULE = {
 export type Reducer = never
 | { name: "ClientConnected", args: ClientConnected }
 | { name: "IdentityDisconnected", args: IdentityDisconnected }
-| { name: "SetDirection", args: SetDirection }
+| { name: "SetDirVec", args: SetDirVec }
 | { name: "Tick", args: Tick }
 ;
 
@@ -166,20 +164,20 @@ export class RemoteReducers {
     this.connection.offReducer("identity_disconnected", callback);
   }
 
-  setDirection(direction: Direction | undefined) {
-    const __args = { direction };
+  setDirVec(dirVecX: number, dirVecY: number) {
+    const __args = { dirVecX, dirVecY };
     let __writer = new BinaryWriter(1024);
-    SetDirection.getTypeScriptAlgebraicType().serialize(__writer, __args);
+    SetDirVec.getTypeScriptAlgebraicType().serialize(__writer, __args);
     let __argsBuffer = __writer.getBuffer();
-    this.connection.callReducer("set_direction", __argsBuffer, this.setCallReducerFlags.setDirectionFlags);
+    this.connection.callReducer("set_dir_vec", __argsBuffer, this.setCallReducerFlags.setDirVecFlags);
   }
 
-  onSetDirection(callback: (ctx: ReducerEventContext, direction: Direction | undefined) => void) {
-    this.connection.onReducer("set_direction", callback);
+  onSetDirVec(callback: (ctx: ReducerEventContext, dirVecX: number, dirVecY: number) => void) {
+    this.connection.onReducer("set_dir_vec", callback);
   }
 
-  removeOnSetDirection(callback: (ctx: ReducerEventContext, direction: Direction | undefined) => void) {
-    this.connection.offReducer("set_direction", callback);
+  removeOnSetDirVec(callback: (ctx: ReducerEventContext, dirVecX: number, dirVecY: number) => void) {
+    this.connection.offReducer("set_dir_vec", callback);
   }
 
   tick(tickSchedule: TickSchedule) {
@@ -201,9 +199,9 @@ export class RemoteReducers {
 }
 
 export class SetReducerFlags {
-  setDirectionFlags: CallReducerFlags = 'FullUpdate';
-  setDirection(flags: CallReducerFlags) {
-    this.setDirectionFlags = flags;
+  setDirVecFlags: CallReducerFlags = 'FullUpdate';
+  setDirVec(flags: CallReducerFlags) {
+    this.setDirVecFlags = flags;
   }
 
   tickFlags: CallReducerFlags = 'FullUpdate';
