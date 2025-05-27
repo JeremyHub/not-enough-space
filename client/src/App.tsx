@@ -3,8 +3,8 @@ import './App.css';
 import { Bit, Bot, Color, DbConnection, Direction, ErrorContext, EventContext, User } from './module_bindings';
 import { Identity } from '@clockworklabs/spacetimedb-sdk';
 
-const CANVAS_WIDTH = 600;
-const CANVAS_HEIGHT = 600;
+const CANVAS_WIDTH = 1000;
+const CANVAS_HEIGHT = 1000;
 const RENDER_BUFFER = 100;
 
 const WORLD_WIDTH = 10000;

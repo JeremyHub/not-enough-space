@@ -15,8 +15,8 @@ canvas {
     display: block;
     margin: auto;
     background: #fff;
-    width: 600px;
-    height: 600px;
+    width: 1000px;
+    height: 1000px;
     box-sizing: border-box;
     position: absolute;
     top: 0;
