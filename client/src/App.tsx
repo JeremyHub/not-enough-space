@@ -389,8 +389,26 @@ function App() {
     if (!conn) return;
 
     const pressed = new Set<string>();
+    let mouseDown = false;
+    let mouseX = 0;
+    let mouseY = 0;
 
-    const getDirection = (): { dirVecX: number, dirVecY: number} => {
+    let lastDirVecX: number | undefined = undefined;
+    let lastDirVecY: number | undefined = undefined;
+
+    const getDirection = (): { dirVecX: number, dirVecY: number } => {
+      if (mouseDown) {
+        const centerX = CANVAS_WIDTH / 2;
+        const centerY = CANVAS_HEIGHT / 2;
+        const dx = mouseX - centerX;
+        const dy = mouseY - centerY;
+        const len = Math.sqrt(dx * dx + dy * dy);
+        if (len > 0) {
+          return { dirVecX: Math.round(dx / len), dirVecY: Math.round(dy / len) };
+        }
+        return { dirVecX: 0, dirVecY: 0 };
+      }
+
       const up = pressed.has('w');
       const down = pressed.has('s');
       const left = pressed.has('a');
@@ -404,14 +422,11 @@ function App() {
       if (right && !left) return { dirVecX: 1, dirVecY: 0 };
       if (up && !down) return { dirVecX: 0, dirVecY: -1 };
       if (down && !up) return { dirVecX: 0, dirVecY: 1 };
-      return { dirVecX: 0, dirVecY: 0};
+      return { dirVecX: 0, dirVecY: 0 };
     };
 
-    let lastDirVecX: number | undefined = undefined
-    let lastDirVecY: number | undefined = undefined
-
     const updateDirection = () => {
-      const {dirVecX, dirVecY} = getDirection();
+      const { dirVecX, dirVecY } = getDirection();
       if (dirVecX !== lastDirVecX || dirVecY !== lastDirVecY) {
         conn.reducers.setDirVec(dirVecX, dirVecY);
         lastDirVecX = dirVecX;
@@ -431,11 +446,42 @@ function App() {
       updateDirection();
     };
 
+    const handleMouseDown = (e: MouseEvent) => {
+      mouseDown = true;
+      const rect = (e.target as HTMLCanvasElement).getBoundingClientRect();
+      mouseX = e.clientX - rect.left;
+      mouseY = e.clientY - rect.top;
+      updateDirection();
+    };
+
+    const handleMouseUp = () => {
+      mouseDown = false;
+      updateDirection();
+    };
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!mouseDown) return;
+      const rect = (e.target as HTMLCanvasElement).getBoundingClientRect();
+      mouseX = e.clientX - rect.left;
+      mouseY = e.clientY - rect.top;
+      updateDirection();
+    };
+
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
+
+    window.addEventListener('mousedown', (e) => handleMouseDown(e as MouseEvent));
+    window.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener('mouseleave', handleMouseUp);
+    window.addEventListener('mousemove', (e) => handleMouseMove(e as MouseEvent));
+
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
+      window.removeEventListener('mousedown', (e) => handleMouseDown(e as MouseEvent));
+      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('mouseleave', handleMouseUp);
+      window.removeEventListener('mousemove', (e) => handleMouseMove(e as MouseEvent));
     };
   }, [conn]);
 
