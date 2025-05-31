@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use spacetimedb::{rand, reducer, table, Identity, ReducerContext, ScheduleAt, SpacetimeType, Table, TimeDuration};
 use spacetimedb::rand::Rng;
 
@@ -61,6 +63,7 @@ pub struct User {
     color: Color,
     health: f32,
     size: f32,
+    total_bot_size_oribiting: f32,
 }
 
 #[table(name = bot, public)]
@@ -129,6 +132,7 @@ pub fn client_connected(ctx: &ReducerContext) {
             color: Color{r: ctx.rng().gen_range(0..=255), g: ctx.rng().gen_range(0..=255), b: ctx.rng().gen_range(0..=255)},
             health: 1.0,
             size: get_user_size(1.0),
+            total_bot_size_oribiting: 0.0,
         });
     }
 }
@@ -353,21 +357,34 @@ fn update_users(ctx: &ReducerContext) {
         }
     }
     // handle user:user and user:bot collisions
+    let mut bot_size_map: HashMap<Identity, f32> = HashMap::new();
     for user in ctx.db.user().iter() {
         if user.online || UPDATE_OFFLINE_PLAYERS {
-            let total_bot_size_oribiting = ctx.db.bot().iter().filter(|b| b.orbiting == Some(user.identity)).map(|b| b.size).sum::<f32>();
-            if total_bot_size_oribiting < user.size {
-                for bot in ctx.db.bot().x().filter((user.x.round() as i32)-((user.size+MAX_BOT_SIZE as f32).round() as i32)..(user.x.round() as i32)+((user.size+MAX_BOT_SIZE as f32).round() as i32)) {
+            if user.total_bot_size_oribiting < user.size {
+                for bot in ctx.db.bot().x().filter(
+                    (user.x.round() as i32) - ((user.size + MAX_BOT_SIZE as f32).round() as i32)
+                        ..(user.x.round() as i32) + ((user.size + MAX_BOT_SIZE as f32).round() as i32)
+                ) {
                     if ((user.x - bot.x as f32).powi(2) + (user.y - bot.y as f32).powi(2)).sqrt() <= bot.size + user.size {
                         ctx.db.bot().bot_id().update(Bot {
                             orbiting: Some(user.identity),
                             ..bot
                         });
+                        *bot_size_map.entry(user.identity).or_insert(0.0) += bot.size;
                     }
                 }
             }
         }
     }
+    for (identity, new_oribing_size) in bot_size_map {
+        if let Some(user) = ctx.db.user().identity().find(identity) {
+            ctx.db.user().identity().update(User {
+                total_bot_size_oribiting: new_oribing_size + user.total_bot_size_oribiting,
+                ..user
+            });
+        }
+    }
+
     // handle character wrapping
     for user in ctx.db.user().iter() {
         if user.online || UPDATE_OFFLINE_PLAYERS {
