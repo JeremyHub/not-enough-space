@@ -23,9 +23,14 @@ const STARTING_BOTS: u64 = 5000;
 const MAX_BOT_SIZE: i32 = 3;
 const BOT_DRIFT: f32 = 0.5;
 const BOT_ACCELERATION: f32 = 2.0;
-const BOT_ACCELERATION_ORBITING: f32 = 6.0;
-const TANGENTIAL_ORBIT_STRENGTH: f32 = 5.0;
+const BOT_ACCELERATION_ORBITING: f32 = 15.0;
+const TANGENTIAL_ORBIT_STRENGTH: f32 = 6.0;
 const PORTION_NON_ORBITING_BOTS_DIRECTION_UPDATED_PER_TICK: f64 = 0.005;
+const ORBITING_BOT_SIZE_DIVISOR: f32 = 2.0;
+const ORBITING_BOT_SIZE_DIVISOR_MIN: i32 = 3;
+const ORBITING_BOT_SIZE_DIVISOR_MAX: i32 = 6;
+const ORIBTING_BOT_USER_SPEED_RATIO_ADD: f32 = 0.85;
+const ORIBITING_BOT_MIN_USER_SPEED_RATIO: f32 = 0.1;
 
 const UPDATE_OFFLINE_PLAYERS: bool = true;
 
@@ -223,10 +228,16 @@ fn update_bot_directions(ctx: &ReducerContext) {
                     let norm_y = dir_vec_y / dir_length;
                     let perp_x = -norm_y;
                     let perp_y = norm_x;
-                    let tangential = (ctx.rng().gen_range(0..=100) as f32 / 100.0) * (TANGENTIAL_ORBIT_STRENGTH/bot.size);
+                    let tangential = TANGENTIAL_ORBIT_STRENGTH/((bot.size/ORBITING_BOT_SIZE_DIVISOR)+ctx.rng().gen_range(ORBITING_BOT_SIZE_DIVISOR_MIN..=ORBITING_BOT_SIZE_DIVISOR_MAX) as f32);
+                    let user_speed_ratio = (user.dx.powi(2) + user.dy.powi(2)).sqrt()/(USER_ACCELERATION/VELOCITY_MULTIPLIER);
+                    log::info!("{}", user_speed_ratio);
+                    let new_dx = bot.dx * (user_speed_ratio+ORIBTING_BOT_USER_SPEED_RATIO_ADD);
+                    let new_dy = bot.dy * (user_speed_ratio+ORIBTING_BOT_USER_SPEED_RATIO_ADD);
                     ctx.db.bot().bot_id().update(Bot {
                         dir_vec_x: norm_x + perp_x * tangential,
                         dir_vec_y: norm_y + perp_y * tangential,
+                        dx: if user_speed_ratio < ORIBITING_BOT_MIN_USER_SPEED_RATIO { new_dx } else { bot.dx },
+                        dy: if user_speed_ratio < 0.1 { new_dy } else { bot.dy },
                         ..bot
                     });
                     continue;
