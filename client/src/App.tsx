@@ -330,7 +330,7 @@ function App() {
   const [bitSubscription, setBitSubscription] = useState<any | null>(null);
   const canvasWidth = Math.round(((self?.size ?? 1) * 100) / 2) * 2;
   const canvasHeight = Math.round(((self?.size ?? 1) * 100) / 2) * 2;
-  const renderBuffer = Math.max(Math.round(((self?.size ?? 1) * 10) / 100) * 10, 50);
+  const renderBuffer = Math.max(Math.round(((self?.size ?? 1) * 10) / 100) * 10, 100);
 
   useEffect(() => {
     if (connectingRef.current) return;
