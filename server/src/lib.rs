@@ -378,16 +378,15 @@ fn update_users(ctx: &ReducerContext) {
     for user in ctx.db.user().iter() {
         if user.online || UPDATE_OFFLINE_PLAYERS {
             if user.total_bot_size_oribiting < user.size {
-                for bot in ctx.db.bot().x().filter(
-                    (user.x.round() as i32) - ((user.size + MAX_BOT_SIZE as f32).round() as i32)
-                        ..(user.x.round() as i32) + ((user.size + MAX_BOT_SIZE as f32).round() as i32)
-                ) {
-                    if toroidal_distance(user.x, user.y, bot.x as f32, bot.y as f32) <= (user.size + bot.size) {
-                        ctx.db.bot().bot_id().update(Bot {
-                            orbiting: Some(user.identity),
-                            ..bot
-                        });
-                        *bot_size_map.entry(user.identity).or_insert(0.0) += bot.size;
+                for range in wrapped_ranges(user.x.round() as i32, (user.size + MAX_BOT_SIZE as f32) as i32, WORLD_WIDTH) {
+                    for bot in ctx.db.bot().x().filter(range) {
+                        if toroidal_distance(user.x, user.y, bot.x as f32, bot.y as f32) <= (user.size + bot.size) {
+                            ctx.db.bot().bot_id().update(Bot {
+                                orbiting: Some(user.identity),
+                                ..bot
+                            });
+                            *bot_size_map.entry(user.identity).or_insert(0.0) += bot.size;
+                        }
                     }
                 }
             }
@@ -438,11 +437,13 @@ fn update_bots(ctx: &ReducerContext) {
 
 fn users_eat_bits(ctx: &ReducerContext) {
     for user in ctx.db.user().iter() {
-        if user.online || UPDATE_OFFLINE_PLAYERS{
+        if user.online || UPDATE_OFFLINE_PLAYERS {
             let mut bits_to_eat = Vec::new();
-            for bit in ctx.db.bit().x().filter((user.x.round() as i32)-((user.size+MAX_BIT_SIZE).round() as i32)..(user.x.round() as i32)+((user.size+MAX_BIT_SIZE).round() as i32)) {
-                if toroidal_distance(user.x, user.y, bit.x as f32, bit.y as f32) <= (user.size + bit.size) {
-                    bits_to_eat.push(bit);
+            for range in wrapped_ranges(user.x.round() as i32, (user.size + MAX_BIT_SIZE) as i32, WORLD_WIDTH) {
+                for bit in ctx.db.bit().x().filter(range) {
+                    if toroidal_distance(user.x, user.y, bit.x as f32, bit.y as f32) <= (user.size + bit.size) {
+                        bits_to_eat.push(bit);
+                    }
                 }
             }
             let mut new_health = user.health;
@@ -459,6 +460,26 @@ fn users_eat_bits(ctx: &ReducerContext) {
     }
 }
 
+fn wrapped_ranges(center: i32, radius: i32, max: i32) -> Vec<core::ops::Range<i32>> {
+    let min = center - radius;
+    let max_range = center + radius;
+    if min < 0 {
+        // Wraps left edge: two ranges
+        vec![
+            0..max_range.min(max),
+            (max + min)..max
+        ]
+    } else if max_range >= max {
+        // Wraps right edge: two ranges
+        vec![
+            min..max,
+            0..(max_range - max)
+        ]
+    } else {
+        // No wrap: single range
+        vec![min..max_range]
+    }
+}
 
 fn toroidal_distance(x1: f32, y1: f32, x2: f32, y2: f32) -> f32 {
     let dx = ((x1 - x2).abs()).min(WORLD_WIDTH as f32 - (x1 - x2).abs());
