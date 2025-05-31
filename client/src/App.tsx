@@ -508,7 +508,7 @@ function App() {
 
   return (
     <div className="App">
-      <Canvas draw={draw} draw_props={{ metadata, canvasWidth, canvasHeight, renderBuffer, users, bits, bots, identity }} />
+      <Canvas key={`${canvasWidth}x${canvasHeight}`} draw={draw} draw_props={{ metadata, canvasWidth, canvasHeight, renderBuffer, users, bits, bots, identity }} />
     </div>
   );
 }
