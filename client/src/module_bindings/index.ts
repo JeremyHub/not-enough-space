@@ -46,6 +46,8 @@ import { BitTableHandle } from "./bit_table.ts";
 export { BitTableHandle };
 import { BotTableHandle } from "./bot_table.ts";
 export { BotTableHandle };
+import { MetadataTableHandle } from "./metadata_table.ts";
+export { MetadataTableHandle };
 import { TickMetaTableHandle } from "./tick_meta_table.ts";
 export { TickMetaTableHandle };
 import { TickScheduleTableHandle } from "./tick_schedule_table.ts";
@@ -60,6 +62,8 @@ import { Bot } from "./bot_type.ts";
 export { Bot };
 import { Color } from "./color_type.ts";
 export { Color };
+import { Metadata } from "./metadata_type.ts";
+export { Metadata };
 import { TickMeta } from "./tick_meta_type.ts";
 export { TickMeta };
 import { TickSchedule } from "./tick_schedule_type.ts";
@@ -78,6 +82,10 @@ const REMOTE_MODULE = {
       tableName: "bot",
       rowType: Bot.getTypeScriptAlgebraicType(),
       primaryKey: "botId",
+    },
+    metadata: {
+      tableName: "metadata",
+      rowType: Metadata.getTypeScriptAlgebraicType(),
     },
     tick_meta: {
       tableName: "tick_meta",
@@ -220,6 +228,10 @@ export class RemoteTables {
 
   get bot(): BotTableHandle {
     return new BotTableHandle(this.connection.clientCache.getOrCreateTable<Bot>(REMOTE_MODULE.tables.bot));
+  }
+
+  get metadata(): MetadataTableHandle {
+    return new MetadataTableHandle(this.connection.clientCache.getOrCreateTable<Metadata>(REMOTE_MODULE.tables.metadata));
   }
 
   get tickMeta(): TickMetaTableHandle {

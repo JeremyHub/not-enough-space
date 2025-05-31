@@ -1,14 +1,30 @@
 import { useEffect, useRef, useState } from 'react';
 import './App.css';
-import { Bit, Bot, Color, DbConnection, ErrorContext, EventContext, User } from './module_bindings';
+import { Bit, Bot, Color, DbConnection, ErrorContext, EventContext, Metadata, User } from './module_bindings';
 import { Identity } from '@clockworklabs/spacetimedb-sdk';
 
 const CANVAS_WIDTH = 1000;
 const CANVAS_HEIGHT = 1000;
 const RENDER_BUFFER = 100;
 
-const WORLD_WIDTH = 10000;
-const WORLD_HEIGHT = 10000;
+function useMetadata(conn: DbConnection | null): Metadata | null {
+  const [metadata, setMetadata] = useState<Metadata | null>(null);
+
+  useEffect(() => {
+    if (!conn) return;
+
+    const onMetadataUpdate = (_ctx: EventContext, newMetadata: Metadata) => {
+      setMetadata(newMetadata);
+    };
+
+    conn.db.metadata.onInsert(onMetadataUpdate);
+    conn.db.metadata.onDelete(() => {
+      setMetadata(null);
+    });
+  }, [conn]);
+
+  return metadata;
+}
 
 function useUsers(conn: DbConnection | null): Map<string, User> {
   const [users, setUsers] = useState<Map<string, User>>(new Map());
@@ -104,6 +120,7 @@ function useBits(conn: DbConnection | null): Array<Bit> {
 }
 
 type DrawProps = {
+  metadata: Metadata,
   users: Map<string, User>;
   bits: Array<Bit>;
   bots: Array<Bot>;
@@ -120,6 +137,7 @@ function renderCircle(ctx: CanvasRenderingContext2D, size: number, x: number, y:
 
 function renderWithWrap(
   renderFn: (x: number, y: number) => void,
+  metadata: Metadata,
   self: User,
   x: number,
   y: number,
@@ -130,28 +148,28 @@ function renderWithWrap(
   if (self.x < CANVAS_WIDTH/2) {
     // check if thing we are rendering is past left edge
     if (x > CANVAS_WIDTH+RENDER_BUFFER) {
-      new_x = x-WORLD_WIDTH;
+      new_x = x-metadata.worldWidth;
     }
   }
   // Check if you are near right edge
-  if (self.x > WORLD_WIDTH - CANVAS_WIDTH / 2) {
+  if (self.x > metadata.worldWidth - CANVAS_WIDTH / 2) {
     // check if thing we are rendering is past right edge
     if (x < -RENDER_BUFFER) {
-      new_x = x + WORLD_WIDTH;
+      new_x = x + metadata.worldWidth;
     }
   }
   // Check if you are near top edge
   if (self.y < CANVAS_HEIGHT / 2) {
     // check if thing we are rendering is past top edge
     if (y > CANVAS_HEIGHT + RENDER_BUFFER) {
-      new_y = y - WORLD_HEIGHT;
+      new_y = y - metadata.worldHeight;
     }
   }
   // Check if you are near bottom edge
-  if (self.y > WORLD_HEIGHT - CANVAS_HEIGHT / 2) {
+  if (self.y > metadata.worldHeight - CANVAS_HEIGHT / 2) {
     // check if thing we are rendering is past bottom edge
     if (y < -RENDER_BUFFER) {
-      new_y = y + WORLD_HEIGHT;
+      new_y = y + metadata.worldHeight;
     }
   }
 
@@ -160,7 +178,7 @@ function renderWithWrap(
 }
 
 const draw = (ctx: CanvasRenderingContext2D | null, props: DrawProps) => {
-  const { users, bits, bots, identity } = props;
+  const { metadata, users, bits, bots, identity } = props;
   if (!ctx) return;
 
   ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
@@ -214,6 +232,7 @@ const draw = (ctx: CanvasRenderingContext2D | null, props: DrawProps) => {
       const { x, y } = toScreen(user);
       renderWithWrap(
         (px, py) => renderCircle(ctx, user.size, px, py, user.color),
+        metadata,
         self,
         x,
         y,
@@ -225,6 +244,7 @@ const draw = (ctx: CanvasRenderingContext2D | null, props: DrawProps) => {
     const { x, y } = toScreen(bot);
     renderWithWrap(
       (px, py) => renderCircle(ctx, bot.size, px, py, bot.color),
+      metadata,
       self,
       x,
       y,
@@ -235,6 +255,7 @@ const draw = (ctx: CanvasRenderingContext2D | null, props: DrawProps) => {
     const { x, y } = toScreen(bit);
     renderWithWrap(
       (px, py) => renderCircle(ctx, bit.size, px, py, bit.color),
+      metadata,
       self,
       x,
       y,
@@ -289,51 +310,13 @@ function App() {
   const [conn, setConn] = useState<DbConnection | null>(null);
   const connectingRef = useRef(false);
   const users = useUsers(conn);
+  const metadata = useMetadata(conn);
   const self = identity ? users.get(identity.toHexString()) : null;
   const bits = useBits(conn);
   const bots = useBots(conn);
   const [quriedX, setQuriedX] = useState<number | null>(null);
   const [quriedY, setQuriedY] = useState<number | null>(null);
-
   const [bitSubscription, setBitSubscription] = useState<any | null>(null);
-
-  function subscribeToNearbyObjs(conn: DbConnection, x: number, y: number) {
-
-    if (quriedX && quriedY && (Math.abs(quriedX-x) < RENDER_BUFFER && Math.abs(quriedY-y) < RENDER_BUFFER)) {
-      return
-    }
-
-    setQuriedX(Math.round(x));
-    setQuriedY(Math.round(y));
-  
-    const withinScreenQuery = `x < ${Math.round(x) + RENDER_BUFFER + CANVAS_WIDTH / 2} AND x > ${Math.round(x) - RENDER_BUFFER - CANVAS_WIDTH / 2} AND y < ${Math.round(y) + RENDER_BUFFER + CANVAS_HEIGHT / 2} AND y > ${Math.round(y) - RENDER_BUFFER - CANVAS_HEIGHT / 2}`
-    
-    const leftEdgeQuery = (x-RENDER_BUFFER < CANVAS_WIDTH/2) ? ` OR (x > ${WORLD_WIDTH - ((CANVAS_WIDTH/2)+RENDER_BUFFER-Math.round(x))} AND (y > ${Math.round(y) - ((CANVAS_HEIGHT/2)+RENDER_BUFFER)}) AND (y < ${Math.round(y) + ((CANVAS_HEIGHT/2)+RENDER_BUFFER)}))` : "";
-    const rightEdgeQuery = (x+RENDER_BUFFER > WORLD_WIDTH - (CANVAS_WIDTH/2)) ? ` OR (x < ${((CANVAS_WIDTH/2)+RENDER_BUFFER+Math.round(x)) - WORLD_WIDTH} AND (y > ${Math.round(y) - ((CANVAS_HEIGHT/2)+RENDER_BUFFER)}) AND (y < ${Math.round(y) + ((CANVAS_HEIGHT/2)+RENDER_BUFFER)}))` : "";
-    const topEdgeQuery = (y-RENDER_BUFFER < CANVAS_HEIGHT/2) ? ` OR (y > ${WORLD_HEIGHT - ((CANVAS_HEIGHT/2)+RENDER_BUFFER-Math.round(y))} AND (x > ${Math.round(x) - ((CANVAS_WIDTH/2)+RENDER_BUFFER)}) AND (x < ${Math.round(x) + ((CANVAS_WIDTH/2)+RENDER_BUFFER)}))` : "";
-    const bottomEdgeQuery = (y+RENDER_BUFFER > WORLD_HEIGHT - (CANVAS_HEIGHT/2)) ? ` OR (y < ${((CANVAS_HEIGHT/2)+RENDER_BUFFER+Math.round(y)) - WORLD_HEIGHT} AND (x > ${Math.round(x) - ((CANVAS_WIDTH/2)+RENDER_BUFFER)}) AND (x < ${Math.round(x) + ((CANVAS_WIDTH/2)+RENDER_BUFFER)}))` : "";
-    const topLeftCornerQuery = (x-RENDER_BUFFER < CANVAS_WIDTH/2 && y-RENDER_BUFFER < CANVAS_HEIGHT/2) ? ` OR (x > ${WORLD_WIDTH - ((CANVAS_WIDTH/2)+RENDER_BUFFER-Math.round(x))} AND y > ${WORLD_HEIGHT - ((CANVAS_HEIGHT/2)+RENDER_BUFFER-Math.round(y))})` : "";
-    const topRightCornerQuery = (x+RENDER_BUFFER > WORLD_WIDTH - (CANVAS_WIDTH/2) && y-RENDER_BUFFER < CANVAS_HEIGHT/2) ? ` OR (x < ${((CANVAS_WIDTH/2)+RENDER_BUFFER+Math.round(x)) - WORLD_WIDTH} AND y > ${WORLD_HEIGHT - ((CANVAS_HEIGHT/2)+RENDER_BUFFER-Math.round(y))})` : "";
-    const bottomLeftCornerQuery = (x-RENDER_BUFFER < CANVAS_WIDTH/2 && y+RENDER_BUFFER > WORLD_HEIGHT - (CANVAS_HEIGHT/2)) ? ` OR (x > ${WORLD_WIDTH - ((CANVAS_WIDTH/2)+RENDER_BUFFER-Math.round(x))} AND y < ${((CANVAS_HEIGHT/2)+RENDER_BUFFER+Math.round(y)) - WORLD_HEIGHT})` : "";
-    const bottomRightCornerQuery = (x+RENDER_BUFFER > WORLD_WIDTH - (CANVAS_WIDTH/2) && y+RENDER_BUFFER > WORLD_HEIGHT - (CANVAS_HEIGHT/2)) ? ` OR (x < ${((CANVAS_WIDTH/2)+RENDER_BUFFER+Math.round(x)) - WORLD_WIDTH} AND y < ${((CANVAS_HEIGHT/2)+RENDER_BUFFER+Math.round(y)) - WORLD_HEIGHT})` : "";
-
-    const baseQuery = `WHERE (${withinScreenQuery}${leftEdgeQuery}${rightEdgeQuery}${topEdgeQuery}${bottomEdgeQuery}${topLeftCornerQuery}${topRightCornerQuery}${bottomLeftCornerQuery}${bottomRightCornerQuery})`;
-    const bitQuery = "SELECT * FROM bit " + baseQuery;
-    const botQuery = "SELECT * FROM bot " + baseQuery;
-    const userQuery = "SELECT * FROM user " + baseQuery;
-
-    const handle = conn
-      .subscriptionBuilder()
-      .subscribe([bitQuery, botQuery, userQuery]);
-
-    setBitSubscription(handle);
-    bitSubscription?.unsubscribe();
-  }
-  useEffect(() => {
-    if (conn && self) {
-      subscribeToNearbyObjs(conn, self.x, self.y);
-    }
-  }, [conn, self?.x, self?.y]);
 
   useEffect(() => {
     if (connectingRef.current) return;
@@ -360,7 +343,7 @@ function App() {
           identity.toHexString()
         );
 
-        subscribeToQueries(conn, [`SELECT * FROM user WHERE identity = '${identity.toHexString()}';`]);
+        subscribeToQueries(conn, [`SELECT * FROM user WHERE identity = '${identity.toHexString()}';`, "SELECT * FROM metadata;"]);
       };
 
       const onDisconnect = () => {
@@ -384,6 +367,45 @@ function App() {
           .build()
       );
   }, []);
+
+  function subscribeToNearbyObjs(conn: DbConnection, metadata: Metadata, x: number, y: number) {
+
+    if (quriedX && quriedY && (Math.abs(quriedX-x) < RENDER_BUFFER && Math.abs(quriedY-y) < RENDER_BUFFER)) {
+      return
+    }
+
+    setQuriedX(Math.round(x));
+    setQuriedY(Math.round(y));
+  
+    const withinScreenQuery = `x < ${Math.round(x) + RENDER_BUFFER + CANVAS_WIDTH / 2} AND x > ${Math.round(x) - RENDER_BUFFER - CANVAS_WIDTH / 2} AND y < ${Math.round(y) + RENDER_BUFFER + CANVAS_HEIGHT / 2} AND y > ${Math.round(y) - RENDER_BUFFER - CANVAS_HEIGHT / 2}`
+    
+    const leftEdgeQuery = (x-RENDER_BUFFER < CANVAS_WIDTH/2) ? ` OR (x > ${metadata.worldWidth - ((CANVAS_WIDTH/2)+RENDER_BUFFER-Math.round(x))} AND (y > ${Math.round(y) - ((CANVAS_HEIGHT/2)+RENDER_BUFFER)}) AND (y < ${Math.round(y) + ((CANVAS_HEIGHT/2)+RENDER_BUFFER)}))` : "";
+    const rightEdgeQuery = (x+RENDER_BUFFER > metadata.worldWidth - (CANVAS_WIDTH/2)) ? ` OR (x < ${((CANVAS_WIDTH/2)+RENDER_BUFFER+Math.round(x)) - metadata.worldWidth} AND (y > ${Math.round(y) - ((CANVAS_HEIGHT/2)+RENDER_BUFFER)}) AND (y < ${Math.round(y) + ((CANVAS_HEIGHT/2)+RENDER_BUFFER)}))` : "";
+    const topEdgeQuery = (y-RENDER_BUFFER < CANVAS_HEIGHT/2) ? ` OR (y > ${metadata.worldHeight - ((CANVAS_HEIGHT/2)+RENDER_BUFFER-Math.round(y))} AND (x > ${Math.round(x) - ((CANVAS_WIDTH/2)+RENDER_BUFFER)}) AND (x < ${Math.round(x) + ((CANVAS_WIDTH/2)+RENDER_BUFFER)}))` : "";
+    const bottomEdgeQuery = (y+RENDER_BUFFER > metadata.worldHeight - (CANVAS_HEIGHT/2)) ? ` OR (y < ${((CANVAS_HEIGHT/2)+RENDER_BUFFER+Math.round(y)) - metadata.worldHeight} AND (x > ${Math.round(x) - ((CANVAS_WIDTH/2)+RENDER_BUFFER)}) AND (x < ${Math.round(x) + ((CANVAS_WIDTH/2)+RENDER_BUFFER)}))` : "";
+    const topLeftCornerQuery = (x-RENDER_BUFFER < CANVAS_WIDTH/2 && y-RENDER_BUFFER < CANVAS_HEIGHT/2) ? ` OR (x > ${metadata.worldWidth - ((CANVAS_WIDTH/2)+RENDER_BUFFER-Math.round(x))} AND y > ${metadata.worldHeight - ((CANVAS_HEIGHT/2)+RENDER_BUFFER-Math.round(y))})` : "";
+    const topRightCornerQuery = (x+RENDER_BUFFER > metadata.worldWidth - (CANVAS_WIDTH/2) && y-RENDER_BUFFER < CANVAS_HEIGHT/2) ? ` OR (x < ${((CANVAS_WIDTH/2)+RENDER_BUFFER+Math.round(x)) - metadata.worldWidth} AND y > ${metadata.worldHeight - ((CANVAS_HEIGHT/2)+RENDER_BUFFER-Math.round(y))})` : "";
+    const bottomLeftCornerQuery = (x-RENDER_BUFFER < CANVAS_WIDTH/2 && y+RENDER_BUFFER > metadata.worldHeight - (CANVAS_HEIGHT/2)) ? ` OR (x > ${metadata.worldWidth - ((CANVAS_WIDTH/2)+RENDER_BUFFER-Math.round(x))} AND y < ${((CANVAS_HEIGHT/2)+RENDER_BUFFER+Math.round(y)) - metadata.worldHeight})` : "";
+    const bottomRightCornerQuery = (x+RENDER_BUFFER > metadata.worldWidth - (CANVAS_WIDTH/2) && y+RENDER_BUFFER > metadata.worldHeight - (CANVAS_HEIGHT/2)) ? ` OR (x < ${((CANVAS_WIDTH/2)+RENDER_BUFFER+Math.round(x)) - metadata.worldWidth} AND y < ${((CANVAS_HEIGHT/2)+RENDER_BUFFER+Math.round(y)) - metadata.worldHeight})` : "";
+
+    const baseQuery = `WHERE (${withinScreenQuery}${leftEdgeQuery}${rightEdgeQuery}${topEdgeQuery}${bottomEdgeQuery}${topLeftCornerQuery}${topRightCornerQuery}${bottomLeftCornerQuery}${bottomRightCornerQuery})`;
+    const bitQuery = "SELECT * FROM bit " + baseQuery;
+    const botQuery = "SELECT * FROM bot " + baseQuery;
+    const userQuery = "SELECT * FROM user " + baseQuery;
+
+    const handle = conn
+      .subscriptionBuilder()
+      .subscribe([bitQuery, botQuery, userQuery]);
+
+    setBitSubscription(handle);
+    bitSubscription?.unsubscribe();
+  }
+
+  useEffect(() => {
+    if (conn && self && metadata) {
+      subscribeToNearbyObjs(conn, metadata, self.x, self.y);
+    }
+  }, [conn, metadata, self?.x, self?.y]);
 
   useEffect(() => {
     if (!conn) return;
@@ -468,7 +490,7 @@ function App() {
   };
   }, [conn]);
 
-  if (!conn || !connected || !identity) {
+  if (!conn || !connected || !identity || !metadata) {
     return (
       <div className="App">
         <h1>Connecting...</h1>
@@ -478,7 +500,7 @@ function App() {
 
   return (
     <div className="App">
-      <Canvas draw={draw} draw_props={{ users, bits, bots, identity }} />
+      <Canvas draw={draw} draw_props={{ metadata, users, bits, bots, identity }} />
     </div>
   );
 }

@@ -35,6 +35,12 @@ const ORIBITING_BOT_USER_SPEED_RATIO_THRESHOLD: f32 = 0.1;
 const UPDATE_OFFLINE_PLAYERS: bool = true;
 
 
+#[table(name = metadata, public)]
+pub struct Metadata {
+    world_height: i32,
+    world_width: i32,
+}
+
 #[derive(SpacetimeType, Clone, Debug, PartialEq)]
 pub struct Color {
     pub r: i32,
@@ -478,6 +484,10 @@ pub fn tick(ctx: &ReducerContext, tick_schedule: TickSchedule) -> Result<(), Str
 #[reducer(init)]
 pub fn init(ctx: &ReducerContext) -> Result<(), String> {
     spawn_bots(ctx, STARTING_BOTS);
+    ctx.db.metadata().insert(Metadata {
+        world_height: WORLD_HEIGHT,
+        world_width: WORLD_WIDTH,
+    });
     ctx.db.tick_schedule().insert(TickSchedule {
         id: 0,
         scheduled_at: ScheduleAt::Time(ctx.timestamp),
