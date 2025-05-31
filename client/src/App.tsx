@@ -350,8 +350,8 @@ function App() {
   const [quriedX, setQuriedX] = useState<number | null>(null);
   const [quriedY, setQuriedY] = useState<number | null>(null);
   const [bitSubscription, setBitSubscription] = useState<any | null>(null);
-  const canvasWidth = Math.round(((self?.size ?? 1) * 100) / 2) * 2;
-  const canvasHeight = Math.round(((self?.size ?? 1) * 100) / 2) * 2;
+  const canvasWidth = Math.min(Math.round(((self?.size ?? 1) * 100) / 2) * 2, 1500);
+  const canvasHeight = Math.min(Math.round(((self?.size ?? 1) * 100) / 2) * 2, 1500);
   const renderBuffer = 100;
 
   const [animatedWidth, setAnimatedWidth] = useState(400);
@@ -562,7 +562,7 @@ function App() {
 
   return (
     <div className="App">
-      <Canvas key={`${animatedWidth}x${animatedHeight}`} draw={draw} draw_props={{ metadata, canvasWidth: animatedWidth, canvasHeight: animatedHeight, renderBuffer, users, bits, bots, identity }} />
+      <Canvas key={`${canvasWidth}x${canvasHeight}`} draw={draw} draw_props={{ metadata, canvasWidth: animatedWidth, canvasHeight: animatedHeight, renderBuffer, users, bits, bots, identity }} />
     </div>
   );
 }

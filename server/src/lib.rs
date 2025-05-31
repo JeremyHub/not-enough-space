@@ -85,7 +85,7 @@ pub struct Bot {
 }
 
 pub fn get_user_size(health: f32) -> f32 {
-    return 4.0 * (health.ln() * (11.0 / 34.0) + 1.0);
+    return (health/10.0) + 5.0;
 }
 
 #[table(name = bit, public)]
