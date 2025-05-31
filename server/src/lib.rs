@@ -71,8 +71,7 @@ pub struct Bot {
 }
 
 pub fn get_user_size(health: f32) -> f32 {
-    // 4(ln((11x)/34)+1)
-    return ((50.0*(health.powi(2)))+health)/((health*health)+200000.0) + 10.0;
+    return 4.0 * (health.ln() * (11.0 / 34.0) + 1.0);
 }
 
 #[table(name = bit, public)]
@@ -338,12 +337,15 @@ fn update_users(ctx: &ReducerContext) {
     // handle user:user and user:bot collisions
     for user in ctx.db.user().iter() {
         if user.online || UPDATE_OFFLINE_PLAYERS {
-            for bot in ctx.db.bot().x().filter((user.x.round() as i32)-((user.size+MAX_BOT_SIZE as f32).round() as i32)..(user.x.round() as i32)+((user.size+MAX_BOT_SIZE as f32).round() as i32)) {
-                if ((user.x - bot.x as f32).powi(2) + (user.y - bot.y as f32).powi(2)).sqrt() <= bot.size + user.size {
-                    ctx.db.bot().bot_id().update(Bot {
-                        orbiting: Some(user.identity),
-                        ..bot
-                    });
+            let total_bot_size_oribiting = ctx.db.bot().iter().filter(|b| b.orbiting == Some(user.identity)).map(|b| b.size).sum::<f32>();
+            if total_bot_size_oribiting < user.size {
+                for bot in ctx.db.bot().x().filter((user.x.round() as i32)-((user.size+MAX_BOT_SIZE as f32).round() as i32)..(user.x.round() as i32)+((user.size+MAX_BOT_SIZE as f32).round() as i32)) {
+                    if ((user.x - bot.x as f32).powi(2) + (user.y - bot.y as f32).powi(2)).sqrt() <= bot.size + user.size {
+                        ctx.db.bot().bot_id().update(Bot {
+                            orbiting: Some(user.identity),
+                            ..bot
+                        });
+                    }
                 }
             }
         }
