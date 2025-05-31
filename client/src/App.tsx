@@ -354,6 +354,38 @@ function App() {
   const canvasHeight = Math.round(((self?.size ?? 1) * 100) / 2) * 2;
   const renderBuffer = Math.max(Math.round(((self?.size ?? 1) * 10) / 100) * 10, 100);
 
+  const [animatedWidth, setAnimatedWidth] = useState(400);
+  const [animatedHeight, setAnimatedHeight] = useState(400);
+
+    useEffect(() => {
+    let raf: number;
+    const growSpeed = 1;
+
+    function animate() {
+      setAnimatedWidth(prev => {
+        if (prev < canvasWidth) {
+          return Math.min(prev + growSpeed, canvasWidth);
+        }
+        return prev;
+      });
+      setAnimatedHeight(prev => {
+        if (prev < canvasHeight) {
+          return Math.min(prev + growSpeed, canvasHeight);
+        }
+        return prev;
+      });
+      if (animatedWidth < canvasWidth || animatedHeight < canvasHeight) {
+        raf = requestAnimationFrame(animate);
+      }
+    }
+
+    setAnimatedWidth(animatedWidth);
+    setAnimatedHeight(animatedHeight);
+    raf = requestAnimationFrame(animate);
+
+    return () => cancelAnimationFrame(raf);
+  }, [canvasWidth, canvasHeight]);
+
   useEffect(() => {
     if (connectingRef.current) return;
     connectingRef.current = true;
@@ -530,7 +562,7 @@ function App() {
 
   return (
     <div className="App">
-      <Canvas key={`${canvasWidth}x${canvasHeight}`} draw={draw} draw_props={{ metadata, canvasWidth, canvasHeight, renderBuffer, users, bits, bots, identity }} />
+      <Canvas key={`${animatedWidth}x${animatedHeight}`} draw={draw} draw_props={{ metadata, canvasWidth: animatedWidth, canvasHeight: animatedHeight, renderBuffer, users, bits, bots, identity }} />
     </div>
   );
 }
