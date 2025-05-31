@@ -446,45 +446,26 @@ function App() {
       updateDirection();
     };
     
-    // TODO: mouse events cause lag because the direction changes too often
+  const handleBlur = () => {
+    pressed.clear();
+    updateDirection();
+  };
 
-    // const handleMouseDown = (e: MouseEvent) => {
-    //   mouseDown = true;
-    //   const rect = (e.target as HTMLCanvasElement).getBoundingClientRect();
-    //   mouseX = e.clientX - rect.left;
-    //   mouseY = e.clientY - rect.top;
-    //   updateDirection();
-    // };
+  const handleContextMenu = (e: MouseEvent) => {
+    e.preventDefault();
+  };
 
-    // const handleMouseUp = () => {
-    //   mouseDown = false;
-    //   updateDirection();
-    // };
+  window.addEventListener('keydown', handleKeyDown);
+  window.addEventListener('keyup', handleKeyUp);
+  window.addEventListener('blur', handleBlur);
+  window.addEventListener('contextmenu', handleContextMenu);
 
-    // const handleMouseMove = (e: MouseEvent) => {
-    //   if (!mouseDown) return;
-    //   const rect = (e.target as HTMLCanvasElement).getBoundingClientRect();
-    //   mouseX = e.clientX - rect.left;
-    //   mouseY = e.clientY - rect.top;
-    //   updateDirection();
-    // };
-
-    window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('keyup', handleKeyUp);
-
-    // window.addEventListener('mousedown', (e) => handleMouseDown(e as MouseEvent));
-    // window.addEventListener('mouseup', handleMouseUp);
-    // window.addEventListener('mouseleave', handleMouseUp);
-    // window.addEventListener('mousemove', (e) => handleMouseMove(e as MouseEvent));
-
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('keyup', handleKeyUp);
-      // window.removeEventListener('mousedown', (e) => handleMouseDown(e as MouseEvent));
-      // window.removeEventListener('mouseup', handleMouseUp);
-      // window.removeEventListener('mouseleave', handleMouseUp);
-      // window.removeEventListener('mousemove', (e) => handleMouseMove(e as MouseEvent));
-    };
+  return () => {
+    window.removeEventListener('keydown', handleKeyDown);
+    window.removeEventListener('keyup', handleKeyUp);
+    window.removeEventListener('blur', handleBlur);
+    window.removeEventListener('contextmenu', handleContextMenu);
+  };
   }, [conn]);
 
   if (!conn || !connected || !identity) {
