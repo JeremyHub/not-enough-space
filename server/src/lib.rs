@@ -30,7 +30,7 @@ const ORBITING_BOT_SIZE_DIVISOR: f32 = 2.0;
 const ORBITING_BOT_SIZE_DIVISOR_MIN: i32 = 3;
 const ORBITING_BOT_SIZE_DIVISOR_MAX: i32 = 6;
 const ORIBTING_BOT_USER_SPEED_RATIO_ADD: f32 = 0.85;
-const ORIBITING_BOT_MIN_USER_SPEED_RATIO: f32 = 0.1;
+const ORIBITING_BOT_USER_SPEED_RATIO_THRESHOLD: f32 = 0.1;
 
 const UPDATE_OFFLINE_PLAYERS: bool = true;
 
@@ -236,8 +236,8 @@ fn update_bot_directions(ctx: &ReducerContext) {
                     ctx.db.bot().bot_id().update(Bot {
                         dir_vec_x: norm_x + perp_x * tangential,
                         dir_vec_y: norm_y + perp_y * tangential,
-                        dx: if user_speed_ratio < ORIBITING_BOT_MIN_USER_SPEED_RATIO { new_dx } else { bot.dx },
-                        dy: if user_speed_ratio < 0.1 { new_dy } else { bot.dy },
+                        dx: if user_speed_ratio < ORIBITING_BOT_USER_SPEED_RATIO_THRESHOLD { new_dx } else { bot.dx },
+                        dy: if user_speed_ratio < ORIBITING_BOT_USER_SPEED_RATIO_THRESHOLD { new_dy } else { bot.dy },
                         ..bot
                     });
                     continue;
