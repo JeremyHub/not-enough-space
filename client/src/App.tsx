@@ -3,10 +3,6 @@ import './App.css';
 import { Bit, Bot, Color, DbConnection, ErrorContext, EventContext, Metadata, User } from './module_bindings';
 import { Identity } from '@clockworklabs/spacetimedb-sdk';
 
-const CANVAS_WIDTH = 1000;
-const CANVAS_HEIGHT = 1000;
-const RENDER_BUFFER = 100;
-
 function useMetadata(conn: DbConnection | null): Metadata | null {
   const [metadata, setMetadata] = useState<Metadata | null>(null);
 
@@ -121,6 +117,9 @@ function useBits(conn: DbConnection | null): Array<Bit> {
 
 type DrawProps = {
   metadata: Metadata,
+  canvasWidth: number,
+  canvasHeight: number,
+  renderBuffer: number,
   users: Map<string, User>;
   bits: Array<Bit>;
   bots: Array<Bot>;
@@ -138,6 +137,9 @@ function renderCircle(ctx: CanvasRenderingContext2D, size: number, x: number, y:
 function renderWithWrap(
   renderFn: (x: number, y: number) => void,
   metadata: Metadata,
+  canvasWidth: number,
+  canvasHeight: number,
+  renderBuffer: number,
   self: User,
   x: number,
   y: number,
@@ -145,30 +147,30 @@ function renderWithWrap(
   let new_x: number = x;
   let new_y: number = y;
   // Check if you are near left edge
-  if (self.x < CANVAS_WIDTH/2) {
+  if (self.x < canvasWidth/2) {
     // check if thing we are rendering is past left edge
-    if (x > CANVAS_WIDTH+RENDER_BUFFER) {
+    if (x > canvasWidth+renderBuffer) {
       new_x = x-metadata.worldWidth;
     }
   }
   // Check if you are near right edge
-  if (self.x > metadata.worldWidth - CANVAS_WIDTH / 2) {
+  if (self.x > metadata.worldWidth - canvasWidth / 2) {
     // check if thing we are rendering is past right edge
-    if (x < -RENDER_BUFFER) {
+    if (x < -renderBuffer) {
       new_x = x + metadata.worldWidth;
     }
   }
   // Check if you are near top edge
-  if (self.y < CANVAS_HEIGHT / 2) {
+  if (self.y < canvasHeight / 2) {
     // check if thing we are rendering is past top edge
-    if (y > CANVAS_HEIGHT + RENDER_BUFFER) {
+    if (y > canvasHeight + renderBuffer) {
       new_y = y - metadata.worldHeight;
     }
   }
   // Check if you are near bottom edge
-  if (self.y > metadata.worldHeight - CANVAS_HEIGHT / 2) {
+  if (self.y > metadata.worldHeight - canvasHeight / 2) {
     // check if thing we are rendering is past bottom edge
-    if (y < -RENDER_BUFFER) {
+    if (y < -renderBuffer) {
       new_y = y + metadata.worldHeight;
     }
   }
@@ -178,7 +180,7 @@ function renderWithWrap(
 }
 
 const draw = (ctx: CanvasRenderingContext2D | null, props: DrawProps) => {
-  const { metadata, users, bits, bots, identity } = props;
+  const { metadata, canvasWidth, canvasHeight, renderBuffer, users, bits, bots, identity } = props;
   if (!ctx) return;
 
   ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
@@ -191,40 +193,40 @@ const draw = (ctx: CanvasRenderingContext2D | null, props: DrawProps) => {
   ctx.strokeStyle = 'rgba(200,200,200,0.3)';
   ctx.lineWidth = 0.08;
 
-  const worldLeft = self.x - CANVAS_WIDTH / 2;
-  const worldTop = self.y - CANVAS_HEIGHT / 2;
+  const worldLeft = self.x - canvasWidth / 2;
+  const worldTop = self.y - canvasHeight / 2;
 
   let firstGridX = Math.floor(worldLeft / GRID_SIZE) * GRID_SIZE;
   for (
     let x = firstGridX;
-    x < worldLeft + CANVAS_WIDTH;
+    x < worldLeft + canvasWidth;
     x += GRID_SIZE
   ) {
     const screenX = x - worldLeft;
     ctx.beginPath();
     ctx.moveTo(screenX, 0);
-    ctx.lineTo(screenX, CANVAS_HEIGHT);
+    ctx.lineTo(screenX, canvasHeight);
     ctx.stroke();
   }
 
   let firstGridY = Math.floor(worldTop / GRID_SIZE) * GRID_SIZE;
   for (
     let y = firstGridY;
-    y < worldTop + CANVAS_HEIGHT;
+    y < worldTop + canvasHeight;
     y += GRID_SIZE
   ) {
     const screenY = y - worldTop;
     ctx.beginPath();
     ctx.moveTo(0, screenY);
-    ctx.lineTo(CANVAS_WIDTH, screenY);
+    ctx.lineTo(canvasWidth, screenY);
     ctx.stroke();
   }
 
-  renderCircle(ctx, self.size, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2, self.color);
+  renderCircle(ctx, self.size, canvasWidth / 2, canvasHeight / 2, self.color);
 
   const toScreen = (obj: { x: number; y: number }) => ({
-    x: obj.x - self.x + CANVAS_WIDTH / 2,
-    y: obj.y - self.y + CANVAS_HEIGHT / 2,
+    x: obj.x - self.x + canvasWidth / 2,
+    y: obj.y - self.y + canvasHeight / 2,
   });
 
   users.forEach(user => {
@@ -233,6 +235,9 @@ const draw = (ctx: CanvasRenderingContext2D | null, props: DrawProps) => {
       renderWithWrap(
         (px, py) => renderCircle(ctx, user.size, px, py, user.color),
         metadata,
+        canvasWidth,
+        canvasHeight,
+        renderBuffer,
         self,
         x,
         y,
@@ -245,6 +250,9 @@ const draw = (ctx: CanvasRenderingContext2D | null, props: DrawProps) => {
     renderWithWrap(
       (px, py) => renderCircle(ctx, bot.size, px, py, bot.color),
       metadata,
+      canvasWidth,
+      canvasHeight,
+      renderBuffer,
       self,
       x,
       y,
@@ -256,6 +264,9 @@ const draw = (ctx: CanvasRenderingContext2D | null, props: DrawProps) => {
     renderWithWrap(
       (px, py) => renderCircle(ctx, bit.size, px, py, bit.color),
       metadata,
+      canvasWidth,
+      canvasHeight,
+      renderBuffer,
       self,
       x,
       y,
@@ -296,8 +307,8 @@ const Canvas = (props: { draw: typeof draw; draw_props: DrawProps }) => {
   return (
     <canvas
       ref={canvasRef}
-      width={CANVAS_WIDTH}
-      height={CANVAS_HEIGHT}
+      width={draw_props.canvasWidth}
+      height={draw_props.canvasHeight}
       {...rest}
       className="nes-canvas"
     />
@@ -317,6 +328,9 @@ function App() {
   const [quriedX, setQuriedX] = useState<number | null>(null);
   const [quriedY, setQuriedY] = useState<number | null>(null);
   const [bitSubscription, setBitSubscription] = useState<any | null>(null);
+  const canvasWidth = Math.round(((self?.size ?? 1) * 100) / 2) * 2;
+  const canvasHeight = Math.round(((self?.size ?? 1) * 100) / 2) * 2;
+  const renderBuffer = Math.max(Math.round(((self?.size ?? 1) * 10) / 100) * 10, 50);
 
   useEffect(() => {
     if (connectingRef.current) return;
@@ -370,23 +384,23 @@ function App() {
 
   function subscribeToNearbyObjs(conn: DbConnection, metadata: Metadata, x: number, y: number) {
 
-    if (quriedX && quriedY && (Math.abs(quriedX-x) < RENDER_BUFFER && Math.abs(quriedY-y) < RENDER_BUFFER)) {
+    if (quriedX && quriedY && (Math.abs(quriedX-x) < renderBuffer && Math.abs(quriedY-y) < renderBuffer)) {
       return
     }
 
     setQuriedX(Math.round(x));
     setQuriedY(Math.round(y));
   
-    const withinScreenQuery = `x < ${Math.round(x) + RENDER_BUFFER + CANVAS_WIDTH / 2} AND x > ${Math.round(x) - RENDER_BUFFER - CANVAS_WIDTH / 2} AND y < ${Math.round(y) + RENDER_BUFFER + CANVAS_HEIGHT / 2} AND y > ${Math.round(y) - RENDER_BUFFER - CANVAS_HEIGHT / 2}`
+    const withinScreenQuery = `x < ${Math.round(x) + renderBuffer + canvasWidth / 2} AND x > ${Math.round(x) - renderBuffer - canvasWidth / 2} AND y < ${Math.round(y) + renderBuffer + canvasHeight / 2} AND y > ${Math.round(y) - renderBuffer - canvasHeight / 2}`
     
-    const leftEdgeQuery = (x-RENDER_BUFFER < CANVAS_WIDTH/2) ? ` OR (x > ${metadata.worldWidth - ((CANVAS_WIDTH/2)+RENDER_BUFFER-Math.round(x))} AND (y > ${Math.round(y) - ((CANVAS_HEIGHT/2)+RENDER_BUFFER)}) AND (y < ${Math.round(y) + ((CANVAS_HEIGHT/2)+RENDER_BUFFER)}))` : "";
-    const rightEdgeQuery = (x+RENDER_BUFFER > metadata.worldWidth - (CANVAS_WIDTH/2)) ? ` OR (x < ${((CANVAS_WIDTH/2)+RENDER_BUFFER+Math.round(x)) - metadata.worldWidth} AND (y > ${Math.round(y) - ((CANVAS_HEIGHT/2)+RENDER_BUFFER)}) AND (y < ${Math.round(y) + ((CANVAS_HEIGHT/2)+RENDER_BUFFER)}))` : "";
-    const topEdgeQuery = (y-RENDER_BUFFER < CANVAS_HEIGHT/2) ? ` OR (y > ${metadata.worldHeight - ((CANVAS_HEIGHT/2)+RENDER_BUFFER-Math.round(y))} AND (x > ${Math.round(x) - ((CANVAS_WIDTH/2)+RENDER_BUFFER)}) AND (x < ${Math.round(x) + ((CANVAS_WIDTH/2)+RENDER_BUFFER)}))` : "";
-    const bottomEdgeQuery = (y+RENDER_BUFFER > metadata.worldHeight - (CANVAS_HEIGHT/2)) ? ` OR (y < ${((CANVAS_HEIGHT/2)+RENDER_BUFFER+Math.round(y)) - metadata.worldHeight} AND (x > ${Math.round(x) - ((CANVAS_WIDTH/2)+RENDER_BUFFER)}) AND (x < ${Math.round(x) + ((CANVAS_WIDTH/2)+RENDER_BUFFER)}))` : "";
-    const topLeftCornerQuery = (x-RENDER_BUFFER < CANVAS_WIDTH/2 && y-RENDER_BUFFER < CANVAS_HEIGHT/2) ? ` OR (x > ${metadata.worldWidth - ((CANVAS_WIDTH/2)+RENDER_BUFFER-Math.round(x))} AND y > ${metadata.worldHeight - ((CANVAS_HEIGHT/2)+RENDER_BUFFER-Math.round(y))})` : "";
-    const topRightCornerQuery = (x+RENDER_BUFFER > metadata.worldWidth - (CANVAS_WIDTH/2) && y-RENDER_BUFFER < CANVAS_HEIGHT/2) ? ` OR (x < ${((CANVAS_WIDTH/2)+RENDER_BUFFER+Math.round(x)) - metadata.worldWidth} AND y > ${metadata.worldHeight - ((CANVAS_HEIGHT/2)+RENDER_BUFFER-Math.round(y))})` : "";
-    const bottomLeftCornerQuery = (x-RENDER_BUFFER < CANVAS_WIDTH/2 && y+RENDER_BUFFER > metadata.worldHeight - (CANVAS_HEIGHT/2)) ? ` OR (x > ${metadata.worldWidth - ((CANVAS_WIDTH/2)+RENDER_BUFFER-Math.round(x))} AND y < ${((CANVAS_HEIGHT/2)+RENDER_BUFFER+Math.round(y)) - metadata.worldHeight})` : "";
-    const bottomRightCornerQuery = (x+RENDER_BUFFER > metadata.worldWidth - (CANVAS_WIDTH/2) && y+RENDER_BUFFER > metadata.worldHeight - (CANVAS_HEIGHT/2)) ? ` OR (x < ${((CANVAS_WIDTH/2)+RENDER_BUFFER+Math.round(x)) - metadata.worldWidth} AND y < ${((CANVAS_HEIGHT/2)+RENDER_BUFFER+Math.round(y)) - metadata.worldHeight})` : "";
+    const leftEdgeQuery = (x-renderBuffer < canvasWidth/2) ? ` OR (x > ${metadata.worldWidth - ((canvasWidth/2)+renderBuffer-Math.round(x))} AND (y > ${Math.round(y) - ((canvasHeight/2)+renderBuffer)}) AND (y < ${Math.round(y) + ((canvasHeight/2)+renderBuffer)}))` : "";
+    const rightEdgeQuery = (x+renderBuffer > metadata.worldWidth - (canvasWidth/2)) ? ` OR (x < ${((canvasWidth/2)+renderBuffer+Math.round(x)) - metadata.worldWidth} AND (y > ${Math.round(y) - ((canvasHeight/2)+renderBuffer)}) AND (y < ${Math.round(y) + ((canvasHeight/2)+renderBuffer)}))` : "";
+    const topEdgeQuery = (y-renderBuffer < canvasHeight/2) ? ` OR (y > ${metadata.worldHeight - ((canvasHeight/2)+renderBuffer-Math.round(y))} AND (x > ${Math.round(x) - ((canvasWidth/2)+renderBuffer)}) AND (x < ${Math.round(x) + ((canvasWidth/2)+renderBuffer)}))` : "";
+    const bottomEdgeQuery = (y+renderBuffer > metadata.worldHeight - (canvasHeight/2)) ? ` OR (y < ${((canvasHeight/2)+renderBuffer+Math.round(y)) - metadata.worldHeight} AND (x > ${Math.round(x) - ((canvasWidth/2)+renderBuffer)}) AND (x < ${Math.round(x) + ((canvasWidth/2)+renderBuffer)}))` : "";
+    const topLeftCornerQuery = (x-renderBuffer < canvasWidth/2 && y-renderBuffer < canvasHeight/2) ? ` OR (x > ${metadata.worldWidth - ((canvasWidth/2)+renderBuffer-Math.round(x))} AND y > ${metadata.worldHeight - ((canvasHeight/2)+renderBuffer-Math.round(y))})` : "";
+    const topRightCornerQuery = (x+renderBuffer > metadata.worldWidth - (canvasWidth/2) && y-renderBuffer < canvasHeight/2) ? ` OR (x < ${((canvasWidth/2)+renderBuffer+Math.round(x)) - metadata.worldWidth} AND y > ${metadata.worldHeight - ((canvasHeight/2)+renderBuffer-Math.round(y))})` : "";
+    const bottomLeftCornerQuery = (x-renderBuffer < canvasWidth/2 && y+renderBuffer > metadata.worldHeight - (canvasHeight/2)) ? ` OR (x > ${metadata.worldWidth - ((canvasWidth/2)+renderBuffer-Math.round(x))} AND y < ${((canvasHeight/2)+renderBuffer+Math.round(y)) - metadata.worldHeight})` : "";
+    const bottomRightCornerQuery = (x+renderBuffer > metadata.worldWidth - (canvasWidth/2) && y+renderBuffer > metadata.worldHeight - (canvasHeight/2)) ? ` OR (x < ${((canvasWidth/2)+renderBuffer+Math.round(x)) - metadata.worldWidth} AND y < ${((canvasHeight/2)+renderBuffer+Math.round(y)) - metadata.worldHeight})` : "";
 
     const baseQuery = `WHERE (${withinScreenQuery}${leftEdgeQuery}${rightEdgeQuery}${topEdgeQuery}${bottomEdgeQuery}${topLeftCornerQuery}${topRightCornerQuery}${bottomLeftCornerQuery}${bottomRightCornerQuery})`;
     const bitQuery = "SELECT * FROM bit " + baseQuery;
@@ -420,8 +434,8 @@ function App() {
 
     const getDirection = (): { dirVecX: number, dirVecY: number } => {
       if (mouseDown) {
-        const centerX = CANVAS_WIDTH / 2;
-        const centerY = CANVAS_HEIGHT / 2;
+        const centerX = canvasWidth / 2;
+        const centerY = canvasHeight / 2;
         const dx = mouseX - centerX;
         const dy = mouseY - centerY;
         const len = Math.sqrt(dx * dx + dy * dy);
@@ -473,24 +487,18 @@ function App() {
     updateDirection();
   };
 
-  const handleContextMenu = (e: MouseEvent) => {
-    e.preventDefault();
-  };
-
   window.addEventListener('keydown', handleKeyDown);
   window.addEventListener('keyup', handleKeyUp);
   window.addEventListener('blur', handleBlur);
-  window.addEventListener('contextmenu', handleContextMenu);
 
   return () => {
     window.removeEventListener('keydown', handleKeyDown);
     window.removeEventListener('keyup', handleKeyUp);
     window.removeEventListener('blur', handleBlur);
-    window.removeEventListener('contextmenu', handleContextMenu);
   };
   }, [conn]);
 
-  if (!conn || !connected || !identity || !metadata) {
+  if (!conn || !connected || !identity || !metadata || !self) {
     return (
       <div className="App">
         <h1>Connecting...</h1>
@@ -500,7 +508,7 @@ function App() {
 
   return (
     <div className="App">
-      <Canvas draw={draw} draw_props={{ metadata, users, bits, bots, identity }} />
+      <Canvas draw={draw} draw_props={{ metadata, canvasWidth, canvasHeight, renderBuffer, users, bits, bots, identity }} />
     </div>
   );
 }

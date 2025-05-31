@@ -1,6 +1,5 @@
 use spacetimedb::{rand, reducer, table, Identity, ReducerContext, ScheduleAt, SpacetimeType, Table, TimeDuration};
 use spacetimedb::rand::Rng;
-// use rand::Rng;
 
 const WORLD_WIDTH: i32 = 10000;
 const WORLD_HEIGHT: i32 = 10000;
@@ -236,7 +235,6 @@ fn update_bot_directions(ctx: &ReducerContext) {
                     let perp_y = norm_x;
                     let tangential = TANGENTIAL_ORBIT_STRENGTH/((bot.size/ORBITING_BOT_SIZE_DIVISOR)+ctx.rng().gen_range(ORBITING_BOT_SIZE_DIVISOR_MIN..=ORBITING_BOT_SIZE_DIVISOR_MAX) as f32);
                     let user_speed_ratio = (user.dx.powi(2) + user.dy.powi(2)).sqrt()/(USER_ACCELERATION/VELOCITY_MULTIPLIER);
-                    log::info!("{}", user_speed_ratio);
                     let new_dx = bot.dx * (user_speed_ratio+ORIBTING_BOT_USER_SPEED_RATIO_ADD);
                     let new_dy = bot.dy * (user_speed_ratio+ORIBTING_BOT_USER_SPEED_RATIO_ADD);
                     ctx.db.bot().bot_id().update(Bot {
