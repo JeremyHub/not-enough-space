@@ -224,12 +224,10 @@ fn update_bot_directions(ctx: &ReducerContext) {
             ..bot
         });
     }
-    // TODO: does not take into account wrapping around edges
     for bot in ctx.db.bot().iter() {
         if let Some(user_id) = bot.orbiting {
             let user = ctx.db.user().identity().find(user_id);
             if let Some(user) = user {
-                // Calculate shortest vector considering wrapping
                 let mut dir_vec_x = user.x - bot.x as f32;
                 let mut dir_vec_y = user.y - bot.y as f32;
 
