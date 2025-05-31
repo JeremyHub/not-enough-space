@@ -146,36 +146,27 @@ function renderWithWrap(
 ) {
   let new_x: number = x;
   let new_y: number = y;
-  // Check if you are near left edge
   if (self.x < canvasWidth/2) {
-    // check if thing we are rendering is past left edge
     if (x > canvasWidth+renderBuffer) {
       new_x = x-metadata.worldWidth;
     }
   }
-  // Check if you are near right edge
   if (self.x > metadata.worldWidth - canvasWidth / 2) {
-    // check if thing we are rendering is past right edge
     if (x < -renderBuffer) {
       new_x = x + metadata.worldWidth;
     }
   }
-  // Check if you are near top edge
   if (self.y < canvasHeight / 2) {
-    // check if thing we are rendering is past top edge
     if (y > canvasHeight + renderBuffer) {
       new_y = y - metadata.worldHeight;
     }
   }
-  // Check if you are near bottom edge
   if (self.y > metadata.worldHeight - canvasHeight / 2) {
-    // check if thing we are rendering is past bottom edge
     if (y < -renderBuffer) {
       new_y = y + metadata.worldHeight;
     }
   }
 
-  // Render the object at the new coordinates
   renderFn(new_x, new_y);
 }
 
@@ -221,6 +212,37 @@ const draw = (ctx: CanvasRenderingContext2D | null, props: DrawProps) => {
     ctx.lineTo(canvasWidth, screenY);
     ctx.stroke();
   }
+
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,0,0,0.7)';
+  ctx.lineWidth = 2;
+
+  const leftBorderX = metadata.worldWidth > 0 ? 0 - worldLeft : 0;
+  const rightBorderX = metadata.worldWidth > 0 ? metadata.worldWidth - worldLeft : canvasWidth;
+  const topBorderY = metadata.worldHeight > 0 ? 0 - worldTop : 0;
+  const bottomBorderY = metadata.worldHeight > 0 ? metadata.worldHeight - worldTop : canvasHeight;
+
+  ctx.beginPath();
+  ctx.moveTo(leftBorderX, 0);
+  ctx.lineTo(leftBorderX, canvasHeight);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(rightBorderX, 0);
+  ctx.lineTo(rightBorderX, canvasHeight);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(0, topBorderY);
+  ctx.lineTo(canvasWidth, topBorderY);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(0, bottomBorderY);
+  ctx.lineTo(canvasWidth, bottomBorderY);
+  ctx.stroke();
+
+  ctx.restore();
 
   renderCircle(ctx, self.size, canvasWidth / 2, canvasHeight / 2, self.color);
 
