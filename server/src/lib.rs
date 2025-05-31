@@ -22,9 +22,10 @@ const BITS_SPAWNED_PER_TICK: f64 = ((1.0/AREA_PER_BIT_SPAWN))*(WORLD_HEIGHT as f
 const STARTING_BOTS: u64 = 5000;
 const MAX_BOT_SIZE: i32 = 3;
 const BOT_DRIFT: f32 = 0.5;
-const BOT_ACCELERATION: f32 = 4.0;
+const BOT_ACCELERATION: f32 = 2.0;
 const BOT_ACCELERATION_ORBITING: f32 = 6.0;
 const TANGENTIAL_ORBIT_STRENGTH: f32 = 5.0;
+const PORTION_NON_ORBITING_BOTS_DIRECTION_UPDATED_PER_TICK: f64 = 0.005;
 
 const UPDATE_OFFLINE_PLAYERS: bool = true;
 
@@ -200,7 +201,9 @@ fn update_bot_directions(ctx: &ReducerContext) {
     let mut rng = ctx.rng();
     non_orbiting_bots.as_mut_slice().shuffle(&mut rng);
 
-    for bot in non_orbiting_bots {
+    let num_to_update = ((non_orbiting_bots.len() as f64) * PORTION_NON_ORBITING_BOTS_DIRECTION_UPDATED_PER_TICK)
+        .ceil() as usize;
+    for bot in non_orbiting_bots.into_iter().take(num_to_update) {
         ctx.db.bot().bot_id().update(Bot {
             dir_vec_x: ((ctx.rng().gen_range(0..=100) as f32 / 100.0) * 2.0) - BOT_DRIFT,
             dir_vec_y: ((ctx.rng().gen_range(0..=100) as f32 / 100.0) * 2.0) - BOT_DRIFT,
