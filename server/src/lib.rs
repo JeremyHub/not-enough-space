@@ -1,5 +1,6 @@
-use spacetimedb::{table, reducer, Table, ReducerContext, Identity, TimeDuration, ScheduleAt, SpacetimeType};
+use spacetimedb::{rand, reducer, table, Identity, ReducerContext, ScheduleAt, SpacetimeType, Table, TimeDuration};
 use spacetimedb::rand::Rng;
+// use rand::Rng;
 
 const WORLD_WIDTH: i32 = 10000;
 const WORLD_HEIGHT: i32 = 10000;
@@ -19,7 +20,6 @@ const AREA_PER_BIT_SPAWN: f64 = 36000.0;
 const BITS_SPAWNED_PER_TICK: f64 = ((1.0/AREA_PER_BIT_SPAWN))*(WORLD_HEIGHT as f64*WORLD_WIDTH as f64);
 
 const STARTING_BOTS: u64 = 5000;
-const NUM_BOTS_UPDATE_DIRECTION_PER_TICK: u64 = STARTING_BOTS/10;
 const MAX_BOT_SIZE: i32 = 3;
 const BOT_DRIFT: f32 = 0.5;
 const BOT_ACCELERATION: f32 = 4.0;
@@ -69,6 +69,7 @@ pub struct Bot {
 }
 
 pub fn get_user_size(health: f32) -> f32 {
+    // 4(ln((11x)/34)+1)
     return ((50.0*(health.powi(2)))+health)/((health*health)+200000.0) + 10.0;
 }
 
@@ -192,34 +193,35 @@ fn spawn_bots(ctx: &ReducerContext, num_bots: u64) {
     }
 }
 
-fn update_bot_directions(ctx: &ReducerContext, bots_to_update: u64) {
-    let total_bots = ctx.db.bot().iter().filter(|b| b.orbiting.is_none() ).count() as u64;
-    if total_bots == 0 { return; }
-    for _ in 0..bots_to_update.min(total_bots) {
-        let idx = ctx.rng().gen_range(0..total_bots);
-        let bot = ctx.db.bot().bot_id().find(idx);
-        if let Some(bot_ref) = bot.as_ref() {
-            if let Some(user_id) = bot_ref.orbiting {
-                let user = ctx.db.user().identity().find(user_id);
-                if let Some(user) = user {
-                    let dir_vec_x = user.x - bot_ref.x as f32;
-                    let dir_vec_y = user.y - bot_ref.y as f32;
-                    let dir_length = (dir_vec_x.powi(2) + dir_vec_y.powi(2)).sqrt();
-                    if dir_length > 0.0 {
-                        ctx.db.bot().bot_id().update(Bot {
-                            dir_vec_x: (dir_vec_x / dir_length),
-                            dir_vec_y: (dir_vec_y / dir_length),
-                            ..bot.expect("cuzijustfuckingcheckeditbruhread")
-                        });
-                        continue;
-                    }
+fn update_bot_directions(ctx: &ReducerContext) {
+    let mut non_orbiting_bots: Vec<_> = ctx.db.bot().iter().filter(|b| b.orbiting.is_none()).collect();
+    use rand::seq::SliceRandom;
+    let mut rng = ctx.rng();
+    non_orbiting_bots.as_mut_slice().shuffle(&mut rng);
+
+    for bot in non_orbiting_bots {
+        ctx.db.bot().bot_id().update(Bot {
+            dir_vec_x: ((ctx.rng().gen_range(0..=100) as f32 / 100.0) * 2.0) - BOT_DRIFT,
+            dir_vec_y: ((ctx.rng().gen_range(0..=100) as f32 / 100.0) * 2.0) - BOT_DRIFT,
+            ..bot
+        });
+    }
+    // TODO: does not take into account wrapping around edges
+    for bot in ctx.db.bot().iter() {
+        if let Some(user_id) = bot.orbiting {
+            let user = ctx.db.user().identity().find(user_id);
+            if let Some(user) = user {
+                let dir_vec_x = user.x - bot.x as f32;
+                let dir_vec_y = user.y - bot.y as f32;
+                let dir_length = (dir_vec_x.powi(2) + dir_vec_y.powi(2)).sqrt();
+                if dir_length > 0.0 {
+                    ctx.db.bot().bot_id().update(Bot {
+                        dir_vec_x: (dir_vec_x / dir_length),
+                        dir_vec_y: (dir_vec_y / dir_length),
+                        ..bot
+                    });
+                    continue;
                 }
-            } else {
-                ctx.db.bot().bot_id().update(Bot {
-                    dir_vec_x: ((ctx.rng().gen_range(0..=100) as f32/100 as f32) * 2.0) - BOT_DRIFT,
-                    dir_vec_y: ((ctx.rng().gen_range(0..=100) as f32/100 as f32) * 2.0) - BOT_DRIFT,
-                    ..bot.expect("cuzijustfuckingcheckeditbruhread")
-                });
             }
         }
     }
@@ -355,7 +357,7 @@ fn update_users(ctx: &ReducerContext) {
 }
 
 fn update_bots(ctx: &ReducerContext) {
-    update_bot_directions(ctx, NUM_BOTS_UPDATE_DIRECTION_PER_TICK);
+    update_bot_directions(ctx);
     for bot in ctx.db.bot().iter() {
         let upd = move_character(&bot, BOT_ACCELERATION, true);
         ctx.db.bot().bot_id().update(Bot {
