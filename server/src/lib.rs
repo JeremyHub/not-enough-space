@@ -23,6 +23,8 @@ const STARTING_BOTS: u64 = 5000;
 const MAX_BOT_SIZE: i32 = 3;
 const BOT_DRIFT: f32 = 0.5;
 const BOT_ACCELERATION: f32 = 4.0;
+const BOT_ACCELERATION_ORBITING: f32 = 6.0;
+const TANGENTIAL_ORBIT_STRENGTH: f32 = 5.0;
 
 const UPDATE_OFFLINE_PLAYERS: bool = true;
 
@@ -215,9 +217,14 @@ fn update_bot_directions(ctx: &ReducerContext) {
                 let dir_vec_y = user.y - bot.y as f32;
                 let dir_length = (dir_vec_x.powi(2) + dir_vec_y.powi(2)).sqrt();
                 if dir_length > 0.0 {
+                    let norm_x = dir_vec_x / dir_length;
+                    let norm_y = dir_vec_y / dir_length;
+                    let perp_x = -norm_y;
+                    let perp_y = norm_x;
+                    let tangential = (ctx.rng().gen_range(0..=100) as f32 / 100.0) * (TANGENTIAL_ORBIT_STRENGTH/bot.size);
                     ctx.db.bot().bot_id().update(Bot {
-                        dir_vec_x: (dir_vec_x / dir_length),
-                        dir_vec_y: (dir_vec_y / dir_length),
+                        dir_vec_x: norm_x + perp_x * tangential,
+                        dir_vec_y: norm_y + perp_y * tangential,
                         ..bot
                     });
                     continue;
@@ -359,7 +366,12 @@ fn update_users(ctx: &ReducerContext) {
 fn update_bots(ctx: &ReducerContext) {
     update_bot_directions(ctx);
     for bot in ctx.db.bot().iter() {
-        let upd = move_character(&bot, BOT_ACCELERATION, true);
+        let acceleration = if bot.orbiting.is_some() {
+            BOT_ACCELERATION_ORBITING
+        } else {
+            BOT_ACCELERATION
+        };
+        let upd = move_character(&bot, acceleration, true);
         ctx.db.bot().bot_id().update(Bot {
             x: upd.x as i32,
             y: upd.y as i32,
