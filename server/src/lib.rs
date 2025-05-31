@@ -229,9 +229,28 @@ fn update_bot_directions(ctx: &ReducerContext) {
         if let Some(user_id) = bot.orbiting {
             let user = ctx.db.user().identity().find(user_id);
             if let Some(user) = user {
-                let dir_vec_x = user.x - bot.x as f32;
-                let dir_vec_y = user.y - bot.y as f32;
+                // Calculate shortest vector considering wrapping
+                let mut dir_vec_x = user.x - bot.x as f32;
+                let mut dir_vec_y = user.y - bot.y as f32;
+
+                // Handle wrapping for x
+                if dir_vec_x.abs() > (WORLD_WIDTH as f32) / 2.0 {
+                    if dir_vec_x > 0.0 {
+                        dir_vec_x -= WORLD_WIDTH as f32;
+                    } else {
+                        dir_vec_x += WORLD_WIDTH as f32;
+                    }
+                }
+                // Handle wrapping for y
+                if dir_vec_y.abs() > (WORLD_HEIGHT as f32) / 2.0 {
+                    if dir_vec_y > 0.0 {
+                        dir_vec_y -= WORLD_HEIGHT as f32;
+                    } else {
+                        dir_vec_y += WORLD_HEIGHT as f32;
+                    }
+                }
                 let dir_length = (dir_vec_x.powi(2) + dir_vec_y.powi(2)).sqrt();
+                
                 if dir_length > 0.0 {
                     let norm_x = dir_vec_x / dir_length;
                     let norm_y = dir_vec_y / dir_length;
