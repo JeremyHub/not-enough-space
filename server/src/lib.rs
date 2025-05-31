@@ -382,7 +382,7 @@ fn update_users(ctx: &ReducerContext) {
                     (user.x.round() as i32) - ((user.size + MAX_BOT_SIZE as f32).round() as i32)
                         ..(user.x.round() as i32) + ((user.size + MAX_BOT_SIZE as f32).round() as i32)
                 ) {
-                    if ((user.x - bot.x as f32).powi(2) + (user.y - bot.y as f32).powi(2)).sqrt() <= bot.size + user.size {
+                    if toroidal_distance(user.x, user.y, bot.x as f32, bot.y as f32) <= (user.size + bot.size) {
                         ctx.db.bot().bot_id().update(Bot {
                             orbiting: Some(user.identity),
                             ..bot
@@ -441,7 +441,7 @@ fn users_eat_bits(ctx: &ReducerContext) {
         if user.online || UPDATE_OFFLINE_PLAYERS{
             let mut bits_to_eat = Vec::new();
             for bit in ctx.db.bit().x().filter((user.x.round() as i32)-((user.size+MAX_BIT_SIZE).round() as i32)..(user.x.round() as i32)+((user.size+MAX_BIT_SIZE).round() as i32)) {
-                if ((user.x - bit.x as f32).powi(2) + (user.y - bit.y as f32).powi(2)).sqrt() <= bit.size + user.size {
+                if toroidal_distance(user.x, user.y, bit.x as f32, bit.y as f32) <= (user.size + bit.size) {
                     bits_to_eat.push(bit);
                 }
             }
@@ -457,6 +457,13 @@ fn users_eat_bits(ctx: &ReducerContext) {
             });
         }
     }
+}
+
+
+fn toroidal_distance(x1: f32, y1: f32, x2: f32, y2: f32) -> f32 {
+    let dx = ((x1 - x2).abs()).min(WORLD_WIDTH as f32 - (x1 - x2).abs());
+    let dy = ((y1 - y2).abs()).min(WORLD_HEIGHT as f32 - (y1 - y2).abs());
+    (dx * dx + dy * dy).sqrt()
 }
 
 #[table(name = tick_schedule, scheduled(tick))]
