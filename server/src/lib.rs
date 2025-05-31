@@ -30,7 +30,7 @@ const PORTION_NON_ORBITING_BOTS_DIRECTION_UPDATED_PER_TICK: f64 = 0.005;
 const ORBITING_BOT_SIZE_DIVISOR: f32 = 2.0;
 const ORBITING_BOT_SIZE_DIVISOR_MIN: i32 = 4;
 const ORBITING_BOT_SIZE_DIVISOR_MAX: i32 = 5;
-const ORIBTING_BOT_USER_SPEED_RATIO_ADD: f32 = 0.85;
+const ORIBTING_BOT_USER_SPEED_RATIO_ADD: f32 = 0.9;
 const ORIBITING_BOT_USER_SPEED_RATIO_THRESHOLD: f32 = 0.1;
 
 const UPDATE_OFFLINE_PLAYERS: bool = true;
@@ -237,7 +237,7 @@ fn update_bot_directions(ctx: &ReducerContext) {
                     let norm_y = dir_vec_y / dir_length;
                     let perp_x = -norm_y;
                     let perp_y = norm_x;
-                    let tangential = TANGENTIAL_ORBIT_STRENGTH/((bot.size/ORBITING_BOT_SIZE_DIVISOR)+ctx.rng().gen_range(ORBITING_BOT_SIZE_DIVISOR_MIN..=ORBITING_BOT_SIZE_DIVISOR_MAX) as f32);
+                    let tangential = TANGENTIAL_ORBIT_STRENGTH/((bot.size/ORBITING_BOT_SIZE_DIVISOR)+ctx.rng().gen_range(ORBITING_BOT_SIZE_DIVISOR_MIN..=ORBITING_BOT_SIZE_DIVISOR_MAX) as f32)+(user.size/30.0);
                     let user_speed_ratio = (user.dx.powi(2) + user.dy.powi(2)).sqrt()/(USER_ACCELERATION/VELOCITY_MULTIPLIER);
                     let new_dx = bot.dx * (user_speed_ratio+ORIBTING_BOT_USER_SPEED_RATIO_ADD);
                     let new_dy = bot.dy * (user_speed_ratio+ORIBTING_BOT_USER_SPEED_RATIO_ADD);
