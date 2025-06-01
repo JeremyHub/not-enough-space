@@ -354,8 +354,6 @@ function App() {
   const canvasHeight = self?.size ? Math.min(Math.round(((self.size) * 100) / 2) * 2, 1500) : null;
   const renderBuffer = 200;
 
-  console.log(canvasWidth)
-
   const [animatedWidth, setAnimatedWidth] = useState<number | null>(null);
   const [animatedHeight, setAnimatedHeight] = useState<number | null>(null);
 
@@ -375,12 +373,14 @@ function App() {
         return;
       }
       setAnimatedWidth(prev => {
+        if (prev === null) return canvasWidth;
         if (prev < canvasWidth) {
           return Math.min(prev + growSpeed, canvasWidth);
         }
         return prev;
       });
       setAnimatedHeight(prev => {
+        if (prev === null) return canvasHeight;
         if (prev < canvasHeight) {
           return Math.min(prev + growSpeed, canvasHeight);
         }
@@ -491,25 +491,11 @@ function App() {
     if (!conn) return;
 
     const pressed = new Set<string>();
-    let mouseDown = false;
-    let mouseX = 0;
-    let mouseY = 0;
 
     let lastDirVecX: number | undefined = undefined;
     let lastDirVecY: number | undefined = undefined;
 
     const getDirection = (): { dirVecX: number, dirVecY: number } => {
-      if (mouseDown) {
-        const centerX = canvasWidth / 2;
-        const centerY = canvasHeight / 2;
-        const dx = mouseX - centerX;
-        const dy = mouseY - centerY;
-        const len = Math.sqrt(dx * dx + dy * dy);
-        if (len > 0) {
-          return { dirVecX:dx / len, dirVecY:dy / len };
-        }
-        return { dirVecX: 0, dirVecY: 0 };
-      }
 
       const up = pressed.has('w');
       const down = pressed.has('s');
@@ -564,7 +550,7 @@ function App() {
   };
   }, [conn]);
 
-  if (!conn || !connected || !identity || !metadata || !self) {
+  if (!conn || !connected || !identity || !metadata || !self || !canvasHeight || !canvasWidth) {
     return (
       <div className="App">
         <h1>Connecting...</h1>
@@ -574,7 +560,20 @@ function App() {
 
   return (
     <div className="App">
-      <Canvas key={`${canvasWidth}x${canvasHeight}`} draw={draw} draw_props={{ metadata, canvasWidth: animatedWidth, canvasHeight: animatedHeight, renderBuffer, users, bits, moons, identity }} />
+      <Canvas
+        key={`${canvasWidth}x${canvasHeight}`}
+        draw={draw}
+        draw_props={{
+          metadata,
+          canvasWidth: animatedWidth ?? canvasWidth,
+          canvasHeight: animatedHeight ?? canvasHeight,
+          renderBuffer,
+          users,
+          bits,
+          moons,
+          identity
+        }}
+      />
     </div>
   );
 }
