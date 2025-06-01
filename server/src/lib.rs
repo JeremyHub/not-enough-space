@@ -18,7 +18,7 @@ const MIN_BIT_WORTH: f32 = 0.1;
 const MAX_BIT_WORTH: f32 = 2.0;
 const MAX_BIT_SIZE: f32 = MAX_BIT_WORTH;
 
-const STARTING_MOONS: u64 = 50;
+const STARTING_MOONS: u64 = 500;
 const MAX_MOON_SIZE: i32 = 5;
 const MIN_MOON_SIZE: i32 = 3;
 const MOON_DRIFT: f32 = 0.5;
@@ -30,13 +30,13 @@ const ORBITING_MOON_SIZE_DIVISOR: f32 = 2.0;
 const ORBITING_MOON_SIZE_DIVISOR_MIN: i32 = 4;
 const ORBITING_MOON_SIZE_DIVISOR_MAX: i32 = 5;
 const ORIBTING_MOON_USER_SPEED_RATIO_ADD: f32 = 0.9;
-const ORIBITING_MOON_USER_SPEED_RATIO_THRESHOLD: f32 = 0.1;
+const ORIBTING_MOON_USER_SPEED_RATIO_THRESHOLD: f32 = 0.1;
 
 // Orbit parameters
 const ORBIT_RADIUS_CLOSE: f32 = 12.0;
-const ORBIT_RADIUS_FAR: f32 = 24.0;
-const ORBIT_ANGULAR_VEL_CLOSE: f32 = 0.10;
-const ORBIT_ANGULAR_VEL_FAR: f32 = 0.04;
+const ORBIT_RADIUS_FAR: f32 = 40.0;
+const ORBIT_ANGULAR_VEL_CLOSE: f32 = 0.04;
+const ORBIT_ANGULAR_VEL_FAR: f32 = 0.02;
 
 const UPDATE_OFFLINE_PLAYERS: bool = true;
 
@@ -252,19 +252,44 @@ fn update_moon_directions(ctx: &ReducerContext) {
                     orbit_angle -= std::f32::consts::PI * 2.0;
                 }
 
-                // Compute new moon position relative to user
+                // Compute desired moon position relative to user
                 let user_x = user.x;
                 let user_y = user.y;
                 let new_x = wrap_single_coord(user_x + orbit_radius * orbit_angle.cos(), WORLD_WIDTH as f32);
                 let new_y = wrap_single_coord(user_y + orbit_radius * orbit_angle.sin(), WORLD_HEIGHT as f32);
 
+                // compute vector from moon's current position to desired position
+                let dx = new_x - moon.x as f32;
+                let dy = new_y - moon.y as f32;
+                let dir_length = (dx.powi(2) + dy.powi(2)).sqrt();
+
+                // scale velocity increment by distance (clamped to avoid zero)
+                let distance_scale = dir_length.max(1.0); // minimum 1.0 to avoid division by zero
+                let acceleration = if moving { 1.0 } else { 1.0 };
+                let scale = distance_scale / orbit_radius; // normalized, so it slows as it gets closer
+
+                // Calculate the velocity increment, but clamp so we don't overshoot
+                let mut delta_vx = (dx / dir_length) * acceleration * scale;
+                let mut delta_vy = (dy / dir_length) * acceleration * scale;
+
+                // Clamp the increment so we don't move further than the distance to the target
+                let max_step = dir_length;
+                let step_length = (delta_vx.powi(2) + delta_vy.powi(2)).sqrt();
+                if step_length > max_step {
+                    let clamp_factor = max_step / step_length;
+                    delta_vx *= clamp_factor;
+                    delta_vy *= clamp_factor;
+                }
+
+                let new_dx = moon.dx + delta_vx*5.0;
+                let new_dy = moon.dy + delta_vy*5.0;
+
+                // Update moon with new position and velocity
                 ctx.db.moon().moon_id().update(Moon {
-                    x: new_x as i32,
-                    y: new_y as i32,
-                    dx: 0.0,
-                    dy: 0.0,
-                    dir_vec_x: 0.0,
-                    dir_vec_y: 0.0,
+                    x: moon.x + new_dx.round() as i32,
+                    y: moon.y + new_dy.round() as i32,
+                    dx: new_dx,
+                    dy: new_dy,
                     orbit_angle,
                     orbit_state: Some(orbit_state),
                     orbit_radius,
