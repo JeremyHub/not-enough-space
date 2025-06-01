@@ -32,6 +32,7 @@ import {
 } from "@clockworklabs/spacetimedb-sdk";
 import { Moon } from "./moon_type";
 import { Color as __Color } from "./color_type";
+import { OrbitState as __OrbitState } from "./orbit_state_type";
 
 import { EventContext, Reducer, RemoteReducers, RemoteTables } from ".";
 
