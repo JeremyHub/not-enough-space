@@ -18,8 +18,9 @@ const MIN_BIT_WORTH: f32 = 0.1;
 const MAX_BIT_WORTH: f32 = 2.0;
 const MAX_BIT_SIZE: f32 = MAX_BIT_WORTH;
 
-const STARTING_MOONS: u64 = 5000;
-const MAX_MOON_SIZE: i32 = 3;
+const STARTING_MOONS: u64 = 50;
+const MAX_MOON_SIZE: i32 = 5;
+const MIN_MOON_SIZE: i32 = 3;
 const MOON_DRIFT: f32 = 0.5;
 const MOON_ACCELERATION: f32 = 2.0;
 const MOON_ACCELERATION_ORBITING: f32 = 15.0;
@@ -180,7 +181,7 @@ fn spawn_moons(ctx: &ReducerContext, num_moons: u64) {
             g: ctx.rng().gen_range(0..=255),
             b: ctx.rng().gen_range(0..=255),
         };
-        let size = ctx.rng().gen_range(1..=MAX_MOON_SIZE);
+        let size = ctx.rng().gen_range(MIN_MOON_SIZE..=MAX_MOON_SIZE);
         ctx.db.moon().insert(Moon {
             moon_id: 0,
             x,
