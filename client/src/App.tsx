@@ -350,18 +350,30 @@ function App() {
   const [quriedX, setQuriedX] = useState<number | null>(null);
   const [quriedY, setQuriedY] = useState<number | null>(null);
   const [bitSubscription, setBitSubscription] = useState<any | null>(null);
-  const canvasWidth = Math.min(Math.round(((self?.size ?? 1) * 100) / 2) * 2, 1500);
-  const canvasHeight = Math.min(Math.round(((self?.size ?? 1) * 100) / 2) * 2, 1500);
+  const canvasWidth = self?.size ? Math.min(Math.round(((self.size) * 100) / 2) * 2, 1500) : null;
+  const canvasHeight = self?.size ? Math.min(Math.round(((self.size) * 100) / 2) * 2, 1500) : null;
   const renderBuffer = 200;
 
-  const [animatedWidth, setAnimatedWidth] = useState(400);
-  const [animatedHeight, setAnimatedHeight] = useState(400);
+  console.log(canvasWidth)
+
+  const [animatedWidth, setAnimatedWidth] = useState<number | null>(null);
+  const [animatedHeight, setAnimatedHeight] = useState<number | null>(null);
 
     useEffect(() => {
     let raf: number;
-    const growSpeed = 1;
+    const growSpeed = 0.1;
 
+    
     function animate() {
+      if (!canvasWidth || !canvasHeight) {
+        raf = requestAnimationFrame(animate);
+        return;
+      }
+      if ((animatedWidth === null || animatedHeight === null)) {
+        setAnimatedWidth(canvasWidth);
+        setAnimatedHeight(canvasHeight);
+        return;
+      }
       setAnimatedWidth(prev => {
         if (prev < canvasWidth) {
           return Math.min(prev + growSpeed, canvasWidth);
@@ -438,7 +450,7 @@ function App() {
 
   function subscribeToNearbyObjs(conn: DbConnection, metadata: Metadata, x: number, y: number) {
 
-    if (quriedX && quriedY && (Math.abs(quriedX-x) < renderBuffer && Math.abs(quriedY-y) < renderBuffer)) {
+    if (!canvasHeight || !canvasWidth || (quriedX && quriedY && (Math.abs(quriedX-x) < renderBuffer && Math.abs(quriedY-y) < renderBuffer))) {
       return
     }
 
