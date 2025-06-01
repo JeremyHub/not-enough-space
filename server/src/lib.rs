@@ -240,7 +240,7 @@ fn update_moon_directions(ctx: &ReducerContext) {
             if let Some(user) = user {
                 // Determine if user is moving
                 let user_speed = (user.dx.powi(2) + user.dy.powi(2)).sqrt();
-                let moving = user_speed > 0.1;
+                let moving = user_speed > 10.0;
                 let (orbit_state, orbit_radius, orbit_angular_vel) = if moving {
                     (OrbitState::Moving, ORBIT_RADIUS_FAR + user.size, ORBIT_ANGULAR_VEL_FAR)
                 } else {
@@ -267,7 +267,7 @@ fn update_moon_directions(ctx: &ReducerContext) {
 
                 // scale velocity increment by distance (clamped to avoid zero)
                 let distance_scale = dir_length.max(1.0); // minimum 1.0 to avoid division by zero
-                let acceleration = if moving { 1.0 } else { 1.0 };
+                let acceleration = if moving { 2.0 } else { 1.0 };
                 let scale = distance_scale / orbit_radius; // normalized, so it slows as it gets closer
 
                 // Calculate the velocity increment, but clamp so we don't overshoot
