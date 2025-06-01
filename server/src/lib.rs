@@ -83,8 +83,9 @@ pub struct Moon {
     #[auto_inc]
     moon_id: u64,
     #[index(btree)]
-    x: i32,
-    y: i32,
+    col_index: i32,
+    x: f32,
+    y: f32,
     dx: f32,
     dy: f32,
     dir_vec_x: f32,
@@ -190,8 +191,8 @@ fn spawn_bits(ctx: &ReducerContext) {
 
 fn spawn_moons(ctx: &ReducerContext, num_moons: u64) {
     for _ in 0..num_moons {
-        let x = ctx.rng().gen_range(0..=WORLD_WIDTH);
-        let y = ctx.rng().gen_range(0..=WORLD_HEIGHT);
+        let x = ctx.rng().gen_range(0..=WORLD_WIDTH) as f32;
+        let y = ctx.rng().gen_range(0..=WORLD_HEIGHT) as f32;
         let color = Color {
             r: ctx.rng().gen_range(0..=255),
             g: ctx.rng().gen_range(0..=255),
@@ -200,6 +201,7 @@ fn spawn_moons(ctx: &ReducerContext, num_moons: u64) {
         let size = ctx.rng().gen_range(MIN_MOON_SIZE..=MAX_MOON_SIZE);
         ctx.db.moon().insert(Moon {
             moon_id: 0,
+            col_index: x.round() as i32,
             x,
             y,
             dx: 0.0,
@@ -259,8 +261,8 @@ fn update_moon_directions(ctx: &ReducerContext) {
                 let new_y = wrap_single_coord(user_y + orbit_radius * orbit_angle.sin(), WORLD_HEIGHT as f32);
 
                 // compute vector from moon's current position to desired position
-                let dx = new_x - moon.x as f32;
-                let dy = new_y - moon.y as f32;
+                let dx = new_x - moon.x;
+                let dy = new_y - moon.y;
                 let dir_length = (dx.powi(2) + dy.powi(2)).sqrt();
 
                 // scale velocity increment by distance (clamped to avoid zero)
@@ -281,13 +283,16 @@ fn update_moon_directions(ctx: &ReducerContext) {
                     delta_vy *= clamp_factor;
                 }
 
-                let new_dx = moon.dx + delta_vx*5.0;
-                let new_dy = moon.dy + delta_vy*5.0;
+                let new_dx = delta_vx*5.0;
+                let new_dy = delta_vy*5.0;
 
                 // Update moon with new position and velocity
+                let updated_x = moon.x + new_dx;
+                let updated_y = moon.y + new_dy;
                 ctx.db.moon().moon_id().update(Moon {
-                    x: moon.x + new_dx.round() as i32,
-                    y: moon.y + new_dy.round() as i32,
+                    col_index: updated_x.round() as i32,
+                    x: updated_x,
+                    y: updated_y,
                     dx: new_dx,
                     dy: new_dy,
                     orbit_angle,
@@ -331,8 +336,8 @@ impl Character for User {
 }
 
 impl Character for Moon {
-    fn x(&self) -> f32 { self.x as f32 }
-    fn y(&self) -> f32 { self.y as f32 }
+    fn x(&self) -> f32 { self.x }
+    fn y(&self) -> f32 { self.y }
     fn dx(&self) -> f32 { self.dx }
     fn dy(&self) -> f32 { self.dy }
     fn dir_vec_x(&self) -> f32 { self.dir_vec_x }
@@ -419,9 +424,9 @@ fn update_users(ctx: &ReducerContext) {
         if user.online || UPDATE_OFFLINE_PLAYERS {
             if user.total_moon_size_oribiting < user.size {
                 for range in wrapped_ranges(user.x.round() as i32, (user.size + MAX_MOON_SIZE as f32) as i32, WORLD_WIDTH) {
-                    for moon in ctx.db.moon().x().filter(range) {
+                    for moon in ctx.db.moon().col_index().filter(range) {
                         if moon.orbiting.is_none() {
-                            if toroidal_distance(user.x, user.y, moon.x as f32, moon.y as f32) <= (user.size + moon.size) {
+                            if toroidal_distance(user.x, user.y, moon.x, moon.y) <= (user.size + moon.size) {
                                 ctx.db.moon().moon_id().update(Moon {
                                     orbiting: Some(user.identity),
                                     ..moon
@@ -466,8 +471,9 @@ fn update_moons(ctx: &ReducerContext) {
             let acceleration = MOON_ACCELERATION;
             let upd = move_character(&moon, acceleration, true);
             ctx.db.moon().moon_id().update(Moon {
-                x: upd.x as i32,
-                y: upd.y as i32,
+                col_index: upd.x.round() as i32,
+                x: upd.x,
+                y: upd.y,
                 dx: upd.dx,
                 dy: upd.dy,
                 ..moon
