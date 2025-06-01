@@ -15,8 +15,11 @@ canvas {
     display: block;
     margin: auto;
     background: #fff;
-    width: 1000px;
-    height: 1000px;
+    width: min(100vw, 100vh);
+    height: min(100vw, 100vh);
+    max-width: 1000px;
+    max-height: 1000px;
+    aspect-ratio: 1 / 1;
     box-sizing: border-box;
     position: absolute;
     top: 0;
