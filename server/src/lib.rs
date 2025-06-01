@@ -18,6 +18,7 @@ const MIN_BIT_WORTH: f32 = 0.1;
 const MAX_BIT_WORTH: f32 = 2.0;
 const MAX_BIT_SIZE: f32 = MAX_BIT_WORTH;
 
+// non-orbiting moon params
 const STARTING_MOONS: u64 = 500;
 const MAX_MOON_SIZE: i32 = 5;
 const MIN_MOON_SIZE: i32 = 3;
@@ -25,11 +26,12 @@ const MOON_DRIFT: f32 = 0.5;
 const MOON_ACCELERATION: f32 = 2.0;
 const PORTION_NON_ORBITING_MOONS_DIRECTION_UPDATED_PER_TICK: f64 = 0.005;
 
-// Orbit parameters
+// moon oribit params
 const ORBIT_RADIUS_CLOSE: f32 = 12.0;
 const ORBIT_RADIUS_FAR: f32 = 40.0;
 const ORBIT_ANGULAR_VEL_CLOSE: f32 = 0.04;
 const ORBIT_ANGULAR_VEL_FAR: f32 = 0.02;
+const USER_SPEED_ORBIT_THRESHOLD: f32 = 10.0;
 
 const UPDATE_OFFLINE_PLAYERS: bool = true;
 
@@ -233,7 +235,7 @@ fn update_moon_directions(ctx: &ReducerContext) {
             if let Some(user) = user {
                 // Determine if user is moving
                 let user_speed = (user.dx.powi(2) + user.dy.powi(2)).sqrt();
-                let moving = user_speed > 10.0;
+                let moving = user_speed > USER_SPEED_ORBIT_THRESHOLD;
                 let (orbit_state, orbit_radius, orbit_angular_vel) = if moving {
                     (OrbitState::Moving, ORBIT_RADIUS_FAR + user.size, ORBIT_ANGULAR_VEL_FAR)
                 } else {
@@ -254,9 +256,26 @@ fn update_moon_directions(ctx: &ReducerContext) {
                 let new_y = wrap_single_coord(user_y + orbit_radius * orbit_angle.sin(), WORLD_HEIGHT as f32);
 
                 // compute vector from moon's current position to desired position
-                let dx = new_x - moon.x;
-                let dy = new_y - moon.y;
-                let dir_length = (dx.powi(2) + dy.powi(2)).sqrt();
+                let mut dir_vec_x = new_x - moon.x;
+                let mut dir_vec_y = new_y - moon.y;
+
+                // Handle wrapping for x
+                if dir_vec_x.abs() > (WORLD_WIDTH as f32) / 2.0 {
+                    if dir_vec_x > 0.0 {
+                        dir_vec_x -= WORLD_WIDTH as f32;
+                    } else {
+                        dir_vec_x += WORLD_WIDTH as f32;
+                    }
+                }
+                // Handle wrapping for y
+                if dir_vec_y.abs() > (WORLD_HEIGHT as f32) / 2.0 {
+                    if dir_vec_y > 0.0 {
+                        dir_vec_y -= WORLD_HEIGHT as f32;
+                    } else {
+                        dir_vec_y += WORLD_HEIGHT as f32;
+                    }
+                }
+                let dir_length = (dir_vec_x.powi(2) + dir_vec_y.powi(2)).sqrt();
 
                 // scale velocity increment by distance (clamped to avoid zero)
                 let distance_scale = dir_length.max(1.0); // minimum 1.0 to avoid division by zero
@@ -264,8 +283,8 @@ fn update_moon_directions(ctx: &ReducerContext) {
                 let scale = distance_scale / orbit_radius; // normalized, so it slows as it gets closer
 
                 // Calculate the velocity increment, but clamp so we don't overshoot
-                let mut delta_vx = (dx / dir_length) * acceleration * scale;
-                let mut delta_vy = (dy / dir_length) * acceleration * scale;
+                let mut delta_vx = (dir_vec_x / dir_length) * acceleration * scale;
+                let mut delta_vy = (dir_vec_y / dir_length) * acceleration * scale;
 
                 // Clamp the increment so we don't move further than the distance to the target
                 let max_step = dir_length;
