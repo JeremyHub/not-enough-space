@@ -17,8 +17,6 @@ const MAX_BITS: u64 = (WORLD_HEIGHT as u64 *WORLD_WIDTH as u64)/MAX_AREA_PER_BIT
 const MIN_BIT_WORTH: f32 = 0.1;
 const MAX_BIT_WORTH: f32 = 2.0;
 const MAX_BIT_SIZE: f32 = MAX_BIT_WORTH;
-const AREA_PER_BIT_SPAWN: f64 = 36000.0;
-const BITS_SPAWNED_PER_TICK: f64 = ((1.0/AREA_PER_BIT_SPAWN))*(WORLD_HEIGHT as f64*WORLD_WIDTH as f64);
 
 const STARTING_MOONS: u64 = 5000;
 const MAX_MOON_SIZE: i32 = 3;
@@ -147,20 +145,10 @@ pub fn identity_disconnected(ctx: &ReducerContext) {
 }
 
 
-fn spawn_bits(ctx: &ReducerContext, tick_id: u64) {
+fn spawn_bits(ctx: &ReducerContext) {
     let current_num_bits = ctx.db.bit().count();
     if current_num_bits < MAX_BITS {
-        let mut bits_to_spawn = 1;
-        if BITS_SPAWNED_PER_TICK >= 1.0 {
-            bits_to_spawn = BITS_SPAWNED_PER_TICK.round() as u64;
-            if bits_to_spawn + current_num_bits > MAX_BITS {
-                bits_to_spawn = MAX_BITS - current_num_bits;
-            }
-        } else {
-            if !(tick_id % (1.0/BITS_SPAWNED_PER_TICK).round() as u64 == 0) {
-                return
-            }
-        }
+        let bits_to_spawn = MAX_BITS - current_num_bits;
         for _ in 0..bits_to_spawn {
             let worth = ctx.rng().gen_range(MIN_BIT_WORTH..=MAX_BIT_WORTH);
             let size = worth;
@@ -380,12 +368,14 @@ fn update_users(ctx: &ReducerContext) {
             if user.total_moon_size_oribiting < user.size {
                 for range in wrapped_ranges(user.x.round() as i32, (user.size + MAX_MOON_SIZE as f32) as i32, WORLD_WIDTH) {
                     for moon in ctx.db.moon().x().filter(range) {
-                        if toroidal_distance(user.x, user.y, moon.x as f32, moon.y as f32) <= (user.size + moon.size) {
-                            ctx.db.moon().moon_id().update(Moon {
-                                orbiting: Some(user.identity),
-                                ..moon
-                            });
-                            *moon_size_map.entry(user.identity).or_insert(0.0) += moon.size;
+                        if !moon.orbiting.is_none() {
+                            if toroidal_distance(user.x, user.y, moon.x as f32, moon.y as f32) <= (user.size + moon.size) {
+                                ctx.db.moon().moon_id().update(Moon {
+                                    orbiting: Some(user.identity),
+                                    ..moon
+                                });
+                                *moon_size_map.entry(user.identity).or_insert(0.0) += moon.size;
+                            }
                         }
                     }
                 }
@@ -509,7 +499,7 @@ pub fn tick(ctx: &ReducerContext, tick_schedule: TickSchedule) -> Result<(), Str
         return Err("Reducer `tick` may only be invoked by the scheduler.".into());
     }
 
-    spawn_bits(ctx, tick_schedule.id);
+    spawn_bits(ctx);
     
     update_moons(ctx);
 
