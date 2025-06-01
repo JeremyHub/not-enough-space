@@ -85,7 +85,7 @@ pub struct Bot {
 }
 
 pub fn get_user_size(health: f32) -> f32 {
-    return if health < 1400.0 {(health/10.0) + 5.0} else {health.ln()*20.0};
+    return if health < 1398.65 {(health/10.0) + 5.0} else {health.ln()*20.0};
 }
 
 #[table(name = bit, public)]
