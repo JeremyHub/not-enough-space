@@ -368,7 +368,7 @@ fn update_users(ctx: &ReducerContext) {
             if user.total_moon_size_oribiting < user.size {
                 for range in wrapped_ranges(user.x.round() as i32, (user.size + MAX_MOON_SIZE as f32) as i32, WORLD_WIDTH) {
                     for moon in ctx.db.moon().x().filter(range) {
-                        if !moon.orbiting.is_none() {
+                        if moon.orbiting.is_none() {
                             if toroidal_distance(user.x, user.y, moon.x as f32, moon.y as f32) <= (user.size + moon.size) {
                                 ctx.db.moon().moon_id().update(Moon {
                                     orbiting: Some(user.identity),
