@@ -121,6 +121,7 @@ type DrawProps = {
   canvasHeight: number,
   renderBuffer: number,
   users: Map<string, User>;
+  self: User;
   bits: Array<Bit>;
   moons: Array<Moon>;
   identity: Identity;
@@ -171,13 +172,10 @@ function renderWithWrap(
 }
 
 const draw = (ctx: CanvasRenderingContext2D | null, props: DrawProps) => {
-  const { metadata, canvasWidth, canvasHeight, renderBuffer, users, bits, moons, identity } = props;
+  const { metadata, canvasWidth, canvasHeight, renderBuffer, users, self, bits, moons, identity } = props;
   if (!ctx) return;
 
   ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-
-  const self = users.get(identity.toHexString());
-  if (!self) return;
 
   const GRID_SIZE = 60
 
@@ -303,10 +301,10 @@ const useCanvas = (
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
+    let animationFrameId: number;
     const canvas = canvasRef.current as HTMLCanvasElement | null;
     if (!canvas) return;
     const context = canvas.getContext('2d');
-    let animationFrameId: number;
 
     const render = () => {
       draw(context, props);
@@ -569,6 +567,7 @@ function App() {
           canvasHeight: animatedHeight ?? canvasHeight,
           renderBuffer,
           users,
+          self,
           bits,
           moons,
           identity
