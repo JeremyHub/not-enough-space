@@ -30,25 +30,25 @@ import {
   Timestamp,
   deepEqual,
 } from "@clockworklabs/spacetimedb-sdk";
-import { Bot } from "./bot_type";
+import { Moon } from "./moon_type";
 import { Color as __Color } from "./color_type";
 
 import { EventContext, Reducer, RemoteReducers, RemoteTables } from ".";
 
 /**
- * Table handle for the table `bot`.
+ * Table handle for the table `moon`.
  *
- * Obtain a handle from the [`bot`] property on [`RemoteTables`],
- * like `ctx.db.bot`.
+ * Obtain a handle from the [`moon`] property on [`RemoteTables`],
+ * like `ctx.db.moon`.
  *
  * Users are encouraged not to explicitly reference this type,
  * but to directly chain method calls,
- * like `ctx.db.bot.on_insert(...)`.
+ * like `ctx.db.moon.on_insert(...)`.
  */
-export class BotTableHandle {
-  tableCache: TableCache<Bot>;
+export class MoonTableHandle {
+  tableCache: TableCache<Moon>;
 
-  constructor(tableCache: TableCache<Bot>) {
+  constructor(tableCache: TableCache<Moon>) {
     this.tableCache = tableCache;
   }
 
@@ -56,53 +56,53 @@ export class BotTableHandle {
     return this.tableCache.count();
   }
 
-  iter(): Iterable<Bot> {
+  iter(): Iterable<Moon> {
     return this.tableCache.iter();
   }
   /**
-   * Access to the `botId` unique index on the table `bot`,
+   * Access to the `moonId` unique index on the table `moon`,
    * which allows point queries on the field of the same name
-   * via the [`BotBotIdUnique.find`] method.
+   * via the [`MoonMoonIdUnique.find`] method.
    *
    * Users are encouraged not to explicitly reference this type,
    * but to directly chain method calls,
-   * like `ctx.db.bot.botId().find(...)`.
+   * like `ctx.db.moon.moonId().find(...)`.
    *
-   * Get a handle on the `botId` unique index on the table `bot`.
+   * Get a handle on the `moonId` unique index on the table `moon`.
    */
-  botId = {
-    // Find the subscribed row whose `botId` column value is equal to `col_val`,
+  moonId = {
+    // Find the subscribed row whose `moonId` column value is equal to `col_val`,
     // if such a row is present in the client cache.
-    find: (col_val: bigint): Bot | undefined => {
+    find: (col_val: bigint): Moon | undefined => {
       for (let row of this.tableCache.iter()) {
-        if (deepEqual(row.botId, col_val)) {
+        if (deepEqual(row.moonId, col_val)) {
           return row;
         }
       }
     },
   };
 
-  onInsert = (cb: (ctx: EventContext, row: Bot) => void) => {
+  onInsert = (cb: (ctx: EventContext, row: Moon) => void) => {
     return this.tableCache.onInsert(cb);
   }
 
-  removeOnInsert = (cb: (ctx: EventContext, row: Bot) => void) => {
+  removeOnInsert = (cb: (ctx: EventContext, row: Moon) => void) => {
     return this.tableCache.removeOnInsert(cb);
   }
 
-  onDelete = (cb: (ctx: EventContext, row: Bot) => void) => {
+  onDelete = (cb: (ctx: EventContext, row: Moon) => void) => {
     return this.tableCache.onDelete(cb);
   }
 
-  removeOnDelete = (cb: (ctx: EventContext, row: Bot) => void) => {
+  removeOnDelete = (cb: (ctx: EventContext, row: Moon) => void) => {
     return this.tableCache.removeOnDelete(cb);
   }
 
   // Updates are only defined for tables with primary keys.
-  onUpdate = (cb: (ctx: EventContext, oldRow: Bot, newRow: Bot) => void) => {
+  onUpdate = (cb: (ctx: EventContext, oldRow: Moon, newRow: Moon) => void) => {
     return this.tableCache.onUpdate(cb);
   }
 
-  removeOnUpdate = (cb: (ctx: EventContext, onRow: Bot, newRow: Bot) => void) => {
+  removeOnUpdate = (cb: (ctx: EventContext, onRow: Moon, newRow: Moon) => void) => {
     return this.tableCache.removeOnUpdate(cb);
   }}

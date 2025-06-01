@@ -32,8 +32,8 @@ import {
 } from "@clockworklabs/spacetimedb-sdk";
 import { Color as __Color } from "./color_type";
 
-export type Bot = {
-  botId: bigint,
+export type Moon = {
+  moonId: bigint,
   x: number,
   y: number,
   dx: number,
@@ -49,14 +49,14 @@ export type Bot = {
 /**
  * A namespace for generated helper functions.
  */
-export namespace Bot {
+export namespace Moon {
   /**
   * A function which returns this type represented as an AlgebraicType.
   * This function is derived from the AlgebraicType used to generate this type.
   */
   export function getTypeScriptAlgebraicType(): AlgebraicType {
     return AlgebraicType.createProductType([
-      new ProductTypeElement("botId", AlgebraicType.createU64Type()),
+      new ProductTypeElement("moonId", AlgebraicType.createU64Type()),
       new ProductTypeElement("x", AlgebraicType.createI32Type()),
       new ProductTypeElement("y", AlgebraicType.createI32Type()),
       new ProductTypeElement("dx", AlgebraicType.createF32Type()),
@@ -70,12 +70,12 @@ export namespace Bot {
     ]);
   }
 
-  export function serialize(writer: BinaryWriter, value: Bot): void {
-    Bot.getTypeScriptAlgebraicType().serialize(writer, value);
+  export function serialize(writer: BinaryWriter, value: Moon): void {
+    Moon.getTypeScriptAlgebraicType().serialize(writer, value);
   }
 
-  export function deserialize(reader: BinaryReader): Bot {
-    return Bot.getTypeScriptAlgebraicType().deserialize(reader);
+  export function deserialize(reader: BinaryReader): Moon {
+    return Moon.getTypeScriptAlgebraicType().deserialize(reader);
   }
 
 }

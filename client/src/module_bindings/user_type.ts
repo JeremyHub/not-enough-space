@@ -44,7 +44,7 @@ export type User = {
   color: __Color,
   health: number,
   size: number,
-  totalBotSizeOribiting: number,
+  totalMoonSizeOribiting: number,
 };
 
 /**
@@ -68,7 +68,7 @@ export namespace User {
       new ProductTypeElement("color", __Color.getTypeScriptAlgebraicType()),
       new ProductTypeElement("health", AlgebraicType.createF32Type()),
       new ProductTypeElement("size", AlgebraicType.createF32Type()),
-      new ProductTypeElement("totalBotSizeOribiting", AlgebraicType.createF32Type()),
+      new ProductTypeElement("totalMoonSizeOribiting", AlgebraicType.createF32Type()),
     ]);
   }
 

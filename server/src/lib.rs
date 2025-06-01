@@ -20,18 +20,18 @@ const MAX_BIT_SIZE: f32 = MAX_BIT_WORTH;
 const AREA_PER_BIT_SPAWN: f64 = 36000.0;
 const BITS_SPAWNED_PER_TICK: f64 = ((1.0/AREA_PER_BIT_SPAWN))*(WORLD_HEIGHT as f64*WORLD_WIDTH as f64);
 
-const STARTING_BOTS: u64 = 5000;
-const MAX_BOT_SIZE: i32 = 3;
-const BOT_DRIFT: f32 = 0.5;
-const BOT_ACCELERATION: f32 = 2.0;
-const BOT_ACCELERATION_ORBITING: f32 = 15.0;
+const STARTING_MOONS: u64 = 5000;
+const MAX_MOON_SIZE: i32 = 3;
+const MOON_DRIFT: f32 = 0.5;
+const MOON_ACCELERATION: f32 = 2.0;
+const MOON_ACCELERATION_ORBITING: f32 = 15.0;
 const TANGENTIAL_ORBIT_STRENGTH: f32 = 6.0;
-const PORTION_NON_ORBITING_BOTS_DIRECTION_UPDATED_PER_TICK: f64 = 0.005;
-const ORBITING_BOT_SIZE_DIVISOR: f32 = 2.0;
-const ORBITING_BOT_SIZE_DIVISOR_MIN: i32 = 4;
-const ORBITING_BOT_SIZE_DIVISOR_MAX: i32 = 5;
-const ORIBTING_BOT_USER_SPEED_RATIO_ADD: f32 = 0.9;
-const ORIBITING_BOT_USER_SPEED_RATIO_THRESHOLD: f32 = 0.1;
+const PORTION_NON_ORBITING_MOONS_DIRECTION_UPDATED_PER_TICK: f64 = 0.005;
+const ORBITING_MOON_SIZE_DIVISOR: f32 = 2.0;
+const ORBITING_MOON_SIZE_DIVISOR_MIN: i32 = 4;
+const ORBITING_MOON_SIZE_DIVISOR_MAX: i32 = 5;
+const ORIBTING_MOON_USER_SPEED_RATIO_ADD: f32 = 0.9;
+const ORIBITING_MOON_USER_SPEED_RATIO_THRESHOLD: f32 = 0.1;
 
 const UPDATE_OFFLINE_PLAYERS: bool = true;
 
@@ -63,14 +63,14 @@ pub struct User {
     color: Color,
     health: f32,
     size: f32,
-    total_bot_size_oribiting: f32,
+    total_moon_size_oribiting: f32,
 }
 
-#[table(name = bot, public)]
-pub struct Bot {
+#[table(name = moon, public)]
+pub struct Moon {
     #[primary_key]
     #[auto_inc]
-    bot_id: u64,
+    moon_id: u64,
     #[index(btree)]
     x: i32,
     y: i32,
@@ -132,7 +132,7 @@ pub fn client_connected(ctx: &ReducerContext) {
             color: Color{r: ctx.rng().gen_range(0..=255), g: ctx.rng().gen_range(0..=255), b: ctx.rng().gen_range(0..=255)},
             health: 1.0,
             size: get_user_size(1.0),
-            total_bot_size_oribiting: 0.0,
+            total_moon_size_oribiting: 0.0,
         });
     }
 }
@@ -183,8 +183,8 @@ fn spawn_bits(ctx: &ReducerContext, tick_id: u64) {
     }
 }
 
-fn spawn_bots(ctx: &ReducerContext, num_bots: u64) {
-    for _ in 0..num_bots {
+fn spawn_moons(ctx: &ReducerContext, num_moons: u64) {
+    for _ in 0..num_moons {
         let x = ctx.rng().gen_range(0..=WORLD_WIDTH);
         let y = ctx.rng().gen_range(0..=WORLD_HEIGHT);
         let color = Color {
@@ -192,15 +192,15 @@ fn spawn_bots(ctx: &ReducerContext, num_bots: u64) {
             g: ctx.rng().gen_range(0..=255),
             b: ctx.rng().gen_range(0..=255),
         };
-        let size = ctx.rng().gen_range(1..=MAX_BOT_SIZE);
-        ctx.db.bot().insert(Bot {
-            bot_id: 0,
+        let size = ctx.rng().gen_range(1..=MAX_MOON_SIZE);
+        ctx.db.moon().insert(Moon {
+            moon_id: 0,
             x,
             y,
             dx: 0.0,
             dy: 0.0,
-            dir_vec_x: ((ctx.rng().gen_range(0..=100) as f32 / 100.0) * 2.0) - BOT_DRIFT,
-            dir_vec_y: ((ctx.rng().gen_range(0..=100) as f32 / 100.0) * 2.0) - BOT_DRIFT,
+            dir_vec_x: ((ctx.rng().gen_range(0..=100) as f32 / 100.0) * 2.0) - MOON_DRIFT,
+            dir_vec_y: ((ctx.rng().gen_range(0..=100) as f32 / 100.0) * 2.0) - MOON_DRIFT,
             color,
             health: size as f32,
             size: size as f32,
@@ -209,27 +209,27 @@ fn spawn_bots(ctx: &ReducerContext, num_bots: u64) {
     }
 }
 
-fn update_bot_directions(ctx: &ReducerContext) {
-    let mut non_orbiting_bots: Vec<_> = ctx.db.bot().iter().filter(|b| b.orbiting.is_none()).collect();
+fn update_moon_directions(ctx: &ReducerContext) {
+    let mut non_orbiting_moons: Vec<_> = ctx.db.moon().iter().filter(|b| b.orbiting.is_none()).collect();
     use rand::seq::SliceRandom;
     let mut rng = ctx.rng();
-    non_orbiting_bots.as_mut_slice().shuffle(&mut rng);
+    non_orbiting_moons.as_mut_slice().shuffle(&mut rng);
 
-    let num_to_update = ((non_orbiting_bots.len() as f64) * PORTION_NON_ORBITING_BOTS_DIRECTION_UPDATED_PER_TICK)
+    let num_to_update = ((non_orbiting_moons.len() as f64) * PORTION_NON_ORBITING_MOONS_DIRECTION_UPDATED_PER_TICK)
         .ceil() as usize;
-    for bot in non_orbiting_bots.into_iter().take(num_to_update) {
-        ctx.db.bot().bot_id().update(Bot {
-            dir_vec_x: ((ctx.rng().gen_range(0..=100) as f32 / 100.0) * 2.0) - BOT_DRIFT,
-            dir_vec_y: ((ctx.rng().gen_range(0..=100) as f32 / 100.0) * 2.0) - BOT_DRIFT,
-            ..bot
+    for moon in non_orbiting_moons.into_iter().take(num_to_update) {
+        ctx.db.moon().moon_id().update(Moon {
+            dir_vec_x: ((ctx.rng().gen_range(0..=100) as f32 / 100.0) * 2.0) - MOON_DRIFT,
+            dir_vec_y: ((ctx.rng().gen_range(0..=100) as f32 / 100.0) * 2.0) - MOON_DRIFT,
+            ..moon
         });
     }
-    for bot in ctx.db.bot().iter() {
-        if let Some(user_id) = bot.orbiting {
+    for moon in ctx.db.moon().iter() {
+        if let Some(user_id) = moon.orbiting {
             let user = ctx.db.user().identity().find(user_id);
             if let Some(user) = user {
-                let mut dir_vec_x = user.x - bot.x as f32;
-                let mut dir_vec_y = user.y - bot.y as f32;
+                let mut dir_vec_x = user.x - moon.x as f32;
+                let mut dir_vec_y = user.y - moon.y as f32;
 
                 // Handle wrapping for x
                 if dir_vec_x.abs() > (WORLD_WIDTH as f32) / 2.0 {
@@ -254,16 +254,16 @@ fn update_bot_directions(ctx: &ReducerContext) {
                     let norm_y = dir_vec_y / dir_length;
                     let perp_x = -norm_y;
                     let perp_y = norm_x;
-                    let tangential = TANGENTIAL_ORBIT_STRENGTH/((bot.size/ORBITING_BOT_SIZE_DIVISOR)+ctx.rng().gen_range(ORBITING_BOT_SIZE_DIVISOR_MIN..=ORBITING_BOT_SIZE_DIVISOR_MAX) as f32)+(user.size/30.0);
+                    let tangential = TANGENTIAL_ORBIT_STRENGTH/((moon.size/ORBITING_MOON_SIZE_DIVISOR)+ctx.rng().gen_range(ORBITING_MOON_SIZE_DIVISOR_MIN..=ORBITING_MOON_SIZE_DIVISOR_MAX) as f32)+(user.size/30.0);
                     let user_speed_ratio = (user.dx.powi(2) + user.dy.powi(2)).sqrt()/(USER_ACCELERATION/VELOCITY_MULTIPLIER);
-                    let new_dx = bot.dx * (user_speed_ratio+ORIBTING_BOT_USER_SPEED_RATIO_ADD);
-                    let new_dy = bot.dy * (user_speed_ratio+ORIBTING_BOT_USER_SPEED_RATIO_ADD);
-                    ctx.db.bot().bot_id().update(Bot {
+                    let new_dx = moon.dx * (user_speed_ratio+ORIBTING_MOON_USER_SPEED_RATIO_ADD);
+                    let new_dy = moon.dy * (user_speed_ratio+ORIBTING_MOON_USER_SPEED_RATIO_ADD);
+                    ctx.db.moon().moon_id().update(Moon {
                         dir_vec_x: norm_x + perp_x * tangential,
                         dir_vec_y: norm_y + perp_y * tangential,
-                        dx: if user_speed_ratio < ORIBITING_BOT_USER_SPEED_RATIO_THRESHOLD { new_dx } else { bot.dx },
-                        dy: if user_speed_ratio < ORIBITING_BOT_USER_SPEED_RATIO_THRESHOLD { new_dy } else { bot.dy },
-                        ..bot
+                        dx: if user_speed_ratio < ORIBITING_MOON_USER_SPEED_RATIO_THRESHOLD { new_dx } else { moon.dx },
+                        dy: if user_speed_ratio < ORIBITING_MOON_USER_SPEED_RATIO_THRESHOLD { new_dy } else { moon.dy },
+                        ..moon
                     });
                     continue;
                 }
@@ -290,7 +290,7 @@ impl Character for User {
     fn dir_vec_y(&self) -> f32 { self.dir_vec_y }
 }
 
-impl Character for Bot {
+impl Character for Moon {
     fn x(&self) -> f32 { self.x as f32 }
     fn y(&self) -> f32 { self.y as f32 }
     fn dx(&self) -> f32 { self.dx }
@@ -373,29 +373,29 @@ fn update_users(ctx: &ReducerContext) {
             });
         }
     }
-    // handle user:user and user:bot collisions
-    let mut bot_size_map: HashMap<Identity, f32> = HashMap::new();
+    // handle user:user and user:moon collisions
+    let mut moon_size_map: HashMap<Identity, f32> = HashMap::new();
     for user in ctx.db.user().iter() {
         if user.online || UPDATE_OFFLINE_PLAYERS {
-            if user.total_bot_size_oribiting < user.size {
-                for range in wrapped_ranges(user.x.round() as i32, (user.size + MAX_BOT_SIZE as f32) as i32, WORLD_WIDTH) {
-                    for bot in ctx.db.bot().x().filter(range) {
-                        if toroidal_distance(user.x, user.y, bot.x as f32, bot.y as f32) <= (user.size + bot.size) {
-                            ctx.db.bot().bot_id().update(Bot {
+            if user.total_moon_size_oribiting < user.size {
+                for range in wrapped_ranges(user.x.round() as i32, (user.size + MAX_MOON_SIZE as f32) as i32, WORLD_WIDTH) {
+                    for moon in ctx.db.moon().x().filter(range) {
+                        if toroidal_distance(user.x, user.y, moon.x as f32, moon.y as f32) <= (user.size + moon.size) {
+                            ctx.db.moon().moon_id().update(Moon {
                                 orbiting: Some(user.identity),
-                                ..bot
+                                ..moon
                             });
-                            *bot_size_map.entry(user.identity).or_insert(0.0) += bot.size;
+                            *moon_size_map.entry(user.identity).or_insert(0.0) += moon.size;
                         }
                     }
                 }
             }
         }
     }
-    for (identity, new_oribing_size) in bot_size_map {
+    for (identity, new_oribing_size) in moon_size_map {
         if let Some(user) = ctx.db.user().identity().find(identity) {
             ctx.db.user().identity().update(User {
-                total_bot_size_oribiting: new_oribing_size + user.total_bot_size_oribiting,
+                total_moon_size_oribiting: new_oribing_size + user.total_moon_size_oribiting,
                 ..user
             });
         }
@@ -416,21 +416,21 @@ fn update_users(ctx: &ReducerContext) {
     }
 }
 
-fn update_bots(ctx: &ReducerContext) {
-    update_bot_directions(ctx);
-    for bot in ctx.db.bot().iter() {
-        let acceleration = if bot.orbiting.is_some() {
-            BOT_ACCELERATION_ORBITING
+fn update_moons(ctx: &ReducerContext) {
+    update_moon_directions(ctx);
+    for moon in ctx.db.moon().iter() {
+        let acceleration = if moon.orbiting.is_some() {
+            MOON_ACCELERATION_ORBITING
         } else {
-            BOT_ACCELERATION
+            MOON_ACCELERATION
         };
-        let upd = move_character(&bot, acceleration, true);
-        ctx.db.bot().bot_id().update(Bot {
+        let upd = move_character(&moon, acceleration, true);
+        ctx.db.moon().moon_id().update(Moon {
             x: upd.x as i32,
             y: upd.y as i32,
             dx: upd.dx,
             dy: upd.dy,
-            ..bot
+            ..moon
         });
     }
 }
@@ -511,7 +511,7 @@ pub fn tick(ctx: &ReducerContext, tick_schedule: TickSchedule) -> Result<(), Str
 
     spawn_bits(ctx, tick_schedule.id);
     
-    update_bots(ctx);
+    update_moons(ctx);
 
     update_users(ctx);
     
@@ -543,7 +543,7 @@ pub fn tick(ctx: &ReducerContext, tick_schedule: TickSchedule) -> Result<(), Str
 
 #[reducer(init)]
 pub fn init(ctx: &ReducerContext) -> Result<(), String> {
-    spawn_bots(ctx, STARTING_BOTS);
+    spawn_moons(ctx, STARTING_MOONS);
     ctx.db.metadata().insert(Metadata {
         world_height: WORLD_HEIGHT,
         world_width: WORLD_WIDTH,

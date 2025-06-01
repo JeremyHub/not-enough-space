@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import './App.css';
-import { Bit, Bot, Color, DbConnection, ErrorContext, EventContext, Metadata, User } from './module_bindings';
+import { Bit, Moon, Color, DbConnection, ErrorContext, EventContext, Metadata, User } from './module_bindings';
 import { Identity } from '@clockworklabs/spacetimedb-sdk';
 
 function useMetadata(conn: DbConnection | null): Metadata | null {
@@ -57,33 +57,33 @@ function useUsers(conn: DbConnection | null): Map<string, User> {
   return users;
 }
 
-function useBots(conn: DbConnection | null): Array<Bot> {
-  const [bots, setBots] = useState<Array<Bot>>([]);
+function useMoons(conn: DbConnection | null): Array<Moon> {
+  const [moons, setMoons] = useState<Array<Moon>>([]);
 
   useEffect(() => {
     if (!conn) return;
-    const onInsert = (_ctx: EventContext, bot: Bot) => {
-      setBots(prev => [...prev, bot]);
+    const onInsert = (_ctx: EventContext, moon: Moon) => {
+      setMoons(prev => [...prev, moon]);
     };
-    conn.db.bot.onInsert(onInsert);
+    conn.db.moon.onInsert(onInsert);
 
-    const onUpdate = (_ctx: EventContext, oldBot: Bot, newBot: Bot) => {
-      setBots(prev => prev.map(bot => bot.botId === oldBot.botId ? newBot : bot));
+    const onUpdate = (_ctx: EventContext, oldMoon: Moon, newMoon: Moon) => {
+      setMoons(prev => prev.map(moon => moon.moonId === oldMoon.moonId ? newMoon : moon));
     };
-    conn.db.bot.onUpdate(onUpdate);
+    conn.db.moon.onUpdate(onUpdate);
 
-    const onDelete = (_ctx: EventContext, bot: Bot) => {
-      setBots(prev => prev.filter(b => b.botId !== bot.botId));
+    const onDelete = (_ctx: EventContext, moon: Moon) => {
+      setMoons(prev => prev.filter(b => b.moonId !== moon.moonId));
     };
-    conn.db.bot.onDelete(onDelete);
+    conn.db.moon.onDelete(onDelete);
 
     return () => {
-      conn.db.bot.removeOnInsert(onInsert);
-      conn.db.bot.removeOnUpdate(onUpdate);
-      conn.db.bot.removeOnDelete(onDelete);
+      conn.db.moon.removeOnInsert(onInsert);
+      conn.db.moon.removeOnUpdate(onUpdate);
+      conn.db.moon.removeOnDelete(onDelete);
     };
   }, [conn]);
-  return bots;
+  return moons;
 }
 
 function useBits(conn: DbConnection | null): Array<Bit> {
@@ -122,7 +122,7 @@ type DrawProps = {
   renderBuffer: number,
   users: Map<string, User>;
   bits: Array<Bit>;
-  bots: Array<Bot>;
+  moons: Array<Moon>;
   identity: Identity;
 };
 
@@ -171,7 +171,7 @@ function renderWithWrap(
 }
 
 const draw = (ctx: CanvasRenderingContext2D | null, props: DrawProps) => {
-  const { metadata, canvasWidth, canvasHeight, renderBuffer, users, bits, bots, identity } = props;
+  const { metadata, canvasWidth, canvasHeight, renderBuffer, users, bits, moons, identity } = props;
   if (!ctx) return;
 
   ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
@@ -267,10 +267,10 @@ const draw = (ctx: CanvasRenderingContext2D | null, props: DrawProps) => {
     }
   });
 
-  bots.forEach(bot => {
-    const { x, y } = toScreen(bot);
+  moons.forEach(moon => {
+    const { x, y } = toScreen(moon);
     renderWithWrap(
-      (px, py) => renderCircle(ctx, bot.size, px, py, bot.color),
+      (px, py) => renderCircle(ctx, moon.size, px, py, moon.color),
       metadata,
       canvasWidth,
       canvasHeight,
@@ -346,7 +346,7 @@ function App() {
   const metadata = useMetadata(conn);
   const self = identity ? users.get(identity.toHexString()) : null;
   const bits = useBits(conn);
-  const bots = useBots(conn);
+  const moons = useMoons(conn);
   const [quriedX, setQuriedX] = useState<number | null>(null);
   const [quriedY, setQuriedY] = useState<number | null>(null);
   const [bitSubscription, setBitSubscription] = useState<any | null>(null);
@@ -458,12 +458,12 @@ function App() {
 
     const baseQuery = `WHERE (${withinScreenQuery}${leftEdgeQuery}${rightEdgeQuery}${topEdgeQuery}${bottomEdgeQuery}${topLeftCornerQuery}${topRightCornerQuery}${bottomLeftCornerQuery}${bottomRightCornerQuery})`;
     const bitQuery = "SELECT * FROM bit " + baseQuery;
-    const botQuery = "SELECT * FROM bot " + baseQuery;
+    const moonQuery = "SELECT * FROM moon " + baseQuery;
     const userQuery = "SELECT * FROM user " + baseQuery;
 
     const handle = conn
       .subscriptionBuilder()
-      .subscribe([bitQuery, botQuery, userQuery]);
+      .subscribe([bitQuery, moonQuery, userQuery]);
 
     setBitSubscription(handle);
     bitSubscription?.unsubscribe();
@@ -562,7 +562,7 @@ function App() {
 
   return (
     <div className="App">
-      <Canvas key={`${canvasWidth}x${canvasHeight}`} draw={draw} draw_props={{ metadata, canvasWidth: animatedWidth, canvasHeight: animatedHeight, renderBuffer, users, bits, bots, identity }} />
+      <Canvas key={`${canvasWidth}x${canvasHeight}`} draw={draw} draw_props={{ metadata, canvasWidth: animatedWidth, canvasHeight: animatedHeight, renderBuffer, users, bits, moons, identity }} />
     </div>
   );
 }
