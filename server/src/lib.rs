@@ -27,11 +27,13 @@ const MOON_ACCELERATION: f32 = 2.0;
 const PORTION_NON_ORBITING_MOONS_DIRECTION_UPDATED_PER_TICK: f64 = 0.005;
 
 // moon oribit params
-const ORBIT_RADIUS_CLOSE: f32 = 12.0;
-const ORBIT_RADIUS_FAR: f32 = 40.0;
+const ORBIT_RADIUS_FACTOR_CLOSE: f32 = 3.0;
+const ORBIT_RADIUS_FACTOR_FAR: f32 = 7.0;
 const ORBIT_ANGULAR_VEL_CLOSE: f32 = 0.04;
 const ORBIT_ANGULAR_VEL_FAR: f32 = 0.02;
 const USER_SPEED_ORBIT_THRESHOLD: f32 = 10.0;
+const ORBIT_MOVING_ACCELERATION: f32 = 10.0;
+const ORBIT_STATIONARY_ACCELERATION: f32 = 2.0;
 
 const UPDATE_OFFLINE_PLAYERS: bool = true;
 
@@ -237,9 +239,9 @@ fn update_moon_directions(ctx: &ReducerContext) {
                 let user_speed = (user.dx.powi(2) + user.dy.powi(2)).sqrt();
                 let moving = user_speed > USER_SPEED_ORBIT_THRESHOLD;
                 let (orbit_state, orbit_radius, orbit_angular_vel) = if moving {
-                    (OrbitState::Moving, ORBIT_RADIUS_FAR + user.size, ORBIT_ANGULAR_VEL_FAR)
+                    (OrbitState::Moving, ORBIT_RADIUS_FACTOR_FAR * user.size, ORBIT_ANGULAR_VEL_FAR)
                 } else {
-                    (OrbitState::Stationary, ORBIT_RADIUS_CLOSE + user.size, ORBIT_ANGULAR_VEL_CLOSE)
+                    (OrbitState::Stationary, ORBIT_RADIUS_FACTOR_CLOSE * user.size, ORBIT_ANGULAR_VEL_CLOSE)
                 };
 
                 // Advance orbit angle
@@ -279,14 +281,14 @@ fn update_moon_directions(ctx: &ReducerContext) {
 
                 // scale velocity increment by distance (clamped to avoid zero)
                 let distance_scale = dir_length.max(1.0); // minimum 1.0 to avoid division by zero
-                let acceleration = if moving { 2.0 } else { 1.0 };
+                let acceleration = if moving { ORBIT_MOVING_ACCELERATION } else { ORBIT_STATIONARY_ACCELERATION };
                 let scale = distance_scale / orbit_radius; // normalized, so it slows as it gets closer
 
                 // Calculate the velocity increment, but clamp so we don't overshoot
                 let mut delta_vx = (dir_vec_x / dir_length) * acceleration * scale;
                 let mut delta_vy = (dir_vec_y / dir_length) * acceleration * scale;
 
-                // Clamp the increment so we don't move further than the distance to the target
+                // Clamp the increment
                 let max_step = dir_length;
                 let step_length = (delta_vx.powi(2) + delta_vy.powi(2)).sqrt();
                 if step_length > max_step {
@@ -295,18 +297,15 @@ fn update_moon_directions(ctx: &ReducerContext) {
                     delta_vy *= clamp_factor;
                 }
 
-                let new_dx = delta_vx*5.0;
-                let new_dy = delta_vy*5.0;
-
                 // Update moon with new position and velocity
-                let updated_x = moon.x + new_dx;
-                let updated_y = moon.y + new_dy;
+                let updated_x = moon.x + delta_vx;
+                let updated_y = moon.y + delta_vy;
                 ctx.db.moon().moon_id().update(Moon {
                     col_index: updated_x.round() as i32,
                     x: updated_x,
                     y: updated_y,
-                    dx: new_dx,
-                    dy: new_dy,
+                    dx: delta_vx,
+                    dy: delta_vy,
                     orbit_angle,
                     orbit_state: Some(orbit_state),
                     orbit_radius,
