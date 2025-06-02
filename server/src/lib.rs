@@ -258,22 +258,22 @@ fn update_moon_directions(ctx: &ReducerContext) {
                 // Compute desired moon position relative to user
                 let user_x = user.x;
                 let user_y = user.y;
-                let (new_x, new_y) = wrap_coords(user_x + orbit_radius * orbit_angle.cos(), user_y + orbit_radius * orbit_angle.sin());
+                let new_x = user_x + orbit_radius * orbit_angle.cos();
+                let new_y = user_y + orbit_radius * orbit_angle.sin();
 
-                // compute vector from moon's current position to desired position
+                // compute minimal toroidal vector from moon's current position to desired position
                 let mut dir_vec_x = new_x - moon.x;
                 let mut dir_vec_y = new_y - moon.y;
 
-                // Handle wrapping for x
-                if dir_vec_x.abs() > (WORLD_WIDTH as f32) / 2.0 {
+                // Proper toroidal wrapping for direction vector
+                if dir_vec_x.abs() > WORLD_WIDTH as f32 / 2.0 {
                     if dir_vec_x > 0.0 {
                         dir_vec_x -= WORLD_WIDTH as f32;
                     } else {
                         dir_vec_x += WORLD_WIDTH as f32;
                     }
                 }
-                // Handle wrapping for y
-                if dir_vec_y.abs() > (WORLD_HEIGHT as f32) / 2.0 {
+                if dir_vec_y.abs() > WORLD_HEIGHT as f32 / 2.0 {
                     if dir_vec_y > 0.0 {
                         dir_vec_y -= WORLD_HEIGHT as f32;
                     } else {
