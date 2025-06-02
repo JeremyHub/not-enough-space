@@ -354,7 +354,7 @@ struct CharacterUpdate {
     dy: f32,
 }
 
-fn move_character<C: Character>(character: &C, acceleration: f32, handle_wrapping: bool) -> CharacterUpdate {
+fn move_character<C: Character>(character: &C, acceleration: f32) -> CharacterUpdate {
     let mut new_dx: f32 = character.dx() * FRICTION;
     let mut new_dy: f32 = character.dy() * FRICTION;
 
@@ -395,18 +395,6 @@ fn wrap_coords(x: f32, y: f32) -> (f32, f32) {
     (new_x, new_y)
 }
 
-fn wrap_character<C: Character>(character: &C) -> CharacterUpdate {
-
-    let (new_x, new_y) = wrap_coords(character.x(), character.y());
-
-    CharacterUpdate {
-        x: new_x,
-        y: new_y,
-        dx: character.dx(),
-        dy: character.dy(),
-    }
-}
-
 fn rearrange_orbit_angles(ctx: &ReducerContext, user_id: Identity) {
     // Collect all moons orbiting this user
     let mut orbiting_moons: Vec<_> = ctx.db.moon().iter()
@@ -430,7 +418,7 @@ fn update_users(ctx: &ReducerContext) {
     // move users
     for user in ctx.db.user().iter() {
         if user.online || UPDATE_OFFLINE_PLAYERS {
-            let upd = move_character(&user, USER_ACCELERATION, false);
+            let upd = move_character(&user, USER_ACCELERATION);
             ctx.db.user().identity().update(User {
                 x: upd.x,
                 y: upd.y,
@@ -478,21 +466,6 @@ fn update_users(ctx: &ReducerContext) {
             rearrange_orbit_angles(ctx, user_id);
         }
     }
-
-    // TODO test if this is needed
-    // handle character wrapping
-    for user in ctx.db.user().iter() {
-        if user.online || UPDATE_OFFLINE_PLAYERS {
-            let upd = wrap_character(&user);
-            ctx.db.user().identity().update(User {
-                x: upd.x,
-                y: upd.y,
-                dx: upd.dx,
-                dy: upd.dy,
-                ..user
-            });
-        }
-    }
 }
 
 fn update_moons(ctx: &ReducerContext) {
@@ -501,7 +474,7 @@ fn update_moons(ctx: &ReducerContext) {
         // Only move non-orbiting moons
         if moon.orbiting.is_none() {
             let acceleration = MOON_ACCELERATION;
-            let upd = move_character(&moon, acceleration, true);
+            let upd = move_character(&moon, acceleration);
             ctx.db.moon().moon_id().update(Moon {
                 col_index: upd.x.round() as i32,
                 x: upd.x,
