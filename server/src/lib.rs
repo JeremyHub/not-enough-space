@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::collections::HashSet;
 
 use spacetimedb::{rand, reducer, table, Identity, ReducerContext, ScheduleAt, SpacetimeType, Table, TimeDuration};
 use spacetimedb::rand::Rng;
@@ -95,7 +96,6 @@ pub struct Moon {
     health: f32,
     size: f32,
     orbiting: Option<Identity>,
-    // New fields for orbiting
     orbit_angle: f32,
     orbit_state: Option<OrbitState>,
     orbit_radius: f32,
@@ -407,6 +407,25 @@ fn wrap_character<C: Character>(character: &C) -> CharacterUpdate {
     }
 }
 
+fn rearrange_orbit_angles(ctx: &ReducerContext, user_id: Identity) {
+    // Collect all moons orbiting this user
+    let mut orbiting_moons: Vec<_> = ctx.db.moon().iter()
+        .filter(|m| m.orbiting == Some(user_id))
+        .collect();
+    let n = orbiting_moons.len();
+    if n == 0 { return; }
+    // Sort by current angle to minimize angle change
+    orbiting_moons.sort_by(|a, b| a.orbit_angle.partial_cmp(&b.orbit_angle).unwrap_or(std::cmp::Ordering::Equal));
+    // Assign equally spaced angles, preserving order
+    for (i, moon) in orbiting_moons.into_iter().enumerate() {
+        let angle = (i as f32) * (2.0 * std::f32::consts::PI / n as f32);
+        ctx.db.moon().moon_id().update(Moon {
+            orbit_angle: angle,
+            ..moon
+        });
+    }
+}
+
 fn update_users(ctx: &ReducerContext) {
     // move users
     for user in ctx.db.user().iter() {
@@ -423,6 +442,7 @@ fn update_users(ctx: &ReducerContext) {
     }
     // handle user:user and user:moon collisions
     let mut moon_size_map: HashMap<Identity, f32> = HashMap::new();
+    let mut users_with_new_moon: Vec<Identity> = Vec::new();
     for user in ctx.db.user().iter() {
         if user.online || UPDATE_OFFLINE_PLAYERS {
             if user.total_moon_size_oribiting < user.size {
@@ -435,6 +455,7 @@ fn update_users(ctx: &ReducerContext) {
                                     ..moon
                                 });
                                 *moon_size_map.entry(user.identity).or_insert(0.0) += moon.size;
+                                users_with_new_moon.push(user.identity);
                             }
                         }
                     }
@@ -450,7 +471,15 @@ fn update_users(ctx: &ReducerContext) {
             });
         }
     }
+    // Rearrange orbit angles for users who got a new moon
+    let mut seen = HashSet::new();
+    for user_id in users_with_new_moon {
+        if seen.insert(user_id) {
+            rearrange_orbit_angles(ctx, user_id);
+        }
+    }
 
+    // TODO test if this is needed
     // handle character wrapping
     for user in ctx.db.user().iter() {
         if user.online || UPDATE_OFFLINE_PLAYERS {
