@@ -1,0 +1,1 @@
+.App{width:100%;height:100%;overflow:hidden}canvas{width:100%;height:100%;box-sizing:content-box}.nes-canvas{border:3px solid #333;display:block;margin:auto;background:#fff;width:min(100vw,100vh);height:min(100vw,100vh);max-width:1000px;max-height:1000px;aspect-ratio:1 / 1;box-sizing:border-box;position:absolute;top:0;bottom:0;left:0;right:0}
