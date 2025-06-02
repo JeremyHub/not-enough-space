@@ -372,12 +372,7 @@ fn move_character<C: Character>(character: &C, acceleration: f32) -> CharacterUp
     let new_x;
     let new_y;
 
-    if handle_wrapping {
-        (new_x, new_y) = wrap_coords(after_move_x, after_move_y);
-    } else {
-        new_x = after_move_x;
-        new_y = after_move_y;
-    }
+    (new_x, new_y) = wrap_coords(after_move_x, after_move_y);
 
     CharacterUpdate { x: new_x, y: new_y, dx: new_dx, dy: new_dy }
 }
