@@ -27,13 +27,17 @@ const MOON_ACCELERATION: f32 = 2.0;
 const PORTION_NON_ORBITING_MOONS_DIRECTION_UPDATED_PER_TICK: f64 = 0.005;
 
 // moon oribit params
-const ORBIT_RADIUS_FACTOR_CLOSE: f32 = 3.0;
-const ORBIT_RADIUS_FACTOR_FAR: f32 = 7.0;
+const ORBIT_RADIUS_USER_SIZE_FACTOR_CLOSE: f32 = 1.5;
+const ORBIT_RADIUS_CONST_CLOSE: f32 = 10.0;
+const ORBIT_RADIUS_USER_SIZE_FACTOR_FAR: f32 = 5.0;
+const ORBIT_RADIUS_CONST_FAR: f32 = 10.0;
 const ORBIT_ANGULAR_VEL_CLOSE: f32 = 0.04;
 const ORBIT_ANGULAR_VEL_FAR: f32 = 0.02;
-const USER_SPEED_ORBIT_THRESHOLD: f32 = 10.0;
-const ORBIT_MOVING_ACCELERATION: f32 = 10.0;
-const ORBIT_STATIONARY_ACCELERATION: f32 = 2.0;
+const USER_SPEED_ORBIT_THRESHOLD: f32 = 5.0;
+const ORBIT_MOVING_ACCELERATION_USER_SIZE_FACTOR: f32 = 0.5;
+const ORBIT_MOVING_ACCELERATION_CONST: f32 = 5.0;
+const ORBIT_STATIONARY_ACCELERATION_USER_SIZE_FACTOR: f32 = 0.2;
+const ORBIT_STATIONARY_ACCELERATION_CONST: f32 = 5.0;
 
 const UPDATE_OFFLINE_PLAYERS: bool = true;
 
@@ -239,9 +243,9 @@ fn update_moon_directions(ctx: &ReducerContext) {
                 let user_speed = (user.dx.powi(2) + user.dy.powi(2)).sqrt();
                 let moving = user_speed > USER_SPEED_ORBIT_THRESHOLD;
                 let (orbit_state, orbit_radius, orbit_angular_vel) = if moving {
-                    (OrbitState::Moving, ORBIT_RADIUS_FACTOR_FAR * user.size, ORBIT_ANGULAR_VEL_FAR)
+                    (OrbitState::Moving, (ORBIT_RADIUS_USER_SIZE_FACTOR_FAR * user.size) + ORBIT_RADIUS_CONST_FAR, ORBIT_ANGULAR_VEL_FAR)
                 } else {
-                    (OrbitState::Stationary, ORBIT_RADIUS_FACTOR_CLOSE * user.size, ORBIT_ANGULAR_VEL_CLOSE)
+                    (OrbitState::Stationary, (ORBIT_RADIUS_USER_SIZE_FACTOR_CLOSE * user.size) + ORBIT_RADIUS_CONST_CLOSE, ORBIT_ANGULAR_VEL_CLOSE)
                 };
 
                 // Advance orbit angle
@@ -254,8 +258,7 @@ fn update_moon_directions(ctx: &ReducerContext) {
                 // Compute desired moon position relative to user
                 let user_x = user.x;
                 let user_y = user.y;
-                let new_x = wrap_single_coord(user_x + orbit_radius * orbit_angle.cos(), WORLD_WIDTH as f32);
-                let new_y = wrap_single_coord(user_y + orbit_radius * orbit_angle.sin(), WORLD_HEIGHT as f32);
+                let (new_x, new_y) = wrap_coords(user_x + orbit_radius * orbit_angle.cos(), user_y + orbit_radius * orbit_angle.sin());
 
                 // compute vector from moon's current position to desired position
                 let mut dir_vec_x = new_x - moon.x;
@@ -281,7 +284,7 @@ fn update_moon_directions(ctx: &ReducerContext) {
 
                 // scale velocity increment by distance (clamped to avoid zero)
                 let distance_scale = dir_length.max(1.0); // minimum 1.0 to avoid division by zero
-                let acceleration = if moving { ORBIT_MOVING_ACCELERATION } else { ORBIT_STATIONARY_ACCELERATION };
+                let acceleration = if moving { (ORBIT_MOVING_ACCELERATION_USER_SIZE_FACTOR * user.size) + ORBIT_MOVING_ACCELERATION_CONST } else { (ORBIT_STATIONARY_ACCELERATION_USER_SIZE_FACTOR * user.size) + ORBIT_STATIONARY_ACCELERATION_CONST };
                 let scale = distance_scale / orbit_radius; // normalized, so it slows as it gets closer
 
                 // Calculate the velocity increment, but clamp so we don't overshoot
@@ -298,8 +301,7 @@ fn update_moon_directions(ctx: &ReducerContext) {
                 }
 
                 // Update moon with new position and velocity
-                let updated_x = moon.x + delta_vx;
-                let updated_y = moon.y + delta_vy;
+                let (updated_x, updated_y) = wrap_coords(moon.x + delta_vx, moon.y + delta_vy);
                 ctx.db.moon().moon_id().update(Moon {
                     col_index: updated_x.round() as i32,
                     x: updated_x,
@@ -317,16 +319,6 @@ fn update_moon_directions(ctx: &ReducerContext) {
     }
 }
 
-// Helper for wrapping a single coordinate
-fn wrap_single_coord(val: f32, max: f32) -> f32 {
-    let mut v = val;
-    if v < 0.0 {
-        v += max;
-    } else if v >= max {
-        v -= max;
-    }
-    v
-}
 
 trait Character {
     fn x(&self) -> f32;
