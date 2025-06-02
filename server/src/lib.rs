@@ -21,8 +21,8 @@ const MAX_BIT_SIZE: f32 = MAX_BIT_WORTH;
 
 // non-orbiting moon params
 const STARTING_MOONS: u64 = 500;
-const MAX_MOON_SIZE: i32 = 5;
-const MIN_MOON_SIZE: i32 = 3;
+const MAX_MOON_SIZE: f32 = 5.0;
+const MIN_MOON_SIZE: f32 = 3.0;
 const MOON_DRIFT: f32 = 0.5;
 const MOON_ACCELERATION: f32 = 2.0;
 const PORTION_NON_ORBITING_MOONS_DIRECTION_UPDATED_PER_TICK: f64 = 0.005;
@@ -34,8 +34,10 @@ const ORBIT_RADIUS_USER_SIZE_FACTOR_FAR: f32 = -1.0;
 const ORBIT_RADIUS_CONST_FAR: f32 = 20.0;
 const ADDITIONAL_ORBIT_RADIUS_MOON_SIZE_FACTOR_FAR: f32 = 15.0;
 const ADDITIONAL_ORBIT_RADIUS_MOON_SIZE_FACTOR_CLOSE: f32 = 5.0;
-const ORBIT_ANGULAR_VEL_CLOSE: f32 = 0.04;
-const ORBIT_ANGULAR_VEL_FAR: f32 = 0.02;
+const ORBIT_ANGULAR_VEL_CLOSE: f32 = 0.000000000004;
+const ORBIT_ANGULAR_VEL_RADIUS_FACTOR_CLOSE: f32 = 0.01;
+const ORBIT_ANGULAR_VEL_FAR: f32 = 0.0000000000002;
+const ORBIT_ANGULAR_VEL_RADIUS_FACTOR_FAR: f32 = 0.01;
 const USER_SPEED_ORBIT_THRESHOLD: f32 = 5.0;
 const ORBIT_MOVING_ACCELERATION_USER_SIZE_FACTOR: f32 = 0.5;
 const ORBIT_MOVING_ACCELERATION_CONST: f32 = 5.0;
@@ -96,7 +98,7 @@ pub struct Moon {
     dir_vec_y: f32,
     color: Color,
     health: f32,
-    size: f32,
+    size: f32, // changed from i32 to f32
     orbiting: Option<Identity>,
     orbit_angle: f32,
     orbit_state: Option<OrbitState>,
@@ -201,7 +203,7 @@ fn spawn_moons(ctx: &ReducerContext, num_moons: u64) {
             g: ctx.rng().gen_range(0..=255),
             b: ctx.rng().gen_range(0..=255),
         };
-        let size = ctx.rng().gen_range(MIN_MOON_SIZE..=MAX_MOON_SIZE);
+        let size = ctx.rng().gen_range(MIN_MOON_SIZE..=MAX_MOON_SIZE); // now f32
         ctx.db.moon().insert(Moon {
             moon_id: 0,
             col_index: x.round() as i32,
@@ -212,8 +214,8 @@ fn spawn_moons(ctx: &ReducerContext, num_moons: u64) {
             dir_vec_x: ((ctx.rng().gen_range(0..=100) as f32 / 100.0) * 2.0) - MOON_DRIFT,
             dir_vec_y: ((ctx.rng().gen_range(0..=100) as f32 / 100.0) * 2.0) - MOON_DRIFT,
             color,
-            health: size as f32,
-            size: size as f32,
+            health: size,
+            size, // now f32
             orbiting: None,
             orbit_angle: 0.0,
             orbit_state: None,
@@ -244,10 +246,17 @@ fn update_moon_directions(ctx: &ReducerContext) {
                 // Determine if user is moving
                 let user_speed = (user.dx.powi(2) + user.dy.powi(2)).sqrt();
                 let moving = user_speed > USER_SPEED_ORBIT_THRESHOLD;
-                let (orbit_state, orbit_radius, orbit_angular_vel) = if moving {
-                    (OrbitState::Moving, (ORBIT_RADIUS_USER_SIZE_FACTOR_FAR * user.size) + ORBIT_RADIUS_CONST_FAR + (ADDITIONAL_ORBIT_RADIUS_MOON_SIZE_FACTOR_FAR * (1.0/moon.size) * user.size), ORBIT_ANGULAR_VEL_FAR)
+                let orbit_state: OrbitState;
+                let orbit_radius: f32;
+                let orbit_angular_vel: f32;
+                if moving {
+                    orbit_state = OrbitState::Moving;
+                    orbit_radius = (ORBIT_RADIUS_USER_SIZE_FACTOR_FAR * user.size) + ORBIT_RADIUS_CONST_FAR + (ADDITIONAL_ORBIT_RADIUS_MOON_SIZE_FACTOR_FAR * (1.0/moon.size) * user.size);
+                    orbit_angular_vel = ORBIT_ANGULAR_VEL_FAR + (ORBIT_ANGULAR_VEL_RADIUS_FACTOR_FAR * moon.size);
                 } else {
-                    (OrbitState::Stationary, (ORBIT_RADIUS_USER_SIZE_FACTOR_CLOSE * user.size) + ORBIT_RADIUS_CONST_CLOSE + (ADDITIONAL_ORBIT_RADIUS_MOON_SIZE_FACTOR_CLOSE * (1.0/moon.size) * user.size), ORBIT_ANGULAR_VEL_CLOSE)
+                    orbit_state = OrbitState::Stationary;
+                    orbit_radius = (ORBIT_RADIUS_USER_SIZE_FACTOR_CLOSE * user.size) + ORBIT_RADIUS_CONST_CLOSE + (ADDITIONAL_ORBIT_RADIUS_MOON_SIZE_FACTOR_CLOSE * (1.0/moon.size) * user.size);
+                    orbit_angular_vel = ORBIT_ANGULAR_VEL_CLOSE + (ORBIT_ANGULAR_VEL_RADIUS_FACTOR_CLOSE * moon.size);
                 };
 
                 // Advance orbit angle
