@@ -28,10 +28,11 @@ const MOON_ACCELERATION: f32 = 2.0;
 const PORTION_NON_ORBITING_MOONS_DIRECTION_UPDATED_PER_TICK: f64 = 0.005;
 
 // moon oribit params
-const ORBIT_RADIUS_USER_SIZE_FACTOR_CLOSE: f32 = 1.5;
-const ORBIT_RADIUS_CONST_CLOSE: f32 = 10.0;
-const ORBIT_RADIUS_USER_SIZE_FACTOR_FAR: f32 = 5.0;
-const ORBIT_RADIUS_CONST_FAR: f32 = 10.0;
+const ORBIT_RADIUS_USER_SIZE_FACTOR_CLOSE: f32 = 1.3;
+const ORBIT_RADIUS_CONST_CLOSE: f32 = 5.0;
+const ORBIT_RADIUS_USER_SIZE_FACTOR_FAR: f32 = 4.0;
+const ORBIT_RADIUS_CONST_FAR: f32 = 20.0;
+const ADDITIONAL_ORBIT_RADIUS_MOON_SIZE_FACTOR: f32 = 5.0;
 const ORBIT_ANGULAR_VEL_CLOSE: f32 = 0.04;
 const ORBIT_ANGULAR_VEL_FAR: f32 = 0.02;
 const USER_SPEED_ORBIT_THRESHOLD: f32 = 5.0;
@@ -242,11 +243,12 @@ fn update_moon_directions(ctx: &ReducerContext) {
                 // Determine if user is moving
                 let user_speed = (user.dx.powi(2) + user.dy.powi(2)).sqrt();
                 let moving = user_speed > USER_SPEED_ORBIT_THRESHOLD;
-                let (orbit_state, orbit_radius, orbit_angular_vel) = if moving {
+                let (orbit_state, mut orbit_radius, orbit_angular_vel) = if moving {
                     (OrbitState::Moving, (ORBIT_RADIUS_USER_SIZE_FACTOR_FAR * user.size) + ORBIT_RADIUS_CONST_FAR, ORBIT_ANGULAR_VEL_FAR)
                 } else {
                     (OrbitState::Stationary, (ORBIT_RADIUS_USER_SIZE_FACTOR_CLOSE * user.size) + ORBIT_RADIUS_CONST_CLOSE, ORBIT_ANGULAR_VEL_CLOSE)
                 };
+                orbit_radius += ADDITIONAL_ORBIT_RADIUS_MOON_SIZE_FACTOR * (1.0/moon.size) * user.size;
 
                 // Advance orbit angle
                 let mut orbit_angle = moon.orbit_angle;
@@ -435,6 +437,7 @@ fn update_users(ctx: &ReducerContext) {
                             if toroidal_distance(user.x, user.y, moon.x, moon.y) <= (user.size + moon.size) {
                                 ctx.db.moon().moon_id().update(Moon {
                                     orbiting: Some(user.identity),
+                                    orbit_angle: ctx.rng().gen_range(0.0..(2.0 * std::f32::consts::PI)),
                                     ..moon
                                 });
                                 *moon_size_map.entry(user.identity).or_insert(0.0) += moon.size;
