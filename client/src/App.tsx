@@ -175,7 +175,8 @@ const draw = (ctx: CanvasRenderingContext2D | null, props: DrawProps) => {
   const { metadata, canvasWidth, canvasHeight, renderBuffer, users, self, bits, moons, identity } = props;
   if (!ctx) return;
 
-  ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+  ctx.fillStyle = 'rgb(23, 23, 23)';
+  ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
   const GRID_SIZE = 60
 
