@@ -433,9 +433,12 @@ function App() {
         console.log('Error connecting to SpacetimeDB:', err);
       };
 
+      const uri = window.prompt('Enter SpacetimeDB URI:', 'ws://localhost:3000') || 'ws://localhost:3000';
+
       setConn(
         DbConnection.builder()
-          .withUri('ws://localhost:3000')
+          // .withUri('ws://localhost:3000')
+          .withUri(uri)
           .withModuleName('nes')
           // .withToken(localStorage.getItem('auth_token') || '')
           .withToken('') // use the above line instead for persisting connection across refreshes
