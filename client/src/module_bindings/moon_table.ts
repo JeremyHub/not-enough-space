@@ -33,7 +33,6 @@ import {
 import { Moon } from "./moon_type";
 import { Color as __Color } from "./color_type";
 import { OrbitState as __OrbitState } from "./orbit_state_type";
-import { OrbitDirection as __OrbitDirection } from "./orbit_direction_type";
 
 import { EventContext, Reducer, RemoteReducers, RemoteTables } from ".";
 

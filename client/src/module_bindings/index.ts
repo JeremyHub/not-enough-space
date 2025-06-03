@@ -64,8 +64,6 @@ import { Metadata } from "./metadata_type.ts";
 export { Metadata };
 import { Moon } from "./moon_type.ts";
 export { Moon };
-import { OrbitDirection } from "./orbit_direction_type.ts";
-export { OrbitDirection };
 import { OrbitState } from "./orbit_state_type.ts";
 export { OrbitState };
 import { TickMeta } from "./tick_meta_type.ts";

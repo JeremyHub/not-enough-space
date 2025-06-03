@@ -32,7 +32,6 @@ import {
 } from "@clockworklabs/spacetimedb-sdk";
 import { Color as __Color } from "./color_type";
 import { OrbitState as __OrbitState } from "./orbit_state_type";
-import { OrbitDirection as __OrbitDirection } from "./orbit_direction_type";
 
 export type Moon = {
   moonId: bigint,
@@ -51,7 +50,7 @@ export type Moon = {
   orbitState: __OrbitState | undefined,
   orbitRadius: number,
   targetColor: __Color | undefined,
-  orbitDirection: __OrbitDirection | undefined,
+  orbitalVelocity: number | undefined,
 };
 
 /**
@@ -80,7 +79,7 @@ export namespace Moon {
       new ProductTypeElement("orbitState", AlgebraicType.createOptionType(__OrbitState.getTypeScriptAlgebraicType())),
       new ProductTypeElement("orbitRadius", AlgebraicType.createF32Type()),
       new ProductTypeElement("targetColor", AlgebraicType.createOptionType(__Color.getTypeScriptAlgebraicType())),
-      new ProductTypeElement("orbitDirection", AlgebraicType.createOptionType(__OrbitDirection.getTypeScriptAlgebraicType())),
+      new ProductTypeElement("orbitalVelocity", AlgebraicType.createOptionType(AlgebraicType.createF32Type())),
     ]);
   }
 
