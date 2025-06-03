@@ -499,10 +499,10 @@ function App() {
 
     const getDirection = (): { dirVecX: number, dirVecY: number } => {
 
-      const up = pressed.has('w');
-      const down = pressed.has('s');
-      const left = pressed.has('a');
-      const right = pressed.has('d');
+      const up = pressed.has('w') || pressed.has('ArrowUp');
+      const down = pressed.has('s') || pressed.has('ArrowDown');
+      const left = pressed.has('a') || pressed.has('ArrowLeft');
+      const right = pressed.has('d') || pressed.has('ArrowRight');
 
       if (up && right && !left && !down) return { dirVecX: 1, dirVecY: -1 };
       if (up && left && !right && !down) return { dirVecX: -1, dirVecY: -1 };
