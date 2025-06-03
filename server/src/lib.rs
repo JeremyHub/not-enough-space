@@ -40,9 +40,7 @@ const ORBIT_RADIUS_USER_SIZE_FACTOR_FAR: f32 = -3.2;
 const ORBIT_RADIUS_CONST_FAR: f32 = 30.0;
 const ADDITIONAL_ORBIT_RADIUS_MOON_SIZE_FACTOR_FAR: f32 = 21.0;
 const ADDITIONAL_ORBIT_RADIUS_MOON_SIZE_FACTOR_CLOSE: f32 = 5.0;
-const ORBIT_ANGULAR_VEL_CLOSE: f32 = 0.000000000004;
 const ORBIT_ANGULAR_VEL_RADIUS_FACTOR_CLOSE: f32 = 0.006;
-const ORBIT_ANGULAR_VEL_FAR: f32 = 0.0000000000002;
 const ORBIT_ANGULAR_VEL_RADIUS_FACTOR_FAR: f32 = 0.004;
 const USER_SPEED_ORBIT_THRESHOLD: f32 = 5.0;
 const ORBIT_MOVING_ACCELERATION_USER_SIZE_FACTOR: f32 = 0.5;
@@ -287,11 +285,11 @@ fn update_moon_directions(ctx: &ReducerContext) {
                 if moving {
                     orbit_state = OrbitState::Moving;
                     orbit_radius = (ORBIT_RADIUS_USER_SIZE_FACTOR_FAR * user.size) + ORBIT_RADIUS_CONST_FAR + (ADDITIONAL_ORBIT_RADIUS_MOON_SIZE_FACTOR_FAR * (1.0/moon.size) * user.size);
-                    orbit_angular_vel = ORBIT_ANGULAR_VEL_FAR + (ORBIT_ANGULAR_VEL_RADIUS_FACTOR_FAR * moon.size);
+                    orbit_angular_vel = ORBIT_ANGULAR_VEL_RADIUS_FACTOR_FAR * moon.size;
                 } else {
                     orbit_state = OrbitState::Stationary;
                     orbit_radius = (ORBIT_RADIUS_USER_SIZE_FACTOR_CLOSE * user.size) + ORBIT_RADIUS_CONST_CLOSE + (ADDITIONAL_ORBIT_RADIUS_MOON_SIZE_FACTOR_CLOSE * (1.0/moon.size) * user.size);
-                    orbit_angular_vel = ORBIT_ANGULAR_VEL_CLOSE + (ORBIT_ANGULAR_VEL_RADIUS_FACTOR_CLOSE * moon.size);
+                    orbit_angular_vel = ORBIT_ANGULAR_VEL_RADIUS_FACTOR_CLOSE * moon.size;
                 };
 
                 // Advance orbit angle
