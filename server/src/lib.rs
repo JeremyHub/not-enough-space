@@ -282,21 +282,19 @@ fn update_moon_directions(ctx: &ReducerContext) {
                 let orbit_state: OrbitState;
                 let orbit_radius: f32;
                 let orbit_angular_vel: f32;
-                let rounded_size = moon.size.round();
                 if moving {
                     orbit_state = OrbitState::Moving;
-                    orbit_radius = (ORBIT_RADIUS_USER_SIZE_FACTOR_FAR * user.size) + ORBIT_RADIUS_CONST_FAR + (ADDITIONAL_ORBIT_RADIUS_MOON_SIZE_FACTOR_FAR * (1.0/rounded_size) * user.size);
-                    orbit_angular_vel = ORBIT_ANGULAR_VEL_RADIUS_FACTOR_FAR * rounded_size;
+                    orbit_radius = (ORBIT_RADIUS_USER_SIZE_FACTOR_FAR * user.size) + ORBIT_RADIUS_CONST_FAR + (ADDITIONAL_ORBIT_RADIUS_MOON_SIZE_FACTOR_FAR * (1.0/moon.size) * user.size);
+                    orbit_angular_vel = ORBIT_ANGULAR_VEL_RADIUS_FACTOR_FAR * moon.size;
                 } else {
                     orbit_state = OrbitState::Stationary;
-                    orbit_radius = (ORBIT_RADIUS_USER_SIZE_FACTOR_CLOSE * user.size) + ORBIT_RADIUS_CONST_CLOSE + (ADDITIONAL_ORBIT_RADIUS_MOON_SIZE_FACTOR_CLOSE * (1.0/rounded_size) * user.size);
-                    orbit_angular_vel = ORBIT_ANGULAR_VEL_RADIUS_FACTOR_CLOSE * rounded_size;
+                    orbit_radius = (ORBIT_RADIUS_USER_SIZE_FACTOR_CLOSE * user.size) + ORBIT_RADIUS_CONST_CLOSE + (ADDITIONAL_ORBIT_RADIUS_MOON_SIZE_FACTOR_CLOSE * (1.0/moon.size) * user.size);
+                    orbit_angular_vel = ORBIT_ANGULAR_VEL_RADIUS_FACTOR_CLOSE * moon.size;
                 };
 
                 // Advance orbit angle
                 let mut orbit_angle = moon.orbit_angle;
-                // orbit angal changes +/- based on rounded size if its even or odd
-                orbit_angle += orbit_angular_vel * if rounded_size as i32 % 2 == 0 { 1.0 } else { -1.0 };
+                orbit_angle += orbit_angular_vel;
                 if orbit_angle > std::f32::consts::PI * 2.0 {
                     orbit_angle -= std::f32::consts::PI * 2.0;
                 }
