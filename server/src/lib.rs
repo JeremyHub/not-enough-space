@@ -436,21 +436,25 @@ fn wrap_coords(x: f32, y: f32) -> (f32, f32) {
 }
 
 fn rearrange_orbit_angles(ctx: &ReducerContext, user_id: Identity) {
-    // Collect all moons orbiting this user
-    let mut orbiting_moons: Vec<_> = ctx.db.moon().iter()
-        .filter(|m| m.orbiting == Some(user_id))
-        .collect();
-    let n = orbiting_moons.len();
-    if n == 0 { return; }
-    // Sort by current angle to minimize angle change
-    orbiting_moons.sort_by(|a, b| a.orbit_angle.partial_cmp(&b.orbit_angle).unwrap_or(std::cmp::Ordering::Equal));
-    // Assign equally spaced angles, preserving order
-    for (i, moon) in orbiting_moons.into_iter().enumerate() {
-        let angle = (i as f32) * (2.0 * std::f32::consts::PI / n as f32);
-        ctx.db.moon().moon_id().update(Moon {
-            orbit_angle: angle,
-            ..moon
-        });
+    // Collect all moons orbiting this user, grouped by rounded size
+    let mut orbits: HashMap<i32, Vec<_>> = HashMap::new();
+    for moon in ctx.db.moon().iter().filter(|m| m.orbiting == Some(user_id)) {
+        let rounded_size = moon.size.round() as i32;
+        orbits.entry(rounded_size).or_default().push(moon);
+    }
+    // For each orbit (size group), assign equally spaced angles
+    for (_size, mut moons) in orbits {
+        let n = moons.len();
+        if n == 0 { continue; }
+        // Sort by current angle to minimize angle change
+        moons.sort_by(|a, b| a.orbit_angle.partial_cmp(&b.orbit_angle).unwrap_or(std::cmp::Ordering::Equal));
+        for (i, moon) in moons.into_iter().enumerate() {
+            let angle = (i as f32) * (2.0 * std::f32::consts::PI / n as f32);
+            ctx.db.moon().moon_id().update(Moon {
+                orbit_angle: angle,
+                ..moon
+            });
+        }
     }
 }
 
