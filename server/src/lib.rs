@@ -87,6 +87,12 @@ pub enum OrbitState {
     Moving,
 }
 
+#[derive(SpacetimeType, Clone, Debug, PartialEq)]
+pub enum OrbitDirection {
+    Clockwise,
+    CounterClockwise,
+}
+
 #[table(name = moon, public)]
 pub struct Moon {
     #[primary_key]
@@ -108,6 +114,7 @@ pub struct Moon {
     orbit_state: Option<OrbitState>,
     orbit_radius: f32,
     target_color: Option<Color>,
+    orbit_direction: Option<OrbitDirection>,
 }
 
 pub fn get_user_size(health: f32) -> f32 {
@@ -253,6 +260,7 @@ fn spawn_moons(ctx: &ReducerContext, num_moons: u64) {
             orbit_state: None,
             orbit_radius: 0.0,
             target_color: None,
+            orbit_direction: None,
         });
     }
 }
@@ -294,9 +302,18 @@ fn update_moon_directions(ctx: &ReducerContext) {
 
                 // Advance orbit angle
                 let mut orbit_angle = moon.orbit_angle;
-                orbit_angle += orbit_angular_vel;
+                // Use orbit_direction to determine sign
+                let direction = moon.orbit_direction.clone().unwrap_or(OrbitDirection::Clockwise);
+                let sign = match direction {
+                    OrbitDirection::Clockwise => 1.0,
+                    OrbitDirection::CounterClockwise => -1.0,
+                };
+                orbit_angle += sign * orbit_angular_vel;
                 if orbit_angle > std::f32::consts::PI * 2.0 {
                     orbit_angle -= std::f32::consts::PI * 2.0;
+                }
+                if orbit_angle < 0.0 {
+                    orbit_angle += std::f32::consts::PI * 2.0;
                 }
 
                 // Compute desired moon position relative to user
@@ -486,10 +503,17 @@ fn update_users(ctx: &ReducerContext) {
                                     g: clamp(user.color.g + offset()),
                                     b: clamp(user.color.b + offset()),
                                 };
+                                // Randomly pick orbit direction
+                                let orbit_direction = if rng.gen_bool(0.5) {
+                                    OrbitDirection::Clockwise
+                                } else {
+                                    OrbitDirection::CounterClockwise
+                                };
                                 ctx.db.moon().moon_id().update(Moon {
                                     orbiting: Some(user.identity),
                                     orbit_angle: ctx.rng().gen_range(0.0..(2.0 * std::f32::consts::PI)),
                                     target_color: Some(target_color),
+                                    orbit_direction: Some(orbit_direction),
                                     ..moon
                                 });
                                 *moon_size_map.entry(user.identity).or_insert(0.0) += moon.size;
