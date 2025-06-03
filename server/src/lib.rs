@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::collections::HashSet;
 
+use spacetimedb::rand::seq::SliceRandom;
 use spacetimedb::{rand, reducer, table, Identity, ReducerContext, ScheduleAt, SpacetimeType, Table, TimeDuration};
 use spacetimedb::rand::Rng;
 
@@ -141,16 +142,48 @@ pub fn client_connected(ctx: &ReducerContext) {
     if let Some(user) = ctx.db.user().identity().find(ctx.sender) {
         ctx.db.user().identity().update(User { online: true, ..user });
     } else {
+        // Custom color generation logic
+        let mut rng = ctx.rng();
+        let mut channels = [0, 1, 2];
+        channels.shuffle(&mut rng);
+
+        let mut color_vals = [0i32; 3];
+
+        // Pick first channel and assign random value
+        let first_idx = channels[0];
+        color_vals[first_idx] = rng.gen_range(0..=255);
+
+        // Pick second channel, value must not be within 50 of first
+        let second_idx = channels[1];
+        let mut second_val;
+        loop {
+            second_val = rng.gen_range(0..=255);
+            if (second_val - color_vals[first_idx]).abs() >= 50 {
+                break;
+            }
+        }
+        color_vals[second_idx] = second_val;
+
+        // Pick third channel, assign random value
+        let third_idx = channels[2];
+        color_vals[third_idx] = rng.gen_range(0..=255);
+
+        let color = Color {
+            r: color_vals[0],
+            g: color_vals[1],
+            b: color_vals[2],
+        };
+
         ctx.db.user().insert(User {
             identity: ctx.sender,
             online: true,
-            x: ctx.rng().gen_range(0..=WORLD_WIDTH) as f32,
-            y: ctx.rng().gen_range(0..=WORLD_HEIGHT) as f32,
+            x: rng.gen_range(0..=WORLD_WIDTH) as f32,
+            y: rng.gen_range(0..=WORLD_HEIGHT) as f32,
             dx: 0.0,
             dy: 0.0,
             dir_vec_x: 0.0,
             dir_vec_y: 0.0,
-            color: Color{r: ctx.rng().gen_range(0..=255), g: ctx.rng().gen_range(0..=255), b: ctx.rng().gen_range(0..=255)},
+            color,
             health: 1.0,
             size: get_user_size(1.0),
             total_moon_size_oribiting: 0.0,
@@ -215,7 +248,7 @@ fn spawn_moons(ctx: &ReducerContext, num_moons: u64) {
             dir_vec_y: ((ctx.rng().gen_range(0..=100) as f32 / 100.0) * 2.0) - MOON_DRIFT,
             color,
             health: size,
-            size, // now f32
+            size,
             orbiting: None,
             orbit_angle: 0.0,
             orbit_state: None,
