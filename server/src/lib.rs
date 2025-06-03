@@ -295,7 +295,8 @@ fn update_moon_directions(ctx: &ReducerContext) {
 
                 // Advance orbit angle
                 let mut orbit_angle = moon.orbit_angle;
-                orbit_angle += orbit_angular_vel;
+                // orbit angal changes +/- based on rounded size if its even or odd
+                orbit_angle += orbit_angular_vel * if rounded_size as i32 % 2 == 0 { 1.0 } else { -1.0 };
                 if orbit_angle > std::f32::consts::PI * 2.0 {
                     orbit_angle -= std::f32::consts::PI * 2.0;
                 }
