@@ -493,8 +493,12 @@ fn update_users(ctx: &ReducerContext) {
                                     g: clamp(user.color.g + offset()),
                                     b: clamp(user.color.b + offset()),
                                 };
-                                // Assign random orbital velocity between -1.0 and 1.0 (excluding 0)
-                                let orbital_velocity = rng.gen_range(-1.0..=1.0);
+                                // Assign random orbital velocity between -1.0 and 1.0 (excluding velocities where abs < 0.5)
+                                let orbital_velocity =  if rng.gen_bool(0.5) {
+                                    rng.gen_range(-1.0..=-0.5)
+                                } else {
+                                    rng.gen_range(0.5..=1.0)
+                                };
                                 ctx.db.moon().moon_id().update(Moon {
                                     orbiting: Some(user.identity),
                                     orbit_angle: ctx.rng().gen_range(0.0..(2.0 * std::f32::consts::PI)),
