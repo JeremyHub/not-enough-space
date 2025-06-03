@@ -14,6 +14,11 @@ const USER_ACCELERATION: f32 = 4.0;
 const VELOCITY_MULTIPLIER: f32 = 0.1;
 const FRICTION: f32 = 0.9;
 
+const MOON_COLOR_DIFF: i32 = 70;
+const MOON_COLOR_ANIMATION_SPEED: i32 = 1;
+const USER_SECOND_COLOR_ABS_DIFF: i32 = 50;
+const STARTING_MOON_COLOR: Color = Color { r: 255, g: 255, b: 255 };
+
 const MAX_AREA_PER_BIT: u64 = 5000;
 const MAX_BITS: u64 = (WORLD_HEIGHT as u64 *WORLD_WIDTH as u64)/MAX_AREA_PER_BIT;
 const MIN_BIT_WORTH: f32 = 0.1;
@@ -99,11 +104,12 @@ pub struct Moon {
     dir_vec_y: f32,
     color: Color,
     health: f32,
-    size: f32, // changed from i32 to f32
+    size: f32,
     orbiting: Option<Identity>,
     orbit_angle: f32,
     orbit_state: Option<OrbitState>,
     orbit_radius: f32,
+    target_color: Option<Color>,
 }
 
 pub fn get_user_size(health: f32) -> f32 {
@@ -153,12 +159,12 @@ pub fn client_connected(ctx: &ReducerContext) {
         let first_idx = channels[0];
         color_vals[first_idx] = rng.gen_range(0..=255);
 
-        // Pick second channel, value must not be within 50 of first
+        // Pick second channel, value must not be within const
         let second_idx = channels[1];
         let mut second_val;
         loop {
             second_val = rng.gen_range(0..=255);
-            if (second_val - color_vals[first_idx]).abs() >= 50 {
+            if (second_val - color_vals[first_idx]).abs() >= USER_SECOND_COLOR_ABS_DIFF {
                 break;
             }
         }
@@ -231,12 +237,7 @@ fn spawn_moons(ctx: &ReducerContext, num_moons: u64) {
     for _ in 0..num_moons {
         let x = ctx.rng().gen_range(0..=WORLD_WIDTH) as f32;
         let y = ctx.rng().gen_range(0..=WORLD_HEIGHT) as f32;
-        let color = Color {
-            r: ctx.rng().gen_range(0..=255),
-            g: ctx.rng().gen_range(0..=255),
-            b: ctx.rng().gen_range(0..=255),
-        };
-        let size = ctx.rng().gen_range(MIN_MOON_SIZE..=MAX_MOON_SIZE); // now f32
+        let size = ctx.rng().gen_range(MIN_MOON_SIZE..=MAX_MOON_SIZE);
         ctx.db.moon().insert(Moon {
             moon_id: 0,
             col_index: x.round() as i32,
@@ -246,13 +247,14 @@ fn spawn_moons(ctx: &ReducerContext, num_moons: u64) {
             dy: 0.0,
             dir_vec_x: ((ctx.rng().gen_range(0..=100) as f32 / 100.0) * 2.0) - MOON_DRIFT,
             dir_vec_y: ((ctx.rng().gen_range(0..=100) as f32 / 100.0) * 2.0) - MOON_DRIFT,
-            color,
+            color: STARTING_MOON_COLOR,
             health: size,
             size,
             orbiting: None,
             orbit_angle: 0.0,
             orbit_state: None,
             orbit_radius: 0.0,
+            target_color: None,
         });
     }
 }
@@ -477,9 +479,19 @@ fn update_users(ctx: &ReducerContext) {
                     for moon in ctx.db.moon().col_index().filter(range) {
                         if moon.orbiting.is_none() {
                             if toroidal_distance(user.x, user.y, moon.x, moon.y) <= (user.size + moon.size) {
+                                // Pick a target color based on the user's color
+                                let mut rng = ctx.rng();
+                                let clamp = |v: i32| v.max(0).min(255);
+                                let mut offset = || rng.gen_range(-MOON_COLOR_DIFF..=MOON_COLOR_DIFF);
+                                let target_color = Color {
+                                    r: clamp(user.color.r + offset()),
+                                    g: clamp(user.color.g + offset()),
+                                    b: clamp(user.color.b + offset()),
+                                };
                                 ctx.db.moon().moon_id().update(Moon {
                                     orbiting: Some(user.identity),
                                     orbit_angle: ctx.rng().gen_range(0.0..(2.0 * std::f32::consts::PI)),
+                                    target_color: Some(target_color),
                                     ..moon
                                 });
                                 *moon_size_map.entry(user.identity).or_insert(0.0) += moon.size;
@@ -523,8 +535,33 @@ fn update_moons(ctx: &ReducerContext) {
                 dy: upd.dy,
                 ..moon
             });
+        } else {
+            if let Some(target_color) = moon.target_color.as_ref() {
+                if moon.color != *target_color {
+                    let mut new_r = moon.color.r;
+                    let mut new_g = moon.color.g;
+                    let mut new_b = moon.color.b;
+                    if (target_color.r - moon.color.r).abs() > 0 {
+                        new_r += (target_color.r - moon.color.r).signum() * MOON_COLOR_ANIMATION_SPEED;
+                    }
+                    if (target_color.g - moon.color.g).abs() > 0 {
+                        new_g += (target_color.g - moon.color.g).signum() * MOON_COLOR_ANIMATION_SPEED;
+                    }
+                    if (target_color.b - moon.color.b).abs() > 0 {
+                        new_b += (target_color.b - moon.color.b).signum() * MOON_COLOR_ANIMATION_SPEED;
+                    }
+                    let new_color = Color {
+                        r: new_r.max(0).min(255),
+                        g: new_g.max(0).min(255),
+                        b: new_b.max(0).min(255),
+                    };
+                    ctx.db.moon().moon_id().update(Moon {
+                        color: new_color,
+                        ..moon
+                    });
+                }
+            }
         }
-        // Orbiting moons are handled in update_moon_directions
     }
 }
 

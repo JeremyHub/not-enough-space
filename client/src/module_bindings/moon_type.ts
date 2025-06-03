@@ -49,6 +49,7 @@ export type Moon = {
   orbitAngle: number,
   orbitState: __OrbitState | undefined,
   orbitRadius: number,
+  targetColor: __Color | undefined,
 };
 
 /**
@@ -76,6 +77,7 @@ export namespace Moon {
       new ProductTypeElement("orbitAngle", AlgebraicType.createF32Type()),
       new ProductTypeElement("orbitState", AlgebraicType.createOptionType(__OrbitState.getTypeScriptAlgebraicType())),
       new ProductTypeElement("orbitRadius", AlgebraicType.createF32Type()),
+      new ProductTypeElement("targetColor", AlgebraicType.createOptionType(__Color.getTypeScriptAlgebraicType())),
     ]);
   }
 
