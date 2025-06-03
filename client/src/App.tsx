@@ -525,13 +525,13 @@ function App() {
     };
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      const key = e.key.toLowerCase();
+      const key = e.key;
       pressed.add(key);
       updateDirection();
     };
 
     const handleKeyUp = (e: KeyboardEvent) => {
-      const key = e.key.toLowerCase();
+      const key = e.key;
       pressed.delete(key);
       updateDirection();
     };
