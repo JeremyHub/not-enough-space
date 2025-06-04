@@ -109,6 +109,8 @@ pub struct Moon {
     orbit_radius: f32,
     target_color: Option<Color>,
     orbital_velocity: Option<f32>,
+    #[index(btree)]
+    is_orbiting: bool,
 }
 
 pub fn get_user_size(health: f32) -> f32 {
@@ -255,6 +257,7 @@ fn spawn_moons(ctx: &ReducerContext, num_moons: u64) {
             orbit_radius: 0.0,
             target_color: None,
             orbital_velocity: None,
+            is_orbiting: false,
         });
     }
 }
@@ -363,6 +366,7 @@ fn update_moon_directions(ctx: &ReducerContext) {
                     orbit_angle,
                     orbit_state: Some(orbit_state),
                     orbit_radius,
+                    is_orbiting: true,
                     ..moon
                 });
                 continue;
@@ -492,6 +496,7 @@ fn update_users(ctx: &ReducerContext) {
                                     orbit_angle: ctx.rng().gen_range(0.0..(2.0 * std::f32::consts::PI)),
                                     target_color: Some(target_color),
                                     orbital_velocity: Some(orbital_velocity),
+                                    is_orbiting: true,
                                     ..moon
                                 });
                                 *moon_size_map.entry(user.identity).or_insert(0.0) += moon.size;
@@ -551,6 +556,7 @@ fn update_moons(ctx: &ReducerContext) {
                 y: upd.y,
                 dx: upd.dx,
                 dy: upd.dy,
+                is_orbiting: false,
                 ..moon
             });
         } else {
@@ -580,6 +586,69 @@ fn update_moons(ctx: &ReducerContext) {
                 }
             }
         }
+    }
+
+    // Only consider moons with is_orbiting == true
+    // Use col_index for spatial partitioning
+    let mut to_destroy: Vec<u64> = Vec::new();
+    let mut explosions: Vec<(f32, f32, f32, Color)> = Vec::new(); // (x, y, worth, color)
+
+    // Collect all orbiting moons with is_orbiting == true
+    let orbiting_moons: Vec<_> = ctx.db.moon().is_orbiting().filter(true).collect();
+
+    // For each orbiting moon, check for collision with other orbiting moons in nearby col_index ranges
+    for moon in &orbiting_moons {
+        if moon.orbiting.is_none() {
+            continue;
+        }
+        // Only check each pair once
+        if to_destroy.contains(&moon.moon_id) {
+            continue;
+        }
+        // TODO update this to take into account the possibly larger moons from spawning
+        let search_radius = (moon.size + MAX_MOON_SIZE) as i32;
+        for range in wrapped_ranges(moon.col_index, search_radius, WORLD_WIDTH) {
+            for other in ctx.db.moon().col_index().filter(range) {
+                if other.moon_id == moon.moon_id {
+                    continue;
+                }
+                if !other.is_orbiting || other.orbiting.is_none() || to_destroy.contains(&other.moon_id) {
+                    continue;
+                }
+                // Only check if orbiting different users
+                if moon.orbiting == other.orbiting {
+                    continue;
+                }
+                // Check collision
+                if toroidal_distance(moon.x, moon.y, other.x, other.y) <= (moon.size + other.size) {
+                    // Mark both for destruction
+                    to_destroy.push(moon.moon_id);
+                    to_destroy.push(other.moon_id);
+                    // Spawn bits for both moons
+                    explosions.push((moon.x, moon.y, moon.size, moon.color.clone()));
+                    explosions.push((other.x, other.y, other.size, other.color.clone()));
+                    break; // Only destroy once per moon
+                }
+            }
+        }
+    }
+
+    // Destroy moons and spawn bits
+    for moon_id in to_destroy {
+        if let Some(moon) = ctx.db.moon().moon_id().find(moon_id) {
+            ctx.db.moon().delete(moon);
+        }
+    }
+    for (x, y, worth, color) in explosions {
+        // Spawn bits at the moon's position, worth = size, size = worth
+        ctx.db.bit().insert(Bit {
+            bit_id: 0,
+            x: x.round() as i32,
+            y: y.round() as i32,
+            size: worth,
+            worth,
+            color,
+        });
     }
 }
 
@@ -706,6 +775,7 @@ pub fn init(ctx: &ReducerContext) -> Result<(), String> {
 #[reducer]
 pub fn sacrifice_health_for_moon(ctx: &ReducerContext) -> Result<(), String> {
     // Minimum health required to sacrifice
+    // TODO make these consts
     let min_health_to_sacrifice = 40.0;
     let max_moon_size_per_health = 2.0;
     let min_moon_size_per_health = 0.5;
@@ -721,7 +791,7 @@ pub fn sacrifice_health_for_moon(ctx: &ReducerContext) -> Result<(), String> {
     }
 
     let health_to_sacrifice = user.health/20.0;
-    let moon_size = (health_to_sacrifice * moon_size_per_health);
+    let moon_size = health_to_sacrifice * moon_size_per_health;
 
     let (moon_color, orbital_velocity) = new_moon_params(ctx, user.color.clone());
 
@@ -753,6 +823,7 @@ pub fn sacrifice_health_for_moon(ctx: &ReducerContext) -> Result<(), String> {
         orbit_radius: 0.0,
         target_color: Some(moon_color),
         orbital_velocity: Some(orbital_velocity),
+        is_orbiting: true,
     });
 
     rearrange_orbit_angles(ctx, user.identity);
