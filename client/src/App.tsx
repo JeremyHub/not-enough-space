@@ -243,8 +243,6 @@ const draw = (ctx: CanvasRenderingContext2D | null, props: DrawProps) => {
 
   // ctx.restore();
 
-  renderCircle(ctx, self.size, canvasWidth / 2, canvasHeight / 2, self.color);
-
   const toScreen = (obj: { x: number; y: number }) => ({
     x: obj.x - self.x + canvasWidth / 2,
     y: obj.y - self.y + canvasHeight / 2,
@@ -293,6 +291,9 @@ const draw = (ctx: CanvasRenderingContext2D | null, props: DrawProps) => {
       y,
     );
   });
+
+  renderCircle(ctx, self.size, canvasWidth / 2, canvasHeight / 2, self.color);
+
 };
 
 const useCanvas = (
@@ -352,6 +353,7 @@ function App() {
   const canvasWidth = self?.size ? Math.min(Math.round(((self.size) * 100) / 2) * 2, 1500) : null;
   const canvasHeight = self?.size ? Math.min(Math.round(((self.size) * 100) / 2) * 2, 1500) : null;
   const renderBuffer = 200;
+  const extraUserRenderBuffer = 100;
 
   const [animatedWidth, setAnimatedWidth] = useState<number | null>(null);
   const [animatedHeight, setAnimatedHeight] = useState<number | null>(null);
@@ -459,21 +461,25 @@ function App() {
     setQuriedX(Math.round(x));
     setQuriedY(Math.round(y));
   
-    const withinScreenQuery = `x < ${Math.round(x) + renderBuffer + canvasWidth / 2} AND x > ${Math.round(x) - renderBuffer - canvasWidth / 2} AND y < ${Math.round(y) + renderBuffer + canvasHeight / 2} AND y > ${Math.round(y) - renderBuffer - canvasHeight / 2}`
-    
-    const leftEdgeQuery = (x-renderBuffer < canvasWidth/2) ? ` OR (x > ${metadata.worldWidth - ((canvasWidth/2)+renderBuffer-Math.round(x))} AND (y > ${Math.round(y) - ((canvasHeight/2)+renderBuffer)}) AND (y < ${Math.round(y) + ((canvasHeight/2)+renderBuffer)}))` : "";
-    const rightEdgeQuery = (x+renderBuffer > metadata.worldWidth - (canvasWidth/2)) ? ` OR (x < ${((canvasWidth/2)+renderBuffer+Math.round(x)) - metadata.worldWidth} AND (y > ${Math.round(y) - ((canvasHeight/2)+renderBuffer)}) AND (y < ${Math.round(y) + ((canvasHeight/2)+renderBuffer)}))` : "";
-    const topEdgeQuery = (y-renderBuffer < canvasHeight/2) ? ` OR (y > ${metadata.worldHeight - ((canvasHeight/2)+renderBuffer-Math.round(y))} AND (x > ${Math.round(x) - ((canvasWidth/2)+renderBuffer)}) AND (x < ${Math.round(x) + ((canvasWidth/2)+renderBuffer)}))` : "";
-    const bottomEdgeQuery = (y+renderBuffer > metadata.worldHeight - (canvasHeight/2)) ? ` OR (y < ${((canvasHeight/2)+renderBuffer+Math.round(y)) - metadata.worldHeight} AND (x > ${Math.round(x) - ((canvasWidth/2)+renderBuffer)}) AND (x < ${Math.round(x) + ((canvasWidth/2)+renderBuffer)}))` : "";
-    const topLeftCornerQuery = (x-renderBuffer < canvasWidth/2 && y-renderBuffer < canvasHeight/2) ? ` OR (x > ${metadata.worldWidth - ((canvasWidth/2)+renderBuffer-Math.round(x))} AND y > ${metadata.worldHeight - ((canvasHeight/2)+renderBuffer-Math.round(y))})` : "";
-    const topRightCornerQuery = (x+renderBuffer > metadata.worldWidth - (canvasWidth/2) && y-renderBuffer < canvasHeight/2) ? ` OR (x < ${((canvasWidth/2)+renderBuffer+Math.round(x)) - metadata.worldWidth} AND y > ${metadata.worldHeight - ((canvasHeight/2)+renderBuffer-Math.round(y))})` : "";
-    const bottomLeftCornerQuery = (x-renderBuffer < canvasWidth/2 && y+renderBuffer > metadata.worldHeight - (canvasHeight/2)) ? ` OR (x > ${metadata.worldWidth - ((canvasWidth/2)+renderBuffer-Math.round(x))} AND y < ${((canvasHeight/2)+renderBuffer+Math.round(y)) - metadata.worldHeight})` : "";
-    const bottomRightCornerQuery = (x+renderBuffer > metadata.worldWidth - (canvasWidth/2) && y+renderBuffer > metadata.worldHeight - (canvasHeight/2)) ? ` OR (x < ${((canvasWidth/2)+renderBuffer+Math.round(x)) - metadata.worldWidth} AND y < ${((canvasHeight/2)+renderBuffer+Math.round(y)) - metadata.worldHeight})` : "";
-
-    const baseQuery = `WHERE (${withinScreenQuery}${leftEdgeQuery}${rightEdgeQuery}${topEdgeQuery}${bottomEdgeQuery}${topLeftCornerQuery}${topRightCornerQuery}${bottomLeftCornerQuery}${bottomRightCornerQuery})`;
-    const bitQuery = "SELECT * FROM bit " + baseQuery;
-    const moonQuery = "SELECT * FROM moon " + baseQuery;
-    const userQuery = "SELECT * FROM user " + baseQuery;
+    function getBaseQuery (renderBuffer: number): string {
+      if (!canvasHeight || !canvasWidth) {
+        return ""
+      }
+      const withinScreenQuery = `x < ${Math.round(x) + renderBuffer + canvasWidth / 2} AND x > ${Math.round(x) - renderBuffer - canvasWidth / 2} AND y < ${Math.round(y) + renderBuffer + canvasHeight / 2} AND y > ${Math.round(y) - renderBuffer - canvasHeight / 2}`
+      const leftEdgeQuery = (x-renderBuffer < canvasWidth/2) ? ` OR (x > ${metadata.worldWidth - ((canvasWidth/2)+renderBuffer-Math.round(x))} AND (y > ${Math.round(y) - ((canvasHeight/2)+renderBuffer)}) AND (y < ${Math.round(y) + ((canvasHeight/2)+renderBuffer)}))` : "";
+      const rightEdgeQuery = (x+renderBuffer > metadata.worldWidth - (canvasWidth/2)) ? ` OR (x < ${((canvasWidth/2)+renderBuffer+Math.round(x)) - metadata.worldWidth} AND (y > ${Math.round(y) - ((canvasHeight/2)+renderBuffer)}) AND (y < ${Math.round(y) + ((canvasHeight/2)+renderBuffer)}))` : "";
+      const topEdgeQuery = (y-renderBuffer < canvasHeight/2) ? ` OR (y > ${metadata.worldHeight - ((canvasHeight/2)+renderBuffer-Math.round(y))} AND (x > ${Math.round(x) - ((canvasWidth/2)+renderBuffer)}) AND (x < ${Math.round(x) + ((canvasWidth/2)+renderBuffer)}))` : "";
+      const bottomEdgeQuery = (y+renderBuffer > metadata.worldHeight - (canvasHeight/2)) ? ` OR (y < ${((canvasHeight/2)+renderBuffer+Math.round(y)) - metadata.worldHeight} AND (x > ${Math.round(x) - ((canvasWidth/2)+renderBuffer)}) AND (x < ${Math.round(x) + ((canvasWidth/2)+renderBuffer)}))` : "";
+      const topLeftCornerQuery = (x-renderBuffer < canvasWidth/2 && y-renderBuffer < canvasHeight/2) ? ` OR (x > ${metadata.worldWidth - ((canvasWidth/2)+renderBuffer-Math.round(x))} AND y > ${metadata.worldHeight - ((canvasHeight/2)+renderBuffer-Math.round(y))})` : "";
+      const topRightCornerQuery = (x+renderBuffer > metadata.worldWidth - (canvasWidth/2) && y-renderBuffer < canvasHeight/2) ? ` OR (x < ${((canvasWidth/2)+renderBuffer+Math.round(x)) - metadata.worldWidth} AND y > ${metadata.worldHeight - ((canvasHeight/2)+renderBuffer-Math.round(y))})` : "";
+      const bottomLeftCornerQuery = (x-renderBuffer < canvasWidth/2 && y+renderBuffer > metadata.worldHeight - (canvasHeight/2)) ? ` OR (x > ${metadata.worldWidth - ((canvasWidth/2)+renderBuffer-Math.round(x))} AND y < ${((canvasHeight/2)+renderBuffer+Math.round(y)) - metadata.worldHeight})` : "";
+      const bottomRightCornerQuery = (x+renderBuffer > metadata.worldWidth - (canvasWidth/2) && y+renderBuffer > metadata.worldHeight - (canvasHeight/2)) ? ` OR (x < ${((canvasWidth/2)+renderBuffer+Math.round(x)) - metadata.worldWidth} AND y < ${((canvasHeight/2)+renderBuffer+Math.round(y)) - metadata.worldHeight})` : "";
+  
+      return `WHERE (${withinScreenQuery}${leftEdgeQuery}${rightEdgeQuery}${topEdgeQuery}${bottomEdgeQuery}${topLeftCornerQuery}${topRightCornerQuery}${bottomLeftCornerQuery}${bottomRightCornerQuery})`;
+    }
+    const bitQuery = "SELECT * FROM bit " + getBaseQuery(renderBuffer);
+    const moonQuery = "SELECT * FROM moon " + getBaseQuery(renderBuffer);
+    const userQuery = "SELECT * FROM user " + getBaseQuery(renderBuffer+extraUserRenderBuffer);
 
     const handle = conn
       .subscriptionBuilder()
