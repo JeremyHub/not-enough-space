@@ -5,8 +5,8 @@ use spacetimedb::rand::seq::SliceRandom;
 use spacetimedb::{rand, reducer, table, Identity, ReducerContext, ScheduleAt, SpacetimeType, Table, TimeDuration};
 use spacetimedb::rand::Rng;
 
-const WORLD_WIDTH: i32 = 1000;
-const WORLD_HEIGHT: i32 = 1000;
+const WORLD_WIDTH: i32 = 10000;
+const WORLD_HEIGHT: i32 = 10000;
 
 const TICK_TIME: i64 = 20000;
 
@@ -26,7 +26,7 @@ const MAX_BIT_WORTH: f32 = 2.5;
 const MAX_BIT_SIZE: f32 = MAX_BIT_WORTH;
 
 // non-orbiting moon params
-const STARTING_MOONS: u64 = 20;
+const STARTING_MOONS: u64 = 200;
 const MAX_MOON_SIZE: f32 = 5.0;
 const MIN_MOON_SIZE: f32 = 3.0;
 const MOON_DRIFT: f32 = 0.5;
