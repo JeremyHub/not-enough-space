@@ -5,8 +5,8 @@ use spacetimedb::rand::seq::SliceRandom;
 use spacetimedb::{rand, reducer, table, Identity, ReducerContext, ScheduleAt, SpacetimeType, Table, TimeDuration};
 use spacetimedb::rand::Rng;
 
-const WORLD_WIDTH: i32 = 10000;
-const WORLD_HEIGHT: i32 = 10000;
+const WORLD_WIDTH: i32 = 1000;
+const WORLD_HEIGHT: i32 = 1000;
 
 const TICK_TIME: i64 = 20000;
 
@@ -26,7 +26,7 @@ const MAX_BIT_WORTH: f32 = 2.5;
 const MAX_BIT_SIZE: f32 = MAX_BIT_WORTH;
 
 // non-orbiting moon params
-const STARTING_MOONS: u64 = 200;
+const STARTING_MOONS: u64 = 20;
 const MAX_MOON_SIZE: f32 = 5.0;
 const MIN_MOON_SIZE: f32 = 3.0;
 const MOON_DRIFT: f32 = 0.5;
@@ -588,6 +588,8 @@ fn update_moons(ctx: &ReducerContext) {
         }
     }
 
+    // TODO the moon should only be destroyed if its hit by a bigger moon, otherwise it should just get smaller by the diff
+
     // Only consider moons with is_orbiting == true
     // Use col_index for spatial partitioning
     let mut to_destroy: Vec<u64> = Vec::new();
@@ -649,6 +651,46 @@ fn update_moons(ctx: &ReducerContext) {
             worth,
             color,
         });
+    }
+
+    // TODO handle cases where moon is larger than player
+
+    // Loop through users, then filter moons by col_index for spatial partitioning
+    for user in ctx.db.user().iter() {
+        for range in wrapped_ranges(user.x.round() as i32, (user.size + MAX_MOON_SIZE as f32) as i32, WORLD_WIDTH) {
+            for moon in ctx.db.moon().col_index().filter(range) {
+                // Only consider orbiting moons, not orbiting this user
+                if !moon.is_orbiting || moon.orbiting == Some(user.identity) {
+                    continue;
+                }
+                if toroidal_distance(moon.x, moon.y, user.x, user.y) <= (moon.size + user.size) {
+                    // Subtract moon.size from user's health
+                    let mut new_health = user.health - moon.size;
+                    if new_health < 0.0 {
+                        new_health = 1.0;
+                    }
+                    let new_size = get_user_size(new_health);
+                    ctx.db.user().identity().update(User {
+                        health: new_health,
+                        size: new_size,
+                        color: user.color.clone(),
+                        ..user
+                    });
+                    // Turn moon into a bit at its position
+                    ctx.db.bit().insert(Bit {
+                        bit_id: 0,
+                        x: moon.x.round() as i32,
+                        y: moon.y.round() as i32,
+                        size: moon.size,
+                        worth: moon.size,
+                        color: moon.color.clone(),
+                    });
+                    // Remove the moon
+                    ctx.db.moon().delete(moon);
+                    break; // Only process one collision per user per tick
+                }
+            }
+        }
     }
 }
 
