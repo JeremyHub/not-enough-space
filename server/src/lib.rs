@@ -10,7 +10,7 @@ const WORLD_HEIGHT: i32 = 10000;
 
 const TICK_TIME: i64 = 20000;
 
-const USER_ACCELERATION: f32 = 4.0;
+const USER_ACCELERATION: f32 = 2.0;
 const VELOCITY_MULTIPLIER: f32 = 0.1;
 const FRICTION: f32 = 0.9;
 
@@ -30,7 +30,7 @@ const STARTING_MOONS: u64 = 200;
 const MAX_MOON_SIZE: f32 = 5.0;
 const MIN_MOON_SIZE: f32 = 3.0;
 const MOON_DRIFT: f32 = 0.5;
-const MOON_ACCELERATION: f32 = 2.0;
+const MOON_ACCELERATION: f32 = 1.5;
 const PORTION_NON_ORBITING_MOONS_DIRECTION_UPDATED_PER_TICK: f64 = 0.005;
 
 // moon oribit params

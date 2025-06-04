@@ -248,6 +248,20 @@ const draw = (ctx: CanvasRenderingContext2D | null, props: DrawProps) => {
     y: obj.y - self.y + canvasHeight / 2,
   });
 
+  bits.forEach(bit => {
+    const { x, y } = toScreen(bit);
+    renderWithWrap(
+      (px, py) => renderCircle(ctx, bit.size, px, py, bit.color),
+      metadata,
+      canvasWidth,
+      canvasHeight,
+      renderBuffer,
+      self,
+      x,
+      y,
+    );
+  });
+
   users.forEach(user => {
     if (user.identity.data !== identity.data) {
       const { x, y } = toScreen(user);
@@ -264,6 +278,8 @@ const draw = (ctx: CanvasRenderingContext2D | null, props: DrawProps) => {
     }
   });
 
+  renderCircle(ctx, self.size, canvasWidth / 2, canvasHeight / 2, self.color);
+
   moons.forEach(moon => {
     const { x, y } = toScreen(moon);
     renderWithWrap(
@@ -277,23 +293,6 @@ const draw = (ctx: CanvasRenderingContext2D | null, props: DrawProps) => {
       y,
     );
   });
-
-  bits.forEach(bit => {
-    const { x, y } = toScreen(bit);
-    renderWithWrap(
-      (px, py) => renderCircle(ctx, bit.size, px, py, bit.color),
-      metadata,
-      canvasWidth,
-      canvasHeight,
-      renderBuffer,
-      self,
-      x,
-      y,
-    );
-  });
-
-  renderCircle(ctx, self.size, canvasWidth / 2, canvasHeight / 2, self.color);
-
 };
 
 const useCanvas = (
