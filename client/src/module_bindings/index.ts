@@ -36,6 +36,8 @@ import { ClientConnected } from "./client_connected_reducer.ts";
 export { ClientConnected };
 import { IdentityDisconnected } from "./identity_disconnected_reducer.ts";
 export { IdentityDisconnected };
+import { SacrificeHealthForMoon } from "./sacrifice_health_for_moon_reducer.ts";
+export { SacrificeHealthForMoon };
 import { SetDirVec } from "./set_dir_vec_reducer.ts";
 export { SetDirVec };
 import { Tick } from "./tick_reducer.ts";
@@ -114,6 +116,10 @@ const REMOTE_MODULE = {
       reducerName: "identity_disconnected",
       argsType: IdentityDisconnected.getTypeScriptAlgebraicType(),
     },
+    sacrifice_health_for_moon: {
+      reducerName: "sacrifice_health_for_moon",
+      argsType: SacrificeHealthForMoon.getTypeScriptAlgebraicType(),
+    },
     set_dir_vec: {
       reducerName: "set_dir_vec",
       argsType: SetDirVec.getTypeScriptAlgebraicType(),
@@ -151,6 +157,7 @@ const REMOTE_MODULE = {
 export type Reducer = never
 | { name: "ClientConnected", args: ClientConnected }
 | { name: "IdentityDisconnected", args: IdentityDisconnected }
+| { name: "SacrificeHealthForMoon", args: SacrificeHealthForMoon }
 | { name: "SetDirVec", args: SetDirVec }
 | { name: "Tick", args: Tick }
 ;
@@ -172,6 +179,18 @@ export class RemoteReducers {
 
   removeOnIdentityDisconnected(callback: (ctx: ReducerEventContext) => void) {
     this.connection.offReducer("identity_disconnected", callback);
+  }
+
+  sacrificeHealthForMoon() {
+    this.connection.callReducer("sacrifice_health_for_moon", new Uint8Array(0), this.setCallReducerFlags.sacrificeHealthForMoonFlags);
+  }
+
+  onSacrificeHealthForMoon(callback: (ctx: ReducerEventContext) => void) {
+    this.connection.onReducer("sacrifice_health_for_moon", callback);
+  }
+
+  removeOnSacrificeHealthForMoon(callback: (ctx: ReducerEventContext) => void) {
+    this.connection.offReducer("sacrifice_health_for_moon", callback);
   }
 
   setDirVec(dirVecX: number, dirVecY: number) {
@@ -209,6 +228,11 @@ export class RemoteReducers {
 }
 
 export class SetReducerFlags {
+  sacrificeHealthForMoonFlags: CallReducerFlags = 'FullUpdate';
+  sacrificeHealthForMoon(flags: CallReducerFlags) {
+    this.sacrificeHealthForMoonFlags = flags;
+  }
+
   setDirVecFlags: CallReducerFlags = 'FullUpdate';
   setDirVec(flags: CallReducerFlags) {
     this.setDirVecFlags = flags;

@@ -282,7 +282,7 @@ fn update_moon_directions(ctx: &ReducerContext) {
                 let user_speed = (user.dx.powi(2) + user.dy.powi(2)).sqrt();
                 let moving = user_speed > USER_SPEED_ORBIT_THRESHOLD;
                 let orbit_state: OrbitState;
-                let orbit_radius: f32;
+                let mut orbit_radius: f32;
                 let orbit_angular_vel: f32;
                 if moving {
                     orbit_state = OrbitState::Moving;
@@ -293,6 +293,7 @@ fn update_moon_directions(ctx: &ReducerContext) {
                     orbit_radius = (ORBIT_RADIUS_USER_SIZE_FACTOR_CLOSE * user.size) + ORBIT_RADIUS_CONST_CLOSE + (ADDITIONAL_ORBIT_RADIUS_MOON_SIZE_FACTOR_CLOSE * (1.0/moon.size) * user.size);
                     orbit_angular_vel = ORBIT_ANGULAR_VEL_RADIUS_FACTOR_CLOSE * moon.size;
                 };
+                orbit_radius = orbit_radius.max(user.size + moon.size);
 
                 // Advance orbit angle
                 let mut orbit_angle = moon.orbit_angle;
@@ -485,20 +486,7 @@ fn update_users(ctx: &ReducerContext) {
                         if moon.orbiting.is_none() {
                             if toroidal_distance(user.x, user.y, moon.x, moon.y) <= (user.size + moon.size) {
                                 // Pick a target color based on the user's color
-                                let mut rng = ctx.rng();
-                                let clamp = |v: i32| v.max(0).min(255);
-                                let offset = rng.gen_range(-MOON_COLOR_DIFF..=MOON_COLOR_DIFF);
-                                let target_color = Color {
-                                    r: clamp(user.color.r + offset),
-                                    g: clamp(user.color.g + offset),
-                                    b: clamp(user.color.b + offset),
-                                };
-                                // Assign random orbital velocity between -1.0 and 1.0 (excluding velocities where abs < 0.5)
-                                let orbital_velocity =  if rng.gen_bool(0.5) {
-                                    rng.gen_range(-1.0..=-0.5)
-                                } else {
-                                    rng.gen_range(0.5..=1.0)
-                                };
+                                let (target_color, orbital_velocity) = new_moon_params(ctx, user.color.clone());
                                 ctx.db.moon().moon_id().update(Moon {
                                     orbiting: Some(user.identity),
                                     orbit_angle: ctx.rng().gen_range(0.0..(2.0 * std::f32::consts::PI)),
@@ -530,6 +518,24 @@ fn update_users(ctx: &ReducerContext) {
             rearrange_orbit_angles(ctx, user_id);
         }
     }
+}
+
+fn new_moon_params(ctx: &ReducerContext, color: Color) -> (Color, f32) {
+    let mut rng = ctx.rng();
+    let clamp = |v: i32| v.max(0).min(255);
+    let offset = rng.gen_range(-MOON_COLOR_DIFF..=MOON_COLOR_DIFF);
+    let target_color = Color {
+        r: clamp(color.r + offset),
+        g: clamp(color.g + offset),
+        b: clamp(color.b + offset),
+    };
+    // Assign random orbital velocity between -1.0 and 1.0 (excluding velocities where abs < 0.5)
+    let orbital_velocity =  if rng.gen_bool(0.5) {
+        rng.gen_range(-1.0..=-0.5)
+    } else {
+        rng.gen_range(0.5..=1.0)
+    };
+    (target_color, orbital_velocity)
 }
 
 fn update_moons(ctx: &ReducerContext) {
@@ -694,5 +700,62 @@ pub fn init(ctx: &ReducerContext) -> Result<(), String> {
         id: 0,
         scheduled_at: ScheduleAt::Time(ctx.timestamp),
     });
+    Ok(())
+}
+
+#[reducer]
+pub fn sacrifice_health_for_moon(ctx: &ReducerContext) -> Result<(), String> {
+    // Minimum health required to sacrifice
+    let min_health_to_sacrifice = 40.0;
+    let max_moon_size_per_health = 2.0;
+    let min_moon_size_per_health = 0.5;
+    let moon_size_per_health = ctx.rng().gen_range(min_moon_size_per_health..=max_moon_size_per_health);
+    
+    let user = match ctx.db.user().identity().find(ctx.sender) {
+        Some(u) => u,
+        None => return Err("User not found.".to_string()),
+    };
+
+    if user.health < min_health_to_sacrifice {
+        return Err(format!("You must have at least {} health.", min_health_to_sacrifice));
+    }
+
+    let health_to_sacrifice = user.health/20.0;
+    let moon_size = (health_to_sacrifice * moon_size_per_health);
+
+    let (moon_color, orbital_velocity) = new_moon_params(ctx, user.color.clone());
+
+    // Subtract health and update user
+    let new_health = user.health - health_to_sacrifice;
+    let new_size = get_user_size(new_health);
+    ctx.db.user().identity().update(User {
+        health: new_health,
+        size: new_size,
+        ..user
+    });
+
+    // Spawn the moon at the user's current position, orbiting the user
+    ctx.db.moon().insert(Moon {
+        moon_id: 0,
+        col_index: user.x.round() as i32,
+        x: user.x,
+        y: user.y,
+        dx: 0.0,
+        dy: 0.0,
+        dir_vec_x: 0.0,
+        dir_vec_y: 0.0,
+        color: moon_color.clone(),
+        health: moon_size,
+        size: moon_size,
+        orbiting: Some(user.identity),
+        orbit_angle: ctx.rng().gen_range(0.0..(2.0 * std::f32::consts::PI)),
+        orbit_state: None,
+        orbit_radius: 0.0,
+        target_color: Some(moon_color),
+        orbital_velocity: Some(orbital_velocity),
+    });
+
+    rearrange_orbit_angles(ctx, user.identity);
+
     Ok(())
 }
