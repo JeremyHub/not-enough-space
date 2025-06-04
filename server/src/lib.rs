@@ -14,15 +14,15 @@ const USER_ACCELERATION: f32 = 4.0;
 const VELOCITY_MULTIPLIER: f32 = 0.1;
 const FRICTION: f32 = 0.9;
 
-const MOON_COLOR_DIFF: i32 = 70;
+const MOON_COLOR_DIFF: i32 = 50;
 const MOON_COLOR_ANIMATION_SPEED: i32 = 1;
 const USER_SECOND_COLOR_ABS_DIFF: i32 = 50;
 const STARTING_MOON_COLOR: Color = Color { r: 255, g: 255, b: 255 };
 
-const MAX_AREA_PER_BIT: u64 = 5000;
+const MAX_AREA_PER_BIT: u64 = 10000;
 const MAX_BITS: u64 = (WORLD_HEIGHT as u64 *WORLD_WIDTH as u64)/MAX_AREA_PER_BIT;
-const MIN_BIT_WORTH: f32 = 0.1;
-const MAX_BIT_WORTH: f32 = 2.0;
+const MIN_BIT_WORTH: f32 = 0.5;
+const MAX_BIT_WORTH: f32 = 2.5;
 const MAX_BIT_SIZE: f32 = MAX_BIT_WORTH;
 
 // non-orbiting moon params
@@ -156,13 +156,13 @@ pub fn client_connected(ctx: &ReducerContext) {
 
         // Pick first channel and assign random value
         let first_idx = channels[0];
-        color_vals[first_idx] = rng.gen_range(0..=255);
+        color_vals[first_idx] = rng.gen_range(50..=205);
 
         // Pick second channel, value must not be within const
         let second_idx = channels[1];
         let mut second_val;
         loop {
-            second_val = rng.gen_range(0..=255);
+            second_val = rng.gen_range(50..=205);
             if (second_val - color_vals[first_idx]).abs() >= USER_SECOND_COLOR_ABS_DIFF {
                 break;
             }
@@ -171,7 +171,7 @@ pub fn client_connected(ctx: &ReducerContext) {
 
         // Pick third channel, assign random value
         let third_idx = channels[2];
-        color_vals[third_idx] = rng.gen_range(0..=255);
+        color_vals[third_idx] = rng.gen_range(50..=205);
 
         let color = Color {
             r: color_vals[0],
@@ -487,11 +487,11 @@ fn update_users(ctx: &ReducerContext) {
                                 // Pick a target color based on the user's color
                                 let mut rng = ctx.rng();
                                 let clamp = |v: i32| v.max(0).min(255);
-                                let mut offset = || rng.gen_range(-MOON_COLOR_DIFF..=MOON_COLOR_DIFF);
+                                let offset = rng.gen_range(-MOON_COLOR_DIFF..=MOON_COLOR_DIFF);
                                 let target_color = Color {
-                                    r: clamp(user.color.r + offset()),
-                                    g: clamp(user.color.g + offset()),
-                                    b: clamp(user.color.b + offset()),
+                                    r: clamp(user.color.r + offset),
+                                    g: clamp(user.color.g + offset),
+                                    b: clamp(user.color.b + offset),
                                 };
                                 // Assign random orbital velocity between -1.0 and 1.0 (excluding velocities where abs < 0.5)
                                 let orbital_velocity =  if rng.gen_bool(0.5) {
