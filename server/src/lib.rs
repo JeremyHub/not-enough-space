@@ -657,6 +657,7 @@ fn update_moons(ctx: &ReducerContext) {
     // TODO handle cases where moon is larger than player
 
     // Loop through users, then filter moons by col_index for spatial partitioning
+    let mut users_to_remove = Vec::new();
     for user in ctx.db.user().iter() {
         for range in wrapped_ranges(user.x.round() as i32, (user.size + MAX_MOON_SIZE as f32) as i32, WORLD_WIDTH) {
             for moon in ctx.db.moon().col_index().filter(range) {
@@ -666,17 +667,19 @@ fn update_moons(ctx: &ReducerContext) {
                 }
                 if toroidal_distance(moon.x, moon.y, user.x, user.y) <= (moon.size + user.size) {
                     // Subtract moon.size from user's health
-                    let mut new_health = user.health - moon.size;
+                    let new_health = user.health - moon.size;
                     if new_health < 0.0 {
-                        new_health = 1.0;
+                        // User dies, remove them
+                        users_to_remove.push(user.identity);
+                    } else {
+                        let new_size = get_user_size(new_health);
+                        ctx.db.user().identity().update(User {
+                            health: new_health,
+                            size: new_size,
+                            color: user.color.clone(),
+                            ..user
+                        });
                     }
-                    let new_size = get_user_size(new_health);
-                    ctx.db.user().identity().update(User {
-                        health: new_health,
-                        size: new_size,
-                        color: user.color.clone(),
-                        ..user
-                    });
                     // Turn moon into a bit at its position
                     ctx.db.bit().insert(Bit {
                         bit_id: 0,
@@ -692,6 +695,21 @@ fn update_moons(ctx: &ReducerContext) {
                     break; // Only process one collision per user per tick
                 }
             }
+        }
+    }
+    // Remove users who died
+    for user_id in users_to_remove {
+        if let Some(user) = ctx.db.user().identity().find(user_id) {
+            // Remove all moons orbiting this user
+            for moon in ctx.db.moon().iter() {
+                if moon.orbiting == Some(user.identity) {
+                    ctx.db.moon().delete(moon);
+                }
+            }
+            // Remove the user
+            ctx.db.user().delete(user);
+        } else {
+            log::warn!("Tried to remove user with identity {:?} but they do not exist.", user_id);
         }
     }
 }
@@ -820,9 +838,9 @@ pub fn init(ctx: &ReducerContext) -> Result<(), String> {
 pub fn sacrifice_health_for_moon(ctx: &ReducerContext) -> Result<(), String> {
     // Minimum health required to sacrifice
     // TODO make these consts
-    let min_health_to_sacrifice = 40.0;
-    let max_moon_size_per_health = 2.0;
-    let min_moon_size_per_health = 0.5;
+    let min_health_to_sacrifice = 80.0;
+    let max_moon_size_per_health = 1.0;
+    let min_moon_size_per_health = 0.3;
     let moon_size_per_health = ctx.rng().gen_range(min_moon_size_per_health..=max_moon_size_per_health);
     
     let user = match ctx.db.user().identity().find(ctx.sender) {
@@ -834,7 +852,7 @@ pub fn sacrifice_health_for_moon(ctx: &ReducerContext) -> Result<(), String> {
         return Err(format!("You must have at least {} health.", min_health_to_sacrifice));
     }
 
-    let health_to_sacrifice = user.health/20.0;
+    let health_to_sacrifice = user.health/40.0;
     let moon_size = health_to_sacrifice * moon_size_per_health;
 
     let (moon_color, orbital_velocity) = new_moon_params(ctx, user.color.clone());
