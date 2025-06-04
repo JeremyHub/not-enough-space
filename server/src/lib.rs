@@ -112,7 +112,7 @@ pub struct Moon {
 }
 
 pub fn get_user_size(health: f32) -> f32 {
-    return if health < 1398.65 {(health/10.0) + 5.0} else {health.ln()*20.0};
+    return 100.0 * (0.0025 * health).atan() + 5.0;
 }
 
 #[table(name = bit, public)]
