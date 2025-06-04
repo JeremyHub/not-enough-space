@@ -638,6 +638,7 @@ fn update_moons(ctx: &ReducerContext) {
     // Destroy moons and spawn bits
     for moon_id in to_destroy {
         if let Some(moon) = ctx.db.moon().moon_id().find(moon_id) {
+            // TODO subtract from users moon total
             ctx.db.moon().delete(moon);
         }
     }
@@ -686,6 +687,7 @@ fn update_moons(ctx: &ReducerContext) {
                         color: moon.color.clone(),
                     });
                     // Remove the moon
+                    // TODO subtract from users moon total
                     ctx.db.moon().delete(moon);
                     break; // Only process one collision per user per tick
                 }
