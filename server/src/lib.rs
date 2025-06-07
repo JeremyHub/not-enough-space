@@ -707,6 +707,7 @@ fn update_moons(ctx: &ReducerContext) {
                 }
             }
             // Remove the user
+            // TODO figure out what this does to the client who died
             ctx.db.user().delete(user);
         } else {
             log::warn!("Tried to remove user with identity {:?} but they do not exist.", user_id);
@@ -860,11 +861,13 @@ pub fn sacrifice_health_for_moon(ctx: &ReducerContext) -> Result<(), String> {
     // Subtract health and update user
     let new_health = user.health - health_to_sacrifice;
     let new_size = get_user_size(new_health);
+    // TODO update the user's moon total
     ctx.db.user().identity().update(User {
         health: new_health,
         size: new_size,
         ..user
     });
+
 
     // Spawn the moon at the user's current position, orbiting the user
     ctx.db.moon().insert(Moon {
