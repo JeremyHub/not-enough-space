@@ -31,7 +31,7 @@ pub fn handle_user_and_oribiting_moon_collision(ctx: &ReducerContext, user: &use
     // Remove the moon and subtract from user's moon total
     if let Some(orbiting_id) = moon.orbiting {
         if let Some(orbiting_user) = ctx.db.user().identity().find(orbiting_id) {
-            let new_total = (orbiting_user.total_moon_size_oribiting - moon.size);
+            let new_total = orbiting_user.total_moon_size_oribiting - moon.size;
             ctx.db.user().identity().update(user::User {
                 total_moon_size_oribiting: new_total,
                 ..orbiting_user
