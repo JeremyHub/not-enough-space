@@ -11,7 +11,6 @@ use super::helpers;
 use super::bit;
 
 pub fn handle_user_and_oribiting_moon_collision(ctx: &ReducerContext, user: &user::User, moon: moon::Moon) {
-    // If moon is larger than user, user dies, else subtract moon.size from user's health
     let new_health = user.health - moon.size;
     let new_size = user::get_user_size(new_health);
     ctx.db.user().identity().update(user::User {
@@ -25,14 +24,14 @@ pub fn handle_user_and_oribiting_moon_collision(ctx: &ReducerContext, user: &use
         bit_id: 0,
         x: moon.x.round() as i32,
         y: moon.y.round() as i32,
-        size: moon.size,
-        worth: moon.size,
+        size: moon.size*2.0, // hack to make it no net loss
+        worth: moon.size*2.0,
         color: moon.color.clone(),
     });
     // Remove the moon and subtract from user's moon total
     if let Some(orbiting_id) = moon.orbiting {
         if let Some(orbiting_user) = ctx.db.user().identity().find(orbiting_id) {
-            let new_total = (orbiting_user.total_moon_size_oribiting - moon.size).max(0.0);
+            let new_total = (orbiting_user.total_moon_size_oribiting - moon.size);
             ctx.db.user().identity().update(user::User {
                 total_moon_size_oribiting: new_total,
                 ..orbiting_user
