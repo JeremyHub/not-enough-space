@@ -44,7 +44,7 @@ pub fn handle_user_and_oribiting_moon_collision(ctx: &ReducerContext, user: &use
 
 pub fn handle_user_non_oribiting_moon_collision(ctx: &ReducerContext, user: &user::User, moon: moon::Moon) -> f32 {
     // Pick a target color based on the user's color
-    let (target_color, orbital_velocity) = moon::new_moon_params(ctx, user.color.clone());
+    let (target_color, orbital_velocity) = moon::new_moon_params(ctx, &user.color);
     ctx.db.moon().moon_id().update(moon::Moon {
         orbiting: Some(user.identity),
         orbit_angle: ctx.rng().gen_range(0.0..(2.0 * std::f32::consts::PI)),

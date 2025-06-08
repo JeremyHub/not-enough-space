@@ -39,7 +39,8 @@ pub struct Moon {
 }
 
 
-pub fn spawn_moons(ctx: &ReducerContext, num_moons: u64) {
+pub fn spawn_moons(ctx: &ReducerContext) {
+    let num_moons = super::NUM_NON_ORBITING_MOONS - ctx.db.moon().is_orbiting().filter(false).count() as u64;
     for _ in 0..num_moons {
         let x = ctx.rng().gen_range(0..=super::WORLD_WIDTH) as f32;
         let y = ctx.rng().gen_range(0..=super::WORLD_HEIGHT) as f32;
@@ -104,7 +105,7 @@ fn move_non_oribiting_moons(ctx: &ReducerContext, moon: Moon) {
 }
 
 
-pub fn new_moon_params(ctx: &ReducerContext, color: helpers::Color) -> (helpers::Color, f32) {
+pub fn new_moon_params(ctx: &ReducerContext, color: &helpers::Color) -> (helpers::Color, f32) {
     let mut rng = ctx.rng();
     let clamp = |v: i32| v.max(0).min(255);
     let offset = rng.gen_range(-super::MOON_COLOR_DIFF..=super::MOON_COLOR_DIFF);

@@ -37,6 +37,8 @@ pub fn tick(ctx: &ReducerContext, tick_schedule: TickSchedule) -> Result<(), Str
     }
 
     bit::spawn_bits(ctx);
+
+    moon::spawn_moons(ctx);
     
     moon::update_moons(ctx);
 
@@ -74,7 +76,6 @@ pub fn tick(ctx: &ReducerContext, tick_schedule: TickSchedule) -> Result<(), Str
 
 #[reducer(init)]
 pub fn init(ctx: &ReducerContext) -> Result<(), String> {
-    moon::spawn_moons(ctx, super::STARTING_MOONS);
     ctx.db.metadata().insert(Metadata {
         world_height: super::WORLD_HEIGHT,
         world_width: super::WORLD_WIDTH,

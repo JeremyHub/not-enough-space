@@ -34,7 +34,7 @@ pub fn sacrifice_health_for_moon(ctx: &ReducerContext) -> Result<(), String> {
 
     let moon_size = health_to_sacrifice * moon_size_per_health;
 
-    let (moon_color, orbital_velocity) = moon::new_moon_params(ctx, user.color.clone());
+    let (moon_color, orbital_velocity) = moon::new_moon_params(ctx, &user.color);
 
     // Subtract health and update user, and add to total_moon_size_oribiting
     let new_health = user.health - health_to_sacrifice;

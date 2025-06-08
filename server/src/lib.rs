@@ -36,7 +36,7 @@ pub const MAX_BIT_WORTH: f32 = 2.5;
 pub const MAX_BIT_SIZE: f32 = MAX_BIT_WORTH;
 
 // non-orbiting moon
-pub const STARTING_MOONS: u64 = 200;
+pub const NUM_NON_ORBITING_MOONS: u64 = 200;
 pub const MAX_MOON_SIZE: f32 = 5.0;
 pub const MIN_MOON_SIZE: f32 = 3.0;
 pub const MOON_DRIFT: f32 = 0.5;
