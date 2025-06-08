@@ -44,7 +44,7 @@ pub fn spawn_bits(ctx: &ReducerContext) {
 }
 
 pub fn handle_explosion(ctx: &ReducerContext, x: f32, y: f32, worth: f32, color: helpers::Color) {
-    // Spawn bits at the moon's position, worth = size, size = worth
+    // Spawn bits at the moon's position
     ctx.db.bit().insert(Bit {
         bit_id: 0,
         x: x.round() as i32,

@@ -24,8 +24,8 @@ pub fn handle_user_and_oribiting_moon_collision(ctx: &ReducerContext, user: &use
         bit_id: 0,
         x: moon.x.round() as i32,
         y: moon.y.round() as i32,
-        size: moon.size*2.0, // hack to make it no net loss
-        worth: moon.size*2.0,
+        size: moon.size,
+        worth: moon.size*2.0, // hack to make it no net loss
         color: moon.color.clone(),
     });
     // Remove the moon and subtract from user's moon total
