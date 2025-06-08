@@ -272,12 +272,111 @@ fn spawn_moons(ctx: &ReducerContext, num_moons: u64) {
     }
 }
 
-fn update_moon_directions(ctx: &ReducerContext) {
+fn update_oribiting_moons(ctx: &ReducerContext) {
+    for moon in ctx.db.moon().iter() {
+    if let Some(user_id) = moon.orbiting {
+        let user = ctx.db.user().identity().find(user_id);
+        if let Some(user) = user {
+            // Determine if user is moving
+            let user_speed = (user.dx.powi(2) + user.dy.powi(2)).sqrt();
+            let moving = user_speed > USER_SPEED_ORBIT_THRESHOLD;
+            let orbit_state: OrbitState;
+            let mut orbit_radius: f32;
+            let orbit_angular_vel: f32;
+            if moving {
+                orbit_state = OrbitState::Moving;
+                orbit_radius = (ORBIT_RADIUS_USER_SIZE_FACTOR_FAR * user.size) + ORBIT_RADIUS_CONST_FAR + (ADDITIONAL_ORBIT_RADIUS_MOON_SIZE_FACTOR_FAR * (1.0/moon.size) * user.size);
+                orbit_angular_vel = ORBIT_ANGULAR_VEL_RADIUS_FACTOR_FAR * moon.size;
+            } else {
+                orbit_state = OrbitState::Stationary;
+                orbit_radius = (ORBIT_RADIUS_USER_SIZE_FACTOR_CLOSE * user.size) + ORBIT_RADIUS_CONST_CLOSE + (ADDITIONAL_ORBIT_RADIUS_MOON_SIZE_FACTOR_CLOSE * (1.0/moon.size) * user.size);
+                orbit_angular_vel = ORBIT_ANGULAR_VEL_RADIUS_FACTOR_CLOSE * moon.size;
+            };
+            orbit_radius = orbit_radius.max(user.size + moon.size);
+
+            // Advance orbit angle
+            let mut orbit_angle = moon.orbit_angle;
+            // Use orbital_velocity as multiplier
+            let orbital_velocity = moon.orbital_velocity.unwrap_or(1.0);
+            orbit_angle += orbital_velocity * orbit_angular_vel;
+            if orbit_angle > std::f32::consts::PI * 2.0 {
+                orbit_angle -= std::f32::consts::PI * 2.0;
+            }
+            if orbit_angle < 0.0 {
+                orbit_angle += std::f32::consts::PI * 2.0;
+            }
+
+            // Compute desired moon position relative to user
+            let user_x = user.x;
+            let user_y = user.y;
+            let new_x = user_x + orbit_radius * orbit_angle.cos();
+            let new_y = user_y + orbit_radius * orbit_angle.sin();
+
+            // compute minimal toroidal vector from moon's current position to desired position
+            let mut dir_vec_x = new_x - moon.x;
+            let mut dir_vec_y = new_y - moon.y;
+
+            // Proper toroidal wrapping for direction vector
+            if dir_vec_x.abs() > WORLD_WIDTH as f32 / 2.0 {
+                if dir_vec_x > 0.0 {
+                    dir_vec_x -= WORLD_WIDTH as f32;
+                } else {
+                    dir_vec_x += WORLD_WIDTH as f32;
+                }
+            }
+            if dir_vec_y.abs() > WORLD_HEIGHT as f32 / 2.0 {
+                if dir_vec_y > 0.0 {
+                    dir_vec_y -= WORLD_HEIGHT as f32;
+                } else {
+                    dir_vec_y += WORLD_HEIGHT as f32;
+                }
+            }
+            let dir_length = (dir_vec_x.powi(2) + dir_vec_y.powi(2)).sqrt();
+
+            // scale velocity increment by distance (clamped to avoid zero)
+            let distance_scale = dir_length.max(1.0); // minimum 1.0 to avoid division by zero
+            let acceleration = if moving { (ORBIT_MOVING_ACCELERATION_USER_SIZE_FACTOR * user.size) + ORBIT_MOVING_ACCELERATION_CONST } else { (ORBIT_STATIONARY_ACCELERATION_USER_SIZE_FACTOR * user.size) + ORBIT_STATIONARY_ACCELERATION_CONST };
+            let scale = distance_scale / orbit_radius; // normalized, so it slows as it gets closer
+
+            // Calculate the velocity increment, but clamp so we don't overshoot
+            let mut delta_vx = (dir_vec_x / dir_length) * acceleration * scale;
+            let mut delta_vy = (dir_vec_y / dir_length) * acceleration * scale;
+
+            // Clamp the increment
+            let max_step = dir_length;
+            let step_length = (delta_vx.powi(2) + delta_vy.powi(2)).sqrt();
+            if step_length > max_step {
+                let clamp_factor = max_step / step_length;
+                delta_vx *= clamp_factor;
+                delta_vy *= clamp_factor;
+            }
+
+            // Update moon with new position and velocity
+            let (updated_x, updated_y) = wrap_coords(moon.x + delta_vx, moon.y + delta_vy);
+            ctx.db.moon().moon_id().update(Moon {
+                col_index: updated_x.round() as i32,
+                x: updated_x,
+                y: updated_y,
+                dx: delta_vx,
+                dy: delta_vy,
+                orbit_angle,
+                orbit_state: Some(orbit_state),
+                orbit_radius,
+                is_orbiting: true,
+                ..moon
+            });
+            continue;
+        }
+    }
+}
+}
+
+fn update_non_oribiting_moons_directions(ctx: &ReducerContext) {
     let mut non_orbiting_moons: Vec<_> = ctx.db.moon().iter().filter(|b| b.orbiting.is_none()).collect();
     use rand::seq::SliceRandom;
     let mut rng = ctx.rng();
     non_orbiting_moons.as_mut_slice().shuffle(&mut rng);
-
+    
     let num_to_update = ((non_orbiting_moons.len() as f64) * PORTION_NON_ORBITING_MOONS_DIRECTION_UPDATED_PER_TICK)
         .ceil() as usize;
     for moon in non_orbiting_moons.into_iter().take(num_to_update) {
@@ -287,103 +386,7 @@ fn update_moon_directions(ctx: &ReducerContext) {
             ..moon
         });
     }
-    for moon in ctx.db.moon().iter() {
-        if let Some(user_id) = moon.orbiting {
-            let user = ctx.db.user().identity().find(user_id);
-            if let Some(user) = user {
-                // Determine if user is moving
-                let user_speed = (user.dx.powi(2) + user.dy.powi(2)).sqrt();
-                let moving = user_speed > USER_SPEED_ORBIT_THRESHOLD;
-                let orbit_state: OrbitState;
-                let mut orbit_radius: f32;
-                let orbit_angular_vel: f32;
-                if moving {
-                    orbit_state = OrbitState::Moving;
-                    orbit_radius = (ORBIT_RADIUS_USER_SIZE_FACTOR_FAR * user.size) + ORBIT_RADIUS_CONST_FAR + (ADDITIONAL_ORBIT_RADIUS_MOON_SIZE_FACTOR_FAR * (1.0/moon.size) * user.size);
-                    orbit_angular_vel = ORBIT_ANGULAR_VEL_RADIUS_FACTOR_FAR * moon.size;
-                } else {
-                    orbit_state = OrbitState::Stationary;
-                    orbit_radius = (ORBIT_RADIUS_USER_SIZE_FACTOR_CLOSE * user.size) + ORBIT_RADIUS_CONST_CLOSE + (ADDITIONAL_ORBIT_RADIUS_MOON_SIZE_FACTOR_CLOSE * (1.0/moon.size) * user.size);
-                    orbit_angular_vel = ORBIT_ANGULAR_VEL_RADIUS_FACTOR_CLOSE * moon.size;
-                };
-                orbit_radius = orbit_radius.max(user.size + moon.size);
-
-                // Advance orbit angle
-                let mut orbit_angle = moon.orbit_angle;
-                // Use orbital_velocity as multiplier
-                let orbital_velocity = moon.orbital_velocity.unwrap_or(1.0);
-                orbit_angle += orbital_velocity * orbit_angular_vel;
-                if orbit_angle > std::f32::consts::PI * 2.0 {
-                    orbit_angle -= std::f32::consts::PI * 2.0;
-                }
-                if orbit_angle < 0.0 {
-                    orbit_angle += std::f32::consts::PI * 2.0;
-                }
-
-                // Compute desired moon position relative to user
-                let user_x = user.x;
-                let user_y = user.y;
-                let new_x = user_x + orbit_radius * orbit_angle.cos();
-                let new_y = user_y + orbit_radius * orbit_angle.sin();
-
-                // compute minimal toroidal vector from moon's current position to desired position
-                let mut dir_vec_x = new_x - moon.x;
-                let mut dir_vec_y = new_y - moon.y;
-
-                // Proper toroidal wrapping for direction vector
-                if dir_vec_x.abs() > WORLD_WIDTH as f32 / 2.0 {
-                    if dir_vec_x > 0.0 {
-                        dir_vec_x -= WORLD_WIDTH as f32;
-                    } else {
-                        dir_vec_x += WORLD_WIDTH as f32;
-                    }
-                }
-                if dir_vec_y.abs() > WORLD_HEIGHT as f32 / 2.0 {
-                    if dir_vec_y > 0.0 {
-                        dir_vec_y -= WORLD_HEIGHT as f32;
-                    } else {
-                        dir_vec_y += WORLD_HEIGHT as f32;
-                    }
-                }
-                let dir_length = (dir_vec_x.powi(2) + dir_vec_y.powi(2)).sqrt();
-
-                // scale velocity increment by distance (clamped to avoid zero)
-                let distance_scale = dir_length.max(1.0); // minimum 1.0 to avoid division by zero
-                let acceleration = if moving { (ORBIT_MOVING_ACCELERATION_USER_SIZE_FACTOR * user.size) + ORBIT_MOVING_ACCELERATION_CONST } else { (ORBIT_STATIONARY_ACCELERATION_USER_SIZE_FACTOR * user.size) + ORBIT_STATIONARY_ACCELERATION_CONST };
-                let scale = distance_scale / orbit_radius; // normalized, so it slows as it gets closer
-
-                // Calculate the velocity increment, but clamp so we don't overshoot
-                let mut delta_vx = (dir_vec_x / dir_length) * acceleration * scale;
-                let mut delta_vy = (dir_vec_y / dir_length) * acceleration * scale;
-
-                // Clamp the increment
-                let max_step = dir_length;
-                let step_length = (delta_vx.powi(2) + delta_vy.powi(2)).sqrt();
-                if step_length > max_step {
-                    let clamp_factor = max_step / step_length;
-                    delta_vx *= clamp_factor;
-                    delta_vy *= clamp_factor;
-                }
-
-                // Update moon with new position and velocity
-                let (updated_x, updated_y) = wrap_coords(moon.x + delta_vx, moon.y + delta_vy);
-                ctx.db.moon().moon_id().update(Moon {
-                    col_index: updated_x.round() as i32,
-                    x: updated_x,
-                    y: updated_y,
-                    dx: delta_vx,
-                    dy: delta_vy,
-                    orbit_angle,
-                    orbit_state: Some(orbit_state),
-                    orbit_radius,
-                    is_orbiting: true,
-                    ..moon
-                });
-                continue;
-            }
-        }
     }
-}
 
 
 trait Character {
@@ -554,62 +557,25 @@ fn new_moon_params(ctx: &ReducerContext, color: Color) -> (Color, f32) {
 }
 
 fn update_moons(ctx: &ReducerContext) {
-    update_moon_directions(ctx);
+
+    update_non_oribiting_moons_directions(ctx);
+    update_oribiting_moons(ctx);
+
     for moon in ctx.db.moon().iter() {
-        // Only move non-orbiting moons
         if moon.orbiting.is_none() {
-            let acceleration = MOON_ACCELERATION;
-            let upd = move_character(&moon, acceleration);
-            ctx.db.moon().moon_id().update(Moon {
-                col_index: upd.x.round() as i32,
-                x: upd.x,
-                y: upd.y,
-                dx: upd.dx,
-                dy: upd.dy,
-                is_orbiting: false,
-                ..moon
-            });
+            move_non_oribiting_moons(ctx, moon);
         } else {
-            if let Some(target_color) = moon.target_color.as_ref() {
-                if moon.color != *target_color {
-                    let mut new_r = moon.color.r;
-                    let mut new_g = moon.color.g;
-                    let mut new_b = moon.color.b;
-                    if (target_color.r - moon.color.r).abs() > 0 {
-                        new_r += (target_color.r - moon.color.r).signum() * MOON_COLOR_ANIMATION_SPEED;
-                    }
-                    if (target_color.g - moon.color.g).abs() > 0 {
-                        new_g += (target_color.g - moon.color.g).signum() * MOON_COLOR_ANIMATION_SPEED;
-                    }
-                    if (target_color.b - moon.color.b).abs() > 0 {
-                        new_b += (target_color.b - moon.color.b).signum() * MOON_COLOR_ANIMATION_SPEED;
-                    }
-                    let new_color = Color {
-                        r: new_r.max(0).min(255),
-                        g: new_g.max(0).min(255),
-                        b: new_b.max(0).min(255),
-                    };
-                    ctx.db.moon().moon_id().update(Moon {
-                        color: new_color,
-                        ..moon
-                    });
-                }
-            }
+            animate_moon_color(ctx, moon);
         }
     }
 
     let mut to_destroy: Vec<u64> = Vec::new();
     let mut explosions: Vec<(f32, f32, f32, Color)> = Vec::new(); // (x, y, worth, color)
-
-    // Collect all orbiting moons with is_orbiting == true
     let orbiting_moons: Vec<_> = ctx.db.moon().is_orbiting().filter(true).collect();
-
-    // For each orbiting moon, check for collision with other orbiting moons in nearby col_index ranges
     for moon in &orbiting_moons {
         if moon.orbiting.is_none() {
             continue;
         }
-        // Only check each pair once
         if to_destroy.contains(&moon.moon_id) {
             continue;
         }
@@ -622,148 +588,200 @@ fn update_moons(ctx: &ReducerContext) {
                 if !other.is_orbiting || other.orbiting.is_none() || to_destroy.contains(&other.moon_id) {
                     continue;
                 }
-                // Only check if orbiting different users
                 if moon.orbiting == other.orbiting {
                     continue;
                 }
-                // Check collision
                 if toroidal_distance(moon.x, moon.y, other.x, other.y) <= (moon.size + other.size) {
-                    // Only destroy the smaller moon, reduce the size of the larger moon by the size of the smaller
-                    if moon.size > other.size {
-                        // Moon survives, other is destroyed
-                        to_destroy.push(other.moon_id);
-                        explosions.push((other.x, other.y, other.size, other.color.clone()));
-                        // Reduce moon's size
-                        if let Some(moon_obj) = ctx.db.moon().moon_id().find(moon.moon_id) {
-                            let new_size = moon.size - other.size;
-                            let new_health = moon.health - other.size;
-                            ctx.db.moon().moon_id().update(Moon {
-                                size: new_size,
-                                health: new_health,
-                                ..moon_obj
-                            });
-                        }
-                    } else if other.size > moon.size {
-                        // Other survives, moon is destroyed
-                        to_destroy.push(moon.moon_id);
-                        explosions.push((moon.x, moon.y, moon.size, moon.color.clone()));
-                        // Reduce other's size
-                        if let Some(other_obj) = ctx.db.moon().moon_id().find(other.moon_id) {
-                            let new_size = other.size - moon.size;
-                            let new_health = other.health - moon.size;
-                            ctx.db.moon().moon_id().update(Moon {
-                                size: new_size,
-                                health: new_health,
-                                ..other_obj
-                            });
-                        }
-                    } else {
-                        // Equal size, both destroyed
-                        to_destroy.push(moon.moon_id);
-                        to_destroy.push(other.moon_id);
-                        explosions.push((moon.x, moon.y, moon.size, moon.color.clone()));
-                        explosions.push((other.x, other.y, other.size, other.color.clone()));
-                    }
-                    break; // Only destroy once per moon
+                    handle_moon_moon_collision(ctx, &mut to_destroy, &mut explosions, moon, other);
                 }
             }
         }
     }
 
-    // Destroy moons and spawn bits, and subtract from users' moon total
     for moon_id in to_destroy {
         if let Some(moon) = ctx.db.moon().moon_id().find(moon_id) {
-            // Subtract from user's moon total if orbiting
-            if let Some(user_id) = moon.orbiting {
-                if let Some(user) = ctx.db.user().identity().find(user_id) {
-                    let new_total = (user.total_moon_size_oribiting - moon.size).max(0.0);
-                    ctx.db.user().identity().update(User {
-                        total_moon_size_oribiting: new_total,
-                        ..user
-                    });
-                }
-            }
-            ctx.db.moon().delete(moon);
+            delete_moon(ctx, moon);
         }
     }
+
     for (x, y, worth, color) in explosions {
-        // Spawn bits at the moon's position, worth = size, size = worth
-        ctx.db.bit().insert(Bit {
-            bit_id: 0,
-            x: x.round() as i32,
-            y: y.round() as i32,
-            size: worth,
-            worth,
-            color,
-        });
+        handle_explosion(ctx, x, y, worth, color);
     }
 
-    // check user :: moon (orbiting other players) collision
     let mut users_to_remove = Vec::new();
     for user in ctx.db.user().iter() {
         for range in wrapped_ranges(user.x.round() as i32, (user.size + MAX_MOON_SIZE as f32) as i32, WORLD_WIDTH) {
             for moon in ctx.db.moon().col_index().filter(range) {
-                // Only consider orbiting moons, not orbiting this user
                 if !moon.is_orbiting || moon.orbiting == Some(user.identity) {
                     continue;
                 }
                 if toroidal_distance(moon.x, moon.y, user.x, user.y) <= (moon.size + user.size) {
-                    // If moon is larger than user, user dies, else subtract moon.size from user's health
-                    let new_health = user.health - moon.size;
-                    if new_health < 0.0 {
-                        // User dies, remove them
-                        users_to_remove.push(user.identity);
-                    } else {
-                        let new_size = get_user_size(new_health);
-                        ctx.db.user().identity().update(User {
-                            health: new_health,
-                            size: new_size,
-                            color: user.color.clone(),
-                            ..user
-                        });
-                    }
-                    // Turn moon into a bit at its position
-                    ctx.db.bit().insert(Bit {
-                        bit_id: 0,
-                        x: moon.x.round() as i32,
-                        y: moon.y.round() as i32,
-                        size: moon.size,
-                        worth: moon.size,
-                        color: moon.color.clone(),
-                    });
-                    // Remove the moon and subtract from user's moon total
-                    if let Some(orbiting_id) = moon.orbiting {
-                        if let Some(orbiting_user) = ctx.db.user().identity().find(orbiting_id) {
-                            let new_total = (orbiting_user.total_moon_size_oribiting - moon.size).max(0.0);
-                            ctx.db.user().identity().update(User {
-                                total_moon_size_oribiting: new_total,
-                                ..orbiting_user
-                            });
-                        }
-                    }
-                    ctx.db.moon().delete(moon);
-                    break; // Only process one collision per user per tick
+                    handle_user_moon_collision(ctx, &mut users_to_remove, &user, moon);
                 }
             }
         }
     }
 
-    // Remove users who died
     for user_id in users_to_remove {
         if let Some(user) = ctx.db.user().identity().find(user_id) {
-            // Remove all moons orbiting this user
-            for moon in ctx.db.moon().iter() {
-                if moon.orbiting == Some(user.identity) {
-                    ctx.db.moon().delete(moon);
-                }
-            }
-            // Remove the user
-            // TODO figure out what this does to the client who died
-            ctx.db.user().delete(user);
-        } else {
-            log::warn!("Tried to remove user with identity {:?} but they do not exist.", user_id);
+            handle_user_death(ctx, user);
         }
     }
+}
+
+fn handle_user_death(ctx: &ReducerContext, user: User) {
+    // Remove all moons orbiting this user
+    for moon in ctx.db.moon().iter() {
+        if moon.orbiting == Some(user.identity) {
+            ctx.db.moon().delete(moon);
+        }
+    }
+    // TODO figure out what this does to the client who died
+    ctx.db.user().delete(user);
+}
+
+fn handle_moon_moon_collision(ctx: &ReducerContext, to_destroy: &mut Vec<u64>, explosions: &mut Vec<(f32, f32, f32, Color)>, moon: &Moon, other: Moon) {
+    // Only destroy the smaller moon, reduce the size of the larger moon by the size of the smaller
+    if moon.size > other.size {
+        // Moon survives, other is destroyed
+        to_destroy.push(other.moon_id);
+        explosions.push((other.x, other.y, other.size, other.color.clone()));
+        // Reduce moon's size
+        if let Some(moon_obj) = ctx.db.moon().moon_id().find(moon.moon_id) {
+            let new_size = moon.size - other.size;
+            let new_health = moon.health - other.size;
+            ctx.db.moon().moon_id().update(Moon {
+                size: new_size,
+                health: new_health,
+                ..moon_obj
+            });
+        }
+    } else if other.size > moon.size {
+        // Other survives, moon is destroyed
+        to_destroy.push(moon.moon_id);
+        explosions.push((moon.x, moon.y, moon.size, moon.color.clone()));
+        // Reduce other's size
+        if let Some(other_obj) = ctx.db.moon().moon_id().find(other.moon_id) {
+            let new_size = other.size - moon.size;
+            let new_health = other.health - moon.size;
+            ctx.db.moon().moon_id().update(Moon {
+                size: new_size,
+                health: new_health,
+                ..other_obj
+            });
+        }
+    } else {
+        // Equal size, both destroyed
+        to_destroy.push(moon.moon_id);
+        to_destroy.push(other.moon_id);
+        explosions.push((moon.x, moon.y, moon.size, moon.color.clone()));
+        explosions.push((other.x, other.y, other.size, other.color.clone()));
+    }
+}
+
+fn handle_user_moon_collision(ctx: &ReducerContext, users_to_remove: &mut Vec<Identity>, user: &User, moon: Moon) {
+    // If moon is larger than user, user dies, else subtract moon.size from user's health
+    let new_health = user.health - moon.size;
+    if new_health < 0.0 {
+        // User dies, remove them
+        users_to_remove.push(user.identity);
+    } else {
+        let new_size = get_user_size(new_health);
+        ctx.db.user().identity().update(User {
+            health: new_health,
+            size: new_size,
+            color: user.color.clone(),
+            ..*user
+        });
+    }
+    // Turn moon into a bit at its position
+    ctx.db.bit().insert(Bit {
+        bit_id: 0,
+        x: moon.x.round() as i32,
+        y: moon.y.round() as i32,
+        size: moon.size,
+        worth: moon.size,
+        color: moon.color.clone(),
+    });
+    // Remove the moon and subtract from user's moon total
+    if let Some(orbiting_id) = moon.orbiting {
+        if let Some(orbiting_user) = ctx.db.user().identity().find(orbiting_id) {
+            let new_total = (orbiting_user.total_moon_size_oribiting - moon.size).max(0.0);
+            ctx.db.user().identity().update(User {
+                total_moon_size_oribiting: new_total,
+                ..orbiting_user
+            });
+        }
+    }
+    ctx.db.moon().delete(moon);
+}
+
+fn handle_explosion(ctx: &ReducerContext, x: f32, y: f32, worth: f32, color: Color) {
+    // Spawn bits at the moon's position, worth = size, size = worth
+    ctx.db.bit().insert(Bit {
+        bit_id: 0,
+        x: x.round() as i32,
+        y: y.round() as i32,
+        size: worth,
+        worth,
+        color,
+    });
+}
+
+fn delete_moon(ctx: &ReducerContext, moon: Moon) {
+    // Subtract from user's moon total if orbiting
+    if let Some(user_id) = moon.orbiting {
+        if let Some(user) = ctx.db.user().identity().find(user_id) {
+            let new_total = (user.total_moon_size_oribiting - moon.size).max(0.0);
+            ctx.db.user().identity().update(User {
+                total_moon_size_oribiting: new_total,
+                ..user
+            });
+        }
+    }
+    ctx.db.moon().delete(moon);
+}
+
+fn animate_moon_color(ctx: &ReducerContext, moon: Moon) {
+    if let Some(target_color) = moon.target_color.as_ref() {
+        if moon.color != *target_color {
+            let mut new_r = moon.color.r;
+            let mut new_g = moon.color.g;
+            let mut new_b = moon.color.b;
+            if (target_color.r - moon.color.r).abs() > 0 {
+                new_r += (target_color.r - moon.color.r).signum() * MOON_COLOR_ANIMATION_SPEED;
+            }
+            if (target_color.g - moon.color.g).abs() > 0 {
+                new_g += (target_color.g - moon.color.g).signum() * MOON_COLOR_ANIMATION_SPEED;
+            }
+            if (target_color.b - moon.color.b).abs() > 0 {
+                new_b += (target_color.b - moon.color.b).signum() * MOON_COLOR_ANIMATION_SPEED;
+            }
+            let new_color = Color {
+                r: new_r.max(0).min(255),
+                g: new_g.max(0).min(255),
+                b: new_b.max(0).min(255),
+            };
+            ctx.db.moon().moon_id().update(Moon {
+                color: new_color,
+                ..moon
+            });
+        }
+    }
+}
+
+fn move_non_oribiting_moons(ctx: &ReducerContext, moon: Moon) {
+    let acceleration = MOON_ACCELERATION;
+    let upd = move_character(&moon, acceleration);
+    ctx.db.moon().moon_id().update(Moon {
+        col_index: upd.x.round() as i32,
+        x: upd.x,
+        y: upd.y,
+        dx: upd.dx,
+        dy: upd.dy,
+        is_orbiting: false,
+        ..moon
+    });
 }
 
 fn users_eat_bits(ctx: &ReducerContext) {
