@@ -62,9 +62,9 @@ pub fn handle_moon_user_collision(ctx: &ReducerContext) {
     for user in ctx.db.user().iter() {
         if user.online || super::UPDATE_OFFLINE_PLAYERS {
             let mut new_user_moon_size = user.total_moon_size_oribiting;
-            if user.total_moon_size_oribiting < user.size {
-                for range in helpers::wrapped_ranges(user.x.round() as i32, (user.size + super::MAX_MOON_SIZE as f32) as i32, super::WORLD_WIDTH) {
-                    for moon in ctx.db.moon().col_index().filter(range) {
+            for range in helpers::wrapped_ranges(user.x.round() as i32, (user.size + super::MAX_MOON_SIZE as f32) as i32, super::WORLD_WIDTH) {
+                for moon in ctx.db.moon().col_index().filter(range) {
+                    if user.total_moon_size_oribiting + moon.size < user.size {
                         if moon.orbiting.is_none() {
                             if helpers::toroidal_distance(user.x, user.y, moon.x, moon.y) <= (user.size + moon.size) {
                                 new_user_moon_size += handle_user_non_oribiting_moon_collision(ctx, &user, moon);

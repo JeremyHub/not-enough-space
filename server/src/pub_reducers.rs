@@ -18,14 +18,18 @@ pub fn sacrifice_health_for_moon(ctx: &ReducerContext) -> Result<(), String> {
         None => return Err("User not found.".to_string()),
     };
 
-    if user.health < super::MIN_HEALTH_TO_SACRIFICE {
-        return Err(format!("You must have at least {} health.", super::MIN_HEALTH_TO_SACRIFICE));
+    let mut health_to_sacrifice = (user.health*super::PORTION_HEALTH_SACRIFICE).min(super::MAX_HEALTH_SACRIFICE);
+    
+    if health_to_sacrifice < super::MIN_HEALTH_SACRIFICE {
+        return Err(format!("You dont have enough health to sacrifice."));
     }
 
-    let health_to_sacrifice = user.health*super::PORTION_HEALTH_SACRIFICE;
-
     if user.total_moon_size_oribiting + health_to_sacrifice > user.size {
-        return Err(format!("You already have too many moons."));
+        if user.total_moon_size_oribiting + super::MIN_HEALTH_SACRIFICE < user.size {
+            health_to_sacrifice = super::MIN_HEALTH_SACRIFICE
+        } else {
+            return Err(format!("You already have too many moons."));
+        }
     }
 
     let moon_size = health_to_sacrifice * moon_size_per_health;
