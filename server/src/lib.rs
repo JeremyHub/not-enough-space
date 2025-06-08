@@ -1,6 +1,3 @@
-use std::collections::HashMap;
-use std::collections::HashSet;
-
 use spacetimedb::rand::seq::SliceRandom;
 use spacetimedb::{rand, reducer, table, Identity, ReducerContext, ScheduleAt, SpacetimeType, Table, TimeDuration};
 use spacetimedb::rand::Rng;
@@ -492,50 +489,6 @@ fn update_users(ctx: &ReducerContext) {
             });
         }
     }
-    // handle user:user and user:moon collisions
-    let mut moon_size_map: HashMap<Identity, f32> = HashMap::new();
-    let mut users_with_new_moon: Vec<Identity> = Vec::new();
-    for user in ctx.db.user().iter() {
-        if user.online || UPDATE_OFFLINE_PLAYERS {
-            if user.total_moon_size_oribiting < user.size {
-                for range in wrapped_ranges(user.x.round() as i32, (user.size + MAX_MOON_SIZE as f32) as i32, WORLD_WIDTH) {
-                    for moon in ctx.db.moon().col_index().filter(range) {
-                        if moon.orbiting.is_none() {
-                            if toroidal_distance(user.x, user.y, moon.x, moon.y) <= (user.size + moon.size) {
-                                // Pick a target color based on the user's color
-                                let (target_color, orbital_velocity) = new_moon_params(ctx, user.color.clone());
-                                ctx.db.moon().moon_id().update(Moon {
-                                    orbiting: Some(user.identity),
-                                    orbit_angle: ctx.rng().gen_range(0.0..(2.0 * std::f32::consts::PI)),
-                                    target_color: Some(target_color),
-                                    orbital_velocity: Some(orbital_velocity),
-                                    is_orbiting: true,
-                                    ..moon
-                                });
-                                *moon_size_map.entry(user.identity).or_insert(0.0) += moon.size;
-                                users_with_new_moon.push(user.identity);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-    for (identity, new_oribing_size) in moon_size_map {
-        if let Some(user) = ctx.db.user().identity().find(identity) {
-            ctx.db.user().identity().update(User {
-                total_moon_size_oribiting: new_oribing_size + user.total_moon_size_oribiting,
-                ..user
-            });
-        }
-    }
-    // Rearrange orbit angles for users who got a new moon
-    let mut seen = HashSet::new();
-    for user_id in users_with_new_moon {
-        if seen.insert(user_id) {
-            rearrange_orbit_angles(ctx, user_id);
-        }
-    }
 }
 
 fn new_moon_params(ctx: &ReducerContext, color: Color) -> (Color, f32) {
@@ -557,6 +510,32 @@ fn new_moon_params(ctx: &ReducerContext, color: Color) -> (Color, f32) {
 }
 
 fn update_moons(ctx: &ReducerContext) {
+
+    // handle user:non-oribiting-moon collisions
+    for user in ctx.db.user().iter() {
+        if user.online || UPDATE_OFFLINE_PLAYERS {
+            let mut new_user_moon_size = user.total_moon_size_oribiting;
+            if user.total_moon_size_oribiting < user.size {
+                for range in wrapped_ranges(user.x.round() as i32, (user.size + MAX_MOON_SIZE as f32) as i32, WORLD_WIDTH) {
+                    for moon in ctx.db.moon().col_index().filter(range) {
+                        if moon.orbiting.is_none() {
+                            if toroidal_distance(user.x, user.y, moon.x, moon.y) <= (user.size + moon.size) {
+                                new_user_moon_size += handle_user_non_oribiting_moon_collision(ctx, &user, moon);
+                            }
+                        }
+                    }
+                }
+            }
+            if user.total_moon_size_oribiting != new_user_moon_size {
+                // After handling all moons for this user, update their total_moon_size_oribiting if needed
+                ctx.db.user().identity().update(User {
+                    total_moon_size_oribiting: new_user_moon_size,
+                    ..user
+                });
+                rearrange_orbit_angles(ctx, user.identity);
+            }
+        }
+    }
 
     update_non_oribiting_moons_directions(ctx);
     update_oribiting_moons(ctx);
@@ -616,7 +595,7 @@ fn update_moons(ctx: &ReducerContext) {
                     continue;
                 }
                 if toroidal_distance(moon.x, moon.y, user.x, user.y) <= (moon.size + user.size) {
-                    handle_user_moon_collision(ctx, &mut users_to_remove, &user, moon);
+                    handle_user_and_oribiting_moon_collision(ctx, &mut users_to_remove, &user, moon);
                 }
             }
         }
@@ -627,6 +606,20 @@ fn update_moons(ctx: &ReducerContext) {
             handle_user_death(ctx, user);
         }
     }
+}
+
+fn handle_user_non_oribiting_moon_collision(ctx: &ReducerContext, user: &User, moon: Moon) -> f32 {
+    // Pick a target color based on the user's color
+    let (target_color, orbital_velocity) = new_moon_params(ctx, user.color.clone());
+    ctx.db.moon().moon_id().update(Moon {
+        orbiting: Some(user.identity),
+        orbit_angle: ctx.rng().gen_range(0.0..(2.0 * std::f32::consts::PI)),
+        target_color: Some(target_color),
+        orbital_velocity: Some(orbital_velocity),
+        is_orbiting: true,
+        ..moon
+    });
+    return moon.size;
 }
 
 fn handle_user_death(ctx: &ReducerContext, user: User) {
@@ -679,7 +672,7 @@ fn handle_moon_moon_collision(ctx: &ReducerContext, to_destroy: &mut Vec<u64>, e
     }
 }
 
-fn handle_user_moon_collision(ctx: &ReducerContext, users_to_remove: &mut Vec<Identity>, user: &User, moon: Moon) {
+fn handle_user_and_oribiting_moon_collision(ctx: &ReducerContext, users_to_remove: &mut Vec<Identity>, user: &User, moon: Moon) {
     // If moon is larger than user, user dies, else subtract moon.size from user's health
     let new_health = user.health - moon.size;
     if new_health < 0.0 {
