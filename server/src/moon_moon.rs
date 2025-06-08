@@ -45,7 +45,7 @@ fn handle_moon_moon_collision(ctx: &ReducerContext, to_destroy: &mut Vec<u64>, e
     }
 }
 
-pub fn handle_moon_moon_collisions(ctx: &ReducerContext) {
+pub fn check_moon_moon_collisions(ctx: &ReducerContext) {
     // moon moon collisions
     let mut to_destroy: Vec<u64> = Vec::new();
     let mut explosions: Vec<(f32, f32, f32, helpers::Color)> = Vec::new(); // (x, y, worth, color)

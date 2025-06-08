@@ -44,11 +44,11 @@ pub fn tick(ctx: &ReducerContext, tick_schedule: TickSchedule) -> Result<(), Str
 
     user::update_users(ctx);
 
-    user_moon::handle_moon_user_collision(ctx);
+    user_moon::check_moon_user_collisions(ctx);
 
-    moon_moon::handle_moon_moon_collisions(ctx);
+    moon_moon::check_moon_moon_collisions(ctx);
     
-    user_bit::users_eat_bits(ctx);
+    user_bit::check_user_bit_collisions(ctx);
 
     
     let last_tick = ctx.db.tick_meta().id().find(0);

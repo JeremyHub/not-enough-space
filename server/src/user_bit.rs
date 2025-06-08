@@ -6,7 +6,7 @@ use crate::user::user as _;
 use super::user;
 use super::helpers;
 
-pub fn users_eat_bits(ctx: &ReducerContext) {
+pub fn check_user_bit_collisions(ctx: &ReducerContext) {
     for user in ctx.db.user().iter() {
         if user.online || super::UPDATE_OFFLINE_PLAYERS {
             let mut bits_to_eat = Vec::new();

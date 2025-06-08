@@ -56,7 +56,7 @@ pub fn handle_user_non_oribiting_moon_collision(ctx: &ReducerContext, user: &use
     return moon.size;
 }
 
-pub fn handle_moon_user_collision(ctx: &ReducerContext) {
+pub fn check_moon_user_collisions(ctx: &ReducerContext) {
 
     // user : non-oribiting-moon collisions
     for user in ctx.db.user().iter() {
