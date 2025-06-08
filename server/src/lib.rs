@@ -522,34 +522,8 @@ fn update_moons(ctx: &ReducerContext) {
     }
 }
 
-fn handle_moon_user_collision(ctx: &ReducerContext) {
-
-    // handle user:non-oribiting-moon collisions
-    for user in ctx.db.user().iter() {
-        if user.online || UPDATE_OFFLINE_PLAYERS {
-            let mut new_user_moon_size = user.total_moon_size_oribiting;
-            if user.total_moon_size_oribiting < user.size {
-                for range in wrapped_ranges(user.x.round() as i32, (user.size + MAX_MOON_SIZE as f32) as i32, WORLD_WIDTH) {
-                    for moon in ctx.db.moon().col_index().filter(range) {
-                        if moon.orbiting.is_none() {
-                            if toroidal_distance(user.x, user.y, moon.x, moon.y) <= (user.size + moon.size) {
-                                new_user_moon_size += handle_user_non_oribiting_moon_collision(ctx, &user, moon);
-                            }
-                        }
-                    }
-                }
-            }
-            if user.total_moon_size_oribiting != new_user_moon_size {
-                // After handling all moons for this user, update their total_moon_size_oribiting if needed
-                ctx.db.user().identity().update(User {
-                    total_moon_size_oribiting: new_user_moon_size,
-                    ..user
-                });
-                rearrange_orbit_angles(ctx, user.identity);
-            }
-        }
-    }
-
+fn handle_moon_moon_collisions(ctx: &ReducerContext) {
+    // moon moon collisions
     let mut to_destroy: Vec<u64> = Vec::new();
     let mut explosions: Vec<(f32, f32, f32, Color)> = Vec::new(); // (x, y, worth, color)
     let orbiting_moons: Vec<_> = ctx.db.moon().is_orbiting().filter(true).collect();
@@ -578,18 +552,45 @@ fn handle_moon_user_collision(ctx: &ReducerContext) {
             }
         }
     }
-
     for moon_id in to_destroy {
         if let Some(moon) = ctx.db.moon().moon_id().find(moon_id) {
             delete_moon(ctx, moon);
         }
     }
-
     for (x, y, worth, color) in explosions {
         handle_explosion(ctx, x, y, worth, color);
     }
+}
 
-    let mut users_to_remove = Vec::new();
+fn handle_moon_user_collision(ctx: &ReducerContext) {
+
+    // user : non-oribiting-moon collisions
+    for user in ctx.db.user().iter() {
+        if user.online || UPDATE_OFFLINE_PLAYERS {
+            let mut new_user_moon_size = user.total_moon_size_oribiting;
+            if user.total_moon_size_oribiting < user.size {
+                for range in wrapped_ranges(user.x.round() as i32, (user.size + MAX_MOON_SIZE as f32) as i32, WORLD_WIDTH) {
+                    for moon in ctx.db.moon().col_index().filter(range) {
+                        if moon.orbiting.is_none() {
+                            if toroidal_distance(user.x, user.y, moon.x, moon.y) <= (user.size + moon.size) {
+                                new_user_moon_size += handle_user_non_oribiting_moon_collision(ctx, &user, moon);
+                            }
+                        }
+                    }
+                }
+            }
+            if user.total_moon_size_oribiting != new_user_moon_size {
+                // After handling all moons for this user, update their total_moon_size_oribiting if needed
+                ctx.db.user().identity().update(User {
+                    total_moon_size_oribiting: new_user_moon_size,
+                    ..user
+                });
+                rearrange_orbit_angles(ctx, user.identity);
+            }
+        }
+    }
+
+    // user : oribiting-moon collision
     for user in ctx.db.user().iter() {
         for range in wrapped_ranges(user.x.round() as i32, (user.size + MAX_MOON_SIZE as f32) as i32, WORLD_WIDTH) {
             for moon in ctx.db.moon().col_index().filter(range) {
@@ -597,14 +598,11 @@ fn handle_moon_user_collision(ctx: &ReducerContext) {
                     continue;
                 }
                 if toroidal_distance(moon.x, moon.y, user.x, user.y) <= (moon.size + user.size) {
-                    handle_user_and_oribiting_moon_collision(ctx, &mut users_to_remove, &user, moon);
+                    handle_user_and_oribiting_moon_collision(ctx, &user, moon);
                 }
             }
         }
-    }
-
-    for user_id in users_to_remove {
-        if let Some(user) = ctx.db.user().identity().find(user_id) {
+        if user.health <= 0.0 {
             handle_user_death(ctx, user);
         }
     }
@@ -674,21 +672,16 @@ fn handle_moon_moon_collision(ctx: &ReducerContext, to_destroy: &mut Vec<u64>, e
     }
 }
 
-fn handle_user_and_oribiting_moon_collision(ctx: &ReducerContext, users_to_remove: &mut Vec<Identity>, user: &User, moon: Moon) {
+fn handle_user_and_oribiting_moon_collision(ctx: &ReducerContext, user: &User, moon: Moon) {
     // If moon is larger than user, user dies, else subtract moon.size from user's health
     let new_health = user.health - moon.size;
-    if new_health < 0.0 {
-        // User dies, remove them
-        users_to_remove.push(user.identity);
-    } else {
-        let new_size = get_user_size(new_health);
-        ctx.db.user().identity().update(User {
-            health: new_health,
-            size: new_size,
-            color: user.color.clone(),
-            ..*user
-        });
-    }
+    let new_size = get_user_size(new_health);
+    ctx.db.user().identity().update(User {
+        health: new_health,
+        size: new_size,
+        color: user.color.clone(),
+        ..*user
+    });
     // Turn moon into a bit at its position
     ctx.db.bit().insert(Bit {
         bit_id: 0,
@@ -860,6 +853,8 @@ pub fn tick(ctx: &ReducerContext, tick_schedule: TickSchedule) -> Result<(), Str
     update_users(ctx);
 
     handle_moon_user_collision(ctx);
+
+    handle_moon_moon_collisions(ctx);
     
     users_eat_bits(ctx);
 
