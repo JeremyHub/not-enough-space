@@ -5,27 +5,33 @@ use spacetimedb::rand::seq::SliceRandom;
 use spacetimedb::{rand, reducer, table, Identity, ReducerContext, ScheduleAt, SpacetimeType, Table, TimeDuration};
 use spacetimedb::rand::Rng;
 
+// world
 const WORLD_WIDTH: i32 = 10000;
 const WORLD_HEIGHT: i32 = 10000;
-
 const TICK_TIME: i64 = 20000;
 
+// debug
+const UPDATE_OFFLINE_PLAYERS: bool = true;
+
+// acceleration
 const USER_ACCELERATION: f32 = 2.0;
 const VELOCITY_MULTIPLIER: f32 = 0.1;
 const FRICTION: f32 = 0.9;
 
+// moon spawning
 const MOON_COLOR_DIFF: i32 = 50;
 const MOON_COLOR_ANIMATION_SPEED: i32 = 1;
 const USER_SECOND_COLOR_ABS_DIFF: i32 = 50;
 const STARTING_MOON_COLOR: Color = Color { r: 255, g: 255, b: 255 };
 
+// bits
 const MAX_AREA_PER_BIT: u64 = 10000;
 const MAX_BITS: u64 = (WORLD_HEIGHT as u64 *WORLD_WIDTH as u64)/MAX_AREA_PER_BIT;
 const MIN_BIT_WORTH: f32 = 0.5;
 const MAX_BIT_WORTH: f32 = 2.5;
 const MAX_BIT_SIZE: f32 = MAX_BIT_WORTH;
 
-// non-orbiting moon params
+// non-orbiting moon
 const STARTING_MOONS: u64 = 200;
 const MAX_MOON_SIZE: f32 = 5.0;
 const MIN_MOON_SIZE: f32 = 3.0;
@@ -33,7 +39,7 @@ const MOON_DRIFT: f32 = 0.5;
 const MOON_ACCELERATION: f32 = 1.5;
 const PORTION_NON_ORBITING_MOONS_DIRECTION_UPDATED_PER_TICK: f64 = 0.005;
 
-// moon oribit params
+// moon oribit
 const ORBIT_RADIUS_USER_SIZE_FACTOR_CLOSE: f32 = 0.2;
 const ORBIT_RADIUS_CONST_CLOSE: f32 = 5.0;
 const ORBIT_RADIUS_USER_SIZE_FACTOR_FAR: f32 = -3.2;
@@ -48,7 +54,11 @@ const ORBIT_MOVING_ACCELERATION_CONST: f32 = 5.0;
 const ORBIT_STATIONARY_ACCELERATION_USER_SIZE_FACTOR: f32 = 0.2;
 const ORBIT_STATIONARY_ACCELERATION_CONST: f32 = 5.0;
 
-const UPDATE_OFFLINE_PLAYERS: bool = true;
+// moon scarifice
+const MIN_HEALTH_TO_SACRIFICE: f32 = 80.0;
+const MAX_MOON_SIZE_PER_HEALTH: f32 = 1.0;
+const MIN_MOON_SIZE_PER_HEALTH: f32 = 0.3;
+const PORTION_HEALTH_SACRIFICE: f32 = 1.0/40.0;
 
 
 #[table(name = metadata, public)]
@@ -588,10 +598,6 @@ fn update_moons(ctx: &ReducerContext) {
         }
     }
 
-    // TODO the moon should only be destroyed if its hit by a bigger moon, otherwise it should just get smaller by the diff
-
-    // Only consider moons with is_orbiting == true
-    // Use col_index for spatial partitioning
     let mut to_destroy: Vec<u64> = Vec::new();
     let mut explosions: Vec<(f32, f32, f32, Color)> = Vec::new(); // (x, y, worth, color)
 
@@ -607,7 +613,6 @@ fn update_moons(ctx: &ReducerContext) {
         if to_destroy.contains(&moon.moon_id) {
             continue;
         }
-        // TODO update this to take into account the possibly larger moons from spawning
         let search_radius = (moon.size + MAX_MOON_SIZE) as i32;
         for range in wrapped_ranges(moon.col_index, search_radius, WORLD_WIDTH) {
             for other in ctx.db.moon().col_index().filter(range) {
@@ -623,22 +628,61 @@ fn update_moons(ctx: &ReducerContext) {
                 }
                 // Check collision
                 if toroidal_distance(moon.x, moon.y, other.x, other.y) <= (moon.size + other.size) {
-                    // Mark both for destruction
-                    to_destroy.push(moon.moon_id);
-                    to_destroy.push(other.moon_id);
-                    // Spawn bits for both moons
-                    explosions.push((moon.x, moon.y, moon.size, moon.color.clone()));
-                    explosions.push((other.x, other.y, other.size, other.color.clone()));
+                    // Only destroy the smaller moon, reduce the size of the larger moon by the size of the smaller
+                    if moon.size > other.size {
+                        // Moon survives, other is destroyed
+                        to_destroy.push(other.moon_id);
+                        explosions.push((other.x, other.y, other.size, other.color.clone()));
+                        // Reduce moon's size
+                        if let Some(moon_obj) = ctx.db.moon().moon_id().find(moon.moon_id) {
+                            let new_size = moon.size - other.size;
+                            let new_health = moon.health - other.size;
+                            ctx.db.moon().moon_id().update(Moon {
+                                size: new_size,
+                                health: new_health,
+                                ..moon_obj
+                            });
+                        }
+                    } else if other.size > moon.size {
+                        // Other survives, moon is destroyed
+                        to_destroy.push(moon.moon_id);
+                        explosions.push((moon.x, moon.y, moon.size, moon.color.clone()));
+                        // Reduce other's size
+                        if let Some(other_obj) = ctx.db.moon().moon_id().find(other.moon_id) {
+                            let new_size = other.size - moon.size;
+                            let new_health = other.health - moon.size;
+                            ctx.db.moon().moon_id().update(Moon {
+                                size: new_size,
+                                health: new_health,
+                                ..other_obj
+                            });
+                        }
+                    } else {
+                        // Equal size, both destroyed
+                        to_destroy.push(moon.moon_id);
+                        to_destroy.push(other.moon_id);
+                        explosions.push((moon.x, moon.y, moon.size, moon.color.clone()));
+                        explosions.push((other.x, other.y, other.size, other.color.clone()));
+                    }
                     break; // Only destroy once per moon
                 }
             }
         }
     }
 
-    // Destroy moons and spawn bits
+    // Destroy moons and spawn bits, and subtract from users' moon total
     for moon_id in to_destroy {
         if let Some(moon) = ctx.db.moon().moon_id().find(moon_id) {
-            // TODO subtract from users moon total
+            // Subtract from user's moon total if orbiting
+            if let Some(user_id) = moon.orbiting {
+                if let Some(user) = ctx.db.user().identity().find(user_id) {
+                    let new_total = (user.total_moon_size_oribiting - moon.size).max(0.0);
+                    ctx.db.user().identity().update(User {
+                        total_moon_size_oribiting: new_total,
+                        ..user
+                    });
+                }
+            }
             ctx.db.moon().delete(moon);
         }
     }
@@ -654,9 +698,7 @@ fn update_moons(ctx: &ReducerContext) {
         });
     }
 
-    // TODO handle cases where moon is larger than player
-
-    // Loop through users, then filter moons by col_index for spatial partitioning
+    // check user :: moon (orbiting other players) collision
     let mut users_to_remove = Vec::new();
     for user in ctx.db.user().iter() {
         for range in wrapped_ranges(user.x.round() as i32, (user.size + MAX_MOON_SIZE as f32) as i32, WORLD_WIDTH) {
@@ -666,7 +708,7 @@ fn update_moons(ctx: &ReducerContext) {
                     continue;
                 }
                 if toroidal_distance(moon.x, moon.y, user.x, user.y) <= (moon.size + user.size) {
-                    // Subtract moon.size from user's health
+                    // If moon is larger than user, user dies, else subtract moon.size from user's health
                     let new_health = user.health - moon.size;
                     if new_health < 0.0 {
                         // User dies, remove them
@@ -689,14 +731,23 @@ fn update_moons(ctx: &ReducerContext) {
                         worth: moon.size,
                         color: moon.color.clone(),
                     });
-                    // Remove the moon
-                    // TODO subtract from users moon total
+                    // Remove the moon and subtract from user's moon total
+                    if let Some(orbiting_id) = moon.orbiting {
+                        if let Some(orbiting_user) = ctx.db.user().identity().find(orbiting_id) {
+                            let new_total = (orbiting_user.total_moon_size_oribiting - moon.size).max(0.0);
+                            ctx.db.user().identity().update(User {
+                                total_moon_size_oribiting: new_total,
+                                ..orbiting_user
+                            });
+                        }
+                    }
                     ctx.db.moon().delete(moon);
                     break; // Only process one collision per user per tick
                 }
             }
         }
     }
+
     // Remove users who died
     for user_id in users_to_remove {
         if let Some(user) = ctx.db.user().identity().find(user_id) {
@@ -837,37 +888,32 @@ pub fn init(ctx: &ReducerContext) -> Result<(), String> {
 
 #[reducer]
 pub fn sacrifice_health_for_moon(ctx: &ReducerContext) -> Result<(), String> {
-    // Minimum health required to sacrifice
-    // TODO make these consts
-    let min_health_to_sacrifice = 80.0;
-    let max_moon_size_per_health = 1.0;
-    let min_moon_size_per_health = 0.3;
-    let moon_size_per_health = ctx.rng().gen_range(min_moon_size_per_health..=max_moon_size_per_health);
+    let moon_size_per_health = ctx.rng().gen_range(MIN_MOON_SIZE_PER_HEALTH..=MAX_MOON_SIZE_PER_HEALTH);
     
     let user = match ctx.db.user().identity().find(ctx.sender) {
         Some(u) => u,
         None => return Err("User not found.".to_string()),
     };
 
-    if user.health < min_health_to_sacrifice {
-        return Err(format!("You must have at least {} health.", min_health_to_sacrifice));
+    if user.health < MIN_HEALTH_TO_SACRIFICE {
+        return Err(format!("You must have at least {} health.", MIN_HEALTH_TO_SACRIFICE));
     }
 
-    let health_to_sacrifice = user.health/40.0;
+    let health_to_sacrifice = user.health/PORTION_HEALTH_SACRIFICE;
     let moon_size = health_to_sacrifice * moon_size_per_health;
 
     let (moon_color, orbital_velocity) = new_moon_params(ctx, user.color.clone());
 
-    // Subtract health and update user
+    // Subtract health and update user, and add to total_moon_size_oribiting
     let new_health = user.health - health_to_sacrifice;
     let new_size = get_user_size(new_health);
-    // TODO update the user's moon total
+    let new_total_moon_size_oribiting = user.total_moon_size_oribiting + moon_size;
     ctx.db.user().identity().update(User {
         health: new_health,
         size: new_size,
+        total_moon_size_oribiting: new_total_moon_size_oribiting,
         ..user
     });
-
 
     // Spawn the moon at the user's current position, orbiting the user
     ctx.db.moon().insert(Moon {
