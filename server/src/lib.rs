@@ -271,101 +271,101 @@ fn spawn_moons(ctx: &ReducerContext, num_moons: u64) {
 
 fn update_oribiting_moons(ctx: &ReducerContext) {
     for moon in ctx.db.moon().iter() {
-    if let Some(user_id) = moon.orbiting {
-        let user = ctx.db.user().identity().find(user_id);
-        if let Some(user) = user {
-            // Determine if user is moving
-            let user_speed = (user.dx.powi(2) + user.dy.powi(2)).sqrt();
-            let moving = user_speed > USER_SPEED_ORBIT_THRESHOLD;
-            let orbit_state: OrbitState;
-            let mut orbit_radius: f32;
-            let orbit_angular_vel: f32;
-            if moving {
-                orbit_state = OrbitState::Moving;
-                orbit_radius = (ORBIT_RADIUS_USER_SIZE_FACTOR_FAR * user.size) + ORBIT_RADIUS_CONST_FAR + (ADDITIONAL_ORBIT_RADIUS_MOON_SIZE_FACTOR_FAR * (1.0/moon.size) * user.size);
-                orbit_angular_vel = ORBIT_ANGULAR_VEL_RADIUS_FACTOR_FAR * moon.size;
-            } else {
-                orbit_state = OrbitState::Stationary;
-                orbit_radius = (ORBIT_RADIUS_USER_SIZE_FACTOR_CLOSE * user.size) + ORBIT_RADIUS_CONST_CLOSE + (ADDITIONAL_ORBIT_RADIUS_MOON_SIZE_FACTOR_CLOSE * (1.0/moon.size) * user.size);
-                orbit_angular_vel = ORBIT_ANGULAR_VEL_RADIUS_FACTOR_CLOSE * moon.size;
-            };
-            orbit_radius = orbit_radius.max(user.size + moon.size);
-
-            // Advance orbit angle
-            let mut orbit_angle = moon.orbit_angle;
-            // Use orbital_velocity as multiplier
-            let orbital_velocity = moon.orbital_velocity.unwrap_or(1.0);
-            orbit_angle += orbital_velocity * orbit_angular_vel;
-            if orbit_angle > std::f32::consts::PI * 2.0 {
-                orbit_angle -= std::f32::consts::PI * 2.0;
-            }
-            if orbit_angle < 0.0 {
-                orbit_angle += std::f32::consts::PI * 2.0;
-            }
-
-            // Compute desired moon position relative to user
-            let user_x = user.x;
-            let user_y = user.y;
-            let new_x = user_x + orbit_radius * orbit_angle.cos();
-            let new_y = user_y + orbit_radius * orbit_angle.sin();
-
-            // compute minimal toroidal vector from moon's current position to desired position
-            let mut dir_vec_x = new_x - moon.x;
-            let mut dir_vec_y = new_y - moon.y;
-
-            // Proper toroidal wrapping for direction vector
-            if dir_vec_x.abs() > WORLD_WIDTH as f32 / 2.0 {
-                if dir_vec_x > 0.0 {
-                    dir_vec_x -= WORLD_WIDTH as f32;
+        if let Some(user_id) = moon.orbiting {
+            let user = ctx.db.user().identity().find(user_id);
+            if let Some(user) = user {
+                // Determine if user is moving
+                let user_speed = (user.dx.powi(2) + user.dy.powi(2)).sqrt();
+                let moving = user_speed > USER_SPEED_ORBIT_THRESHOLD;
+                let orbit_state: OrbitState;
+                let mut orbit_radius: f32;
+                let orbit_angular_vel: f32;
+                if moving {
+                    orbit_state = OrbitState::Moving;
+                    orbit_radius = (ORBIT_RADIUS_USER_SIZE_FACTOR_FAR * user.size) + ORBIT_RADIUS_CONST_FAR + (ADDITIONAL_ORBIT_RADIUS_MOON_SIZE_FACTOR_FAR * (1.0/moon.size) * user.size);
+                    orbit_angular_vel = ORBIT_ANGULAR_VEL_RADIUS_FACTOR_FAR * moon.size;
                 } else {
-                    dir_vec_x += WORLD_WIDTH as f32;
+                    orbit_state = OrbitState::Stationary;
+                    orbit_radius = (ORBIT_RADIUS_USER_SIZE_FACTOR_CLOSE * user.size) + ORBIT_RADIUS_CONST_CLOSE + (ADDITIONAL_ORBIT_RADIUS_MOON_SIZE_FACTOR_CLOSE * (1.0/moon.size) * user.size);
+                    orbit_angular_vel = ORBIT_ANGULAR_VEL_RADIUS_FACTOR_CLOSE * moon.size;
+                };
+                orbit_radius = orbit_radius.max(user.size + moon.size);
+
+                // Advance orbit angle
+                let mut orbit_angle = moon.orbit_angle;
+                // Use orbital_velocity as multiplier
+                let orbital_velocity = moon.orbital_velocity.unwrap_or(1.0);
+                orbit_angle += orbital_velocity * orbit_angular_vel;
+                if orbit_angle > std::f32::consts::PI * 2.0 {
+                    orbit_angle -= std::f32::consts::PI * 2.0;
                 }
-            }
-            if dir_vec_y.abs() > WORLD_HEIGHT as f32 / 2.0 {
-                if dir_vec_y > 0.0 {
-                    dir_vec_y -= WORLD_HEIGHT as f32;
-                } else {
-                    dir_vec_y += WORLD_HEIGHT as f32;
+                if orbit_angle < 0.0 {
+                    orbit_angle += std::f32::consts::PI * 2.0;
                 }
+
+                // Compute desired moon position relative to user
+                let user_x = user.x;
+                let user_y = user.y;
+                let new_x = user_x + orbit_radius * orbit_angle.cos();
+                let new_y = user_y + orbit_radius * orbit_angle.sin();
+
+                // compute minimal toroidal vector from moon's current position to desired position
+                let mut dir_vec_x = new_x - moon.x;
+                let mut dir_vec_y = new_y - moon.y;
+
+                // Proper toroidal wrapping for direction vector
+                if dir_vec_x.abs() > WORLD_WIDTH as f32 / 2.0 {
+                    if dir_vec_x > 0.0 {
+                        dir_vec_x -= WORLD_WIDTH as f32;
+                    } else {
+                        dir_vec_x += WORLD_WIDTH as f32;
+                    }
+                }
+                if dir_vec_y.abs() > WORLD_HEIGHT as f32 / 2.0 {
+                    if dir_vec_y > 0.0 {
+                        dir_vec_y -= WORLD_HEIGHT as f32;
+                    } else {
+                        dir_vec_y += WORLD_HEIGHT as f32;
+                    }
+                }
+                let dir_length = (dir_vec_x.powi(2) + dir_vec_y.powi(2)).sqrt();
+
+                // scale velocity increment by distance (clamped to avoid zero)
+                let distance_scale = dir_length.max(1.0); // minimum 1.0 to avoid division by zero
+                let acceleration = if moving { (ORBIT_MOVING_ACCELERATION_USER_SIZE_FACTOR * user.size) + ORBIT_MOVING_ACCELERATION_CONST } else { (ORBIT_STATIONARY_ACCELERATION_USER_SIZE_FACTOR * user.size) + ORBIT_STATIONARY_ACCELERATION_CONST };
+                let scale = distance_scale / orbit_radius; // normalized, so it slows as it gets closer
+
+                // Calculate the velocity increment, but clamp so we don't overshoot
+                let mut delta_vx = (dir_vec_x / dir_length) * acceleration * scale;
+                let mut delta_vy = (dir_vec_y / dir_length) * acceleration * scale;
+
+                // Clamp the increment
+                let max_step = dir_length;
+                let step_length = (delta_vx.powi(2) + delta_vy.powi(2)).sqrt();
+                if step_length > max_step {
+                    let clamp_factor = max_step / step_length;
+                    delta_vx *= clamp_factor;
+                    delta_vy *= clamp_factor;
+                }
+
+                // Update moon with new position and velocity
+                let (updated_x, updated_y) = wrap_coords(moon.x + delta_vx, moon.y + delta_vy);
+                ctx.db.moon().moon_id().update(Moon {
+                    col_index: updated_x.round() as i32,
+                    x: updated_x,
+                    y: updated_y,
+                    dx: delta_vx,
+                    dy: delta_vy,
+                    orbit_angle,
+                    orbit_state: Some(orbit_state),
+                    orbit_radius,
+                    is_orbiting: true,
+                    ..moon
+                });
+                continue;
             }
-            let dir_length = (dir_vec_x.powi(2) + dir_vec_y.powi(2)).sqrt();
-
-            // scale velocity increment by distance (clamped to avoid zero)
-            let distance_scale = dir_length.max(1.0); // minimum 1.0 to avoid division by zero
-            let acceleration = if moving { (ORBIT_MOVING_ACCELERATION_USER_SIZE_FACTOR * user.size) + ORBIT_MOVING_ACCELERATION_CONST } else { (ORBIT_STATIONARY_ACCELERATION_USER_SIZE_FACTOR * user.size) + ORBIT_STATIONARY_ACCELERATION_CONST };
-            let scale = distance_scale / orbit_radius; // normalized, so it slows as it gets closer
-
-            // Calculate the velocity increment, but clamp so we don't overshoot
-            let mut delta_vx = (dir_vec_x / dir_length) * acceleration * scale;
-            let mut delta_vy = (dir_vec_y / dir_length) * acceleration * scale;
-
-            // Clamp the increment
-            let max_step = dir_length;
-            let step_length = (delta_vx.powi(2) + delta_vy.powi(2)).sqrt();
-            if step_length > max_step {
-                let clamp_factor = max_step / step_length;
-                delta_vx *= clamp_factor;
-                delta_vy *= clamp_factor;
-            }
-
-            // Update moon with new position and velocity
-            let (updated_x, updated_y) = wrap_coords(moon.x + delta_vx, moon.y + delta_vy);
-            ctx.db.moon().moon_id().update(Moon {
-                col_index: updated_x.round() as i32,
-                x: updated_x,
-                y: updated_y,
-                dx: delta_vx,
-                dy: delta_vy,
-                orbit_angle,
-                orbit_state: Some(orbit_state),
-                orbit_radius,
-                is_orbiting: true,
-                ..moon
-            });
-            continue;
         }
     }
-}
 }
 
 fn update_non_oribiting_moons_directions(ctx: &ReducerContext) {
@@ -383,34 +383,6 @@ fn update_non_oribiting_moons_directions(ctx: &ReducerContext) {
             ..moon
         });
     }
-    }
-
-
-trait Character {
-    fn x(&self) -> f32;
-    fn y(&self) -> f32;
-    fn dx(&self) -> f32;
-    fn dy(&self) -> f32;
-    fn dir_vec_x(&self) -> f32;
-    fn dir_vec_y(&self) -> f32;
-}
-
-impl Character for User {
-    fn x(&self) -> f32 { self.x }
-    fn y(&self) -> f32 { self.y }
-    fn dx(&self) -> f32 { self.dx }
-    fn dy(&self) -> f32 { self.dy }
-    fn dir_vec_x(&self) -> f32 { self.dir_vec_x }
-    fn dir_vec_y(&self) -> f32 { self.dir_vec_y }
-}
-
-impl Character for Moon {
-    fn x(&self) -> f32 { self.x }
-    fn y(&self) -> f32 { self.y }
-    fn dx(&self) -> f32 { self.dx }
-    fn dy(&self) -> f32 { self.dy }
-    fn dir_vec_x(&self) -> f32 { self.dir_vec_x }
-    fn dir_vec_y(&self) -> f32 { self.dir_vec_y }
 }
 
 struct CharacterUpdate {
@@ -420,20 +392,20 @@ struct CharacterUpdate {
     dy: f32,
 }
 
-fn move_character<C: Character>(character: &C, acceleration: f32) -> CharacterUpdate {
-    let mut new_dx: f32 = character.dx() * FRICTION;
-    let mut new_dy: f32 = character.dy() * FRICTION;
+fn move_character(x: f32, y: f32, dx: f32, dy: f32, dir_vec_x: f32, dir_vec_y: f32, acceleration: f32) -> CharacterUpdate {
+    let mut new_dx: f32 = dx * FRICTION;
+    let mut new_dy: f32 = dy * FRICTION;
 
-    if character.dir_vec_x() != 0.0 || character.dir_vec_y() != 0.0 {
-        let dir_length = (character.dir_vec_x().powi(2) + character.dir_vec_y().powi(2)).sqrt();
+    if dir_vec_x != 0.0 || dir_vec_y != 0.0 {
+        let dir_length = (dir_vec_x.powi(2) + dir_vec_y.powi(2)).sqrt();
         if dir_length > 0.0 {
-            new_dx += (character.dir_vec_x() / dir_length) * acceleration;
-            new_dy += (character.dir_vec_y() / dir_length) * acceleration;
+            new_dx += (dir_vec_x / dir_length) * acceleration;
+            new_dy += (dir_vec_y / dir_length) * acceleration;
         }
     }
 
-    let after_move_x = character.x() + (character.dx() * VELOCITY_MULTIPLIER);
-    let after_move_y = character.y() + (character.dy() * VELOCITY_MULTIPLIER);
+    let after_move_x = x + (dx * VELOCITY_MULTIPLIER);
+    let after_move_y = y + (dy * VELOCITY_MULTIPLIER);
 
     let new_x;
     let new_y;
@@ -479,7 +451,15 @@ fn update_users(ctx: &ReducerContext) {
     // move users
     for user in ctx.db.user().iter() {
         if user.online || UPDATE_OFFLINE_PLAYERS {
-            let upd = move_character(&user, USER_ACCELERATION);
+            let upd = move_character(
+                user.x,
+                user.y,
+                user.dx,
+                user.dy,
+                user.dir_vec_x,
+                user.dir_vec_y,
+                USER_ACCELERATION
+            );
             ctx.db.user().identity().update(User {
                 x: upd.x,
                 y: upd.y,
@@ -500,7 +480,7 @@ fn new_moon_params(ctx: &ReducerContext, color: Color) -> (Color, f32) {
         g: clamp(color.g + offset),
         b: clamp(color.b + offset),
     };
-    // Assign random orbital velocity between -1.0 and 1.0 (excluding velocities where abs < 0.5)
+    // Assign random orbital velocity between -1.0 and -0.5, or 0.5 and 1.0
     let orbital_velocity =  if rng.gen_bool(0.5) {
         rng.gen_range(-1.0..=-0.5)
     } else {
@@ -760,7 +740,15 @@ fn animate_moon_color(ctx: &ReducerContext, moon: Moon) {
 
 fn move_non_oribiting_moons(ctx: &ReducerContext, moon: Moon) {
     let acceleration = MOON_ACCELERATION;
-    let upd = move_character(&moon, acceleration);
+    let upd = move_character(
+        moon.x,
+        moon.y,
+        moon.dx,
+        moon.dy,
+        moon.dir_vec_x,
+        moon.dir_vec_y,
+        acceleration
+    );
     ctx.db.moon().moon_id().update(Moon {
         col_index: upd.x.round() as i32,
         x: upd.x,
@@ -801,19 +789,16 @@ fn wrapped_ranges(center: i32, radius: i32, max: i32) -> Vec<core::ops::Range<i3
     let min = center - radius;
     let max_range = center + radius;
     if min < 0 {
-        // Wraps left edge: two ranges
         vec![
             0..max_range.min(max),
             (max + min)..max
         ]
     } else if max_range >= max {
-        // Wraps right edge: two ranges
         vec![
             min..max,
             0..(max_range - max)
         ]
     } else {
-        // No wrap: single range
         vec![min..max_range]
     }
 }
