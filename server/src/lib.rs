@@ -12,14 +12,15 @@ pub mod user_moon;
 pub const WORLD_WIDTH: i32 = 10000;
 pub const WORLD_HEIGHT: i32 = 10000;
 pub const TICK_TIME: i64 = 20000;
+pub const VELOCITY_MULTIPLIER: f32 = 0.1;
+pub const FRICTION: f32 = 0.9;
 
 // debug
 pub const UPDATE_OFFLINE_PLAYERS: bool = true;
 
-// acceleration
+// users
 pub const USER_ACCELERATION: f32 = 2.0;
-pub const VELOCITY_MULTIPLIER: f32 = 0.1;
-pub const FRICTION: f32 = 0.9;
+pub const USER_STARTING_HEALTH: f32 = 1.0;
 
 // moon spawning
 pub const MOON_COLOR_DIFF: i32 = 50;

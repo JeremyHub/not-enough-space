@@ -22,7 +22,7 @@ pub fn sacrifice_health_for_moon(ctx: &ReducerContext) -> Result<(), String> {
         return Err(format!("You must have at least {} health.", super::MIN_HEALTH_TO_SACRIFICE));
     }
 
-    let health_to_sacrifice = user.health/super::PORTION_HEALTH_SACRIFICE;
+    let health_to_sacrifice = user.health*super::PORTION_HEALTH_SACRIFICE;
     let moon_size = health_to_sacrifice * moon_size_per_health;
 
     let (moon_color, orbital_velocity) = moon::new_moon_params(ctx, user.color.clone());
@@ -127,8 +127,8 @@ pub fn client_connected(ctx: &ReducerContext) {
             dir_vec_x: 0.0,
             dir_vec_y: 0.0,
             color,
-            health: 1.0,
-            size: user::get_user_size(1.0),
+            health: super::USER_STARTING_HEALTH,
+            size: user::get_user_size(super::USER_STARTING_HEALTH),
             total_moon_size_oribiting: 0.0,
         });
     }
