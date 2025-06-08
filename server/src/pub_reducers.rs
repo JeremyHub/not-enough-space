@@ -23,6 +23,11 @@ pub fn sacrifice_health_for_moon(ctx: &ReducerContext) -> Result<(), String> {
     }
 
     let health_to_sacrifice = user.health*super::PORTION_HEALTH_SACRIFICE;
+
+    if user.total_moon_size_oribiting + health_to_sacrifice > user.size {
+        return Err(format!("You already have too many moons."));
+    }
+
     let moon_size = health_to_sacrifice * moon_size_per_health;
 
     let (moon_color, orbital_velocity) = moon::new_moon_params(ctx, user.color.clone());
@@ -59,8 +64,6 @@ pub fn sacrifice_health_for_moon(ctx: &ReducerContext) -> Result<(), String> {
         orbital_velocity: Some(orbital_velocity),
         is_orbiting: true,
     });
-
-    moon::rearrange_orbit_angles(ctx, user.identity);
 
     Ok(())
 }

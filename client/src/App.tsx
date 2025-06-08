@@ -212,36 +212,36 @@ const draw = (ctx: CanvasRenderingContext2D | null, props: DrawProps) => {
     ctx.stroke();
   }
 
-  // ctx.save();
-  // ctx.strokeStyle = 'rgba(255,0,0,0.7)';
-  // ctx.lineWidth = 2;
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,0,0,0.7)';
+  ctx.lineWidth = 2;
 
-  // const leftBorderX = metadata.worldWidth > 0 ? 0 - worldLeft : 0;
-  // const rightBorderX = metadata.worldWidth > 0 ? metadata.worldWidth - worldLeft : canvasWidth;
-  // const topBorderY = metadata.worldHeight > 0 ? 0 - worldTop : 0;
-  // const bottomBorderY = metadata.worldHeight > 0 ? metadata.worldHeight - worldTop : canvasHeight;
+  const leftBorderX = metadata.worldWidth > 0 ? 0 - worldLeft : 0;
+  const rightBorderX = metadata.worldWidth > 0 ? metadata.worldWidth - worldLeft : canvasWidth;
+  const topBorderY = metadata.worldHeight > 0 ? 0 - worldTop : 0;
+  const bottomBorderY = metadata.worldHeight > 0 ? metadata.worldHeight - worldTop : canvasHeight;
 
-  // ctx.beginPath();
-  // ctx.moveTo(leftBorderX, 0);
-  // ctx.lineTo(leftBorderX, canvasHeight);
-  // ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(leftBorderX, 0);
+  ctx.lineTo(leftBorderX, canvasHeight);
+  ctx.stroke();
 
-  // ctx.beginPath();
-  // ctx.moveTo(rightBorderX, 0);
-  // ctx.lineTo(rightBorderX, canvasHeight);
-  // ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(rightBorderX, 0);
+  ctx.lineTo(rightBorderX, canvasHeight);
+  ctx.stroke();
 
-  // ctx.beginPath();
-  // ctx.moveTo(0, topBorderY);
-  // ctx.lineTo(canvasWidth, topBorderY);
-  // ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(0, topBorderY);
+  ctx.lineTo(canvasWidth, topBorderY);
+  ctx.stroke();
 
-  // ctx.beginPath();
-  // ctx.moveTo(0, bottomBorderY);
-  // ctx.lineTo(canvasWidth, bottomBorderY);
-  // ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(0, bottomBorderY);
+  ctx.lineTo(canvasWidth, bottomBorderY);
+  ctx.stroke();
 
-  // ctx.restore();
+  ctx.restore();
 
   const toScreen = (obj: { x: number; y: number }) => ({
     x: obj.x - self.x + canvasWidth / 2,

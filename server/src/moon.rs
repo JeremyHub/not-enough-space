@@ -238,25 +238,6 @@ fn update_non_oribiting_moons_directions(ctx: &ReducerContext) {
     }
 }
 
-pub fn rearrange_orbit_angles(ctx: &ReducerContext, user_id: Identity) {
-    // Collect all moons orbiting this user
-    let mut orbiting_moons: Vec<_> = ctx.db.moon().iter()
-        .filter(|m| m.orbiting == Some(user_id))
-        .collect();
-    let n = orbiting_moons.len();
-    if n == 0 { return; }
-    // Sort by current angle to minimize angle change
-    orbiting_moons.sort_by(|a, b| a.orbit_angle.partial_cmp(&b.orbit_angle).unwrap_or(std::cmp::Ordering::Equal));
-    // Assign equally spaced angles, preserving order
-    for (i, moon) in orbiting_moons.into_iter().enumerate() {
-        let angle = (i as f32) * (2.0 * std::f32::consts::PI / n as f32);
-        ctx.db.moon().moon_id().update(Moon {
-            orbit_angle: angle,
-            ..moon
-        });
-    }
-}
-
 pub fn delete_moon(ctx: &ReducerContext, moon: Moon) {
     // Subtract from user's moon total if orbiting
     if let Some(user_id) = moon.orbiting {

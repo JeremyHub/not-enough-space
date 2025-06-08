@@ -79,7 +79,6 @@ pub fn handle_moon_user_collision(ctx: &ReducerContext) {
                     total_moon_size_oribiting: new_user_moon_size,
                     ..user
                 });
-                moon::rearrange_orbit_angles(ctx, user.identity);
             }
         }
     }
