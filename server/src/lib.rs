@@ -510,6 +510,19 @@ fn new_moon_params(ctx: &ReducerContext, color: Color) -> (Color, f32) {
 }
 
 fn update_moons(ctx: &ReducerContext) {
+    update_non_oribiting_moons_directions(ctx);
+    update_oribiting_moons(ctx);
+
+    for moon in ctx.db.moon().iter() {
+        if moon.orbiting.is_none() {
+            move_non_oribiting_moons(ctx, moon);
+        } else {
+            animate_moon_color(ctx, moon);
+        }
+    }
+}
+
+fn handle_moon_user_collision(ctx: &ReducerContext) {
 
     // handle user:non-oribiting-moon collisions
     for user in ctx.db.user().iter() {
@@ -534,17 +547,6 @@ fn update_moons(ctx: &ReducerContext) {
                 });
                 rearrange_orbit_angles(ctx, user.identity);
             }
-        }
-    }
-
-    update_non_oribiting_moons_directions(ctx);
-    update_oribiting_moons(ctx);
-
-    for moon in ctx.db.moon().iter() {
-        if moon.orbiting.is_none() {
-            move_non_oribiting_moons(ctx, moon);
-        } else {
-            animate_moon_color(ctx, moon);
         }
     }
 
@@ -856,6 +858,8 @@ pub fn tick(ctx: &ReducerContext, tick_schedule: TickSchedule) -> Result<(), Str
     update_moons(ctx);
 
     update_users(ctx);
+
+    handle_moon_user_collision(ctx);
     
     users_eat_bits(ctx);
 
