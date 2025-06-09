@@ -8,6 +8,7 @@ use crate::user::user as _;
 use super::user;
 use super::moon;
 use super::helpers;
+use crate::user_moon;
 
 #[reducer]
 pub fn sacrifice_health_for_moon(ctx: &ReducerContext) -> Result<(), String> {
@@ -24,8 +25,8 @@ pub fn sacrifice_health_for_moon(ctx: &ReducerContext) -> Result<(), String> {
         return Err(format!("You dont have enough health to sacrifice."));
     }
 
-    if user.total_moon_size_oribiting + health_to_sacrifice > user.size {
-        if user.total_moon_size_oribiting + super::MIN_HEALTH_SACRIFICE < user.size {
+    if !user_moon::can_get_moon_into_orbit(&user, health_to_sacrifice*super::MAX_MOON_SIZE_PER_HEALTH) { // use max here so user can cheese to get the max every time
+        if user_moon::can_get_moon_into_orbit(&user, super::MIN_HEALTH_SACRIFICE*super::MAX_MOON_SIZE_PER_HEALTH) {
             health_to_sacrifice = super::MIN_HEALTH_SACRIFICE
         } else {
             return Err(format!("You already have too many moons."));

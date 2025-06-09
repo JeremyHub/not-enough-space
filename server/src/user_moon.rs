@@ -63,8 +63,8 @@ pub fn check_moon_user_collisions(ctx: &ReducerContext) {
             let mut new_user_moon_size = user.total_moon_size_oribiting;
             for range in helpers::wrapped_ranges(user.x.round() as i32, (user.size + super::MAX_MOON_SIZE as f32) as i32, super::WORLD_WIDTH) {
                 for moon in ctx.db.moon().col_index().filter(range) {
-                    if user.total_moon_size_oribiting + moon.size < user.size {
-                        if moon.orbiting.is_none() {
+                    if moon.orbiting.is_none() {
+                        if can_get_moon_into_orbit(&user, moon.size) {
                             if helpers::toroidal_distance(user.x, user.y, moon.x, moon.y) <= (user.size + moon.size) {
                                 new_user_moon_size += handle_user_non_oribiting_moon_collision(ctx, &user, moon);
                             }
@@ -98,4 +98,11 @@ pub fn check_moon_user_collisions(ctx: &ReducerContext) {
             user::handle_user_death(ctx, user);
         }
     }
+}
+
+pub fn can_get_moon_into_orbit(user: &user::User, moon_size: f32) -> bool {
+    if user.health < user.total_moon_size_oribiting + moon_size {
+        return false;
+    }
+    return true;
 }
