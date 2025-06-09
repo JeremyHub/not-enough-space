@@ -53,7 +53,7 @@ pub fn handle_user_and_oribiting_moon_collision(ctx: &ReducerContext, user: &use
         orbital_velocity: new_orbital_velocity,
         ..moon
     });
-    // TODO bits fly towards player whose moon did the hit
+    // spawn a bit at the collision point, going twards the user who owns the moon that did the hit
 }
 
 pub fn handle_user_free_moon_collision(ctx: &ReducerContext, user: &user::User, moon: moon::Moon) -> f32 {

@@ -1,4 +1,4 @@
-use spacetimedb::{table, ReducerContext, Table};
+use spacetimedb::{table, Identity, ReducerContext, Table};
 use spacetimedb::rand::Rng;
 
 use super::helpers;
@@ -19,6 +19,7 @@ pub struct Bit {
     pub color: helpers::Color,
     #[index(btree)]
     pub moving: bool,
+    pub owned_by: Option<Identity>,
 }
 
 pub fn spawn_bits(ctx: &ReducerContext) {
@@ -46,6 +47,7 @@ pub fn spawn_bits(ctx: &ReducerContext) {
                 worth,
                 color,
                 moving: false,
+                owned_by: None,
             });
         }
     }
@@ -64,6 +66,7 @@ pub fn handle_explosion(ctx: &ReducerContext, x: f32, y: f32, worth: f32, color:
         worth,
         color,
         moving: false,
+        owned_by: None,
     });
 }
 
@@ -78,17 +81,15 @@ pub fn update_bits(ctx: &ReducerContext) {
             0.0,
             super::BIT_ACCELERATION,
         );
+        let moving = if bit.dx != 0.0 || bit.dy != 0.0 { true } else { false };
         ctx.db.bit().bit_id().update(Bit {
             col_index: upd.x.round() as i32,
             x: upd.x,
             y: upd.y,
             dx: upd.dx,
             dy: upd.dy,
-            moving: if bit.dx != 0.0 || bit.dy != 0.0 {
-                true
-            } else {
-                false
-            },
+            moving: moving,
+            owned_by: if moving {bit.owned_by} else {None},
             ..bit
         });
     }
