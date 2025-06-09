@@ -4,6 +4,7 @@ use super::user;
 use super::moon;
 use super::bit;
 use super::user_moon;
+use super::user_user;
 use super::moon_moon;
 use super::user_bit;
 use super::ai;
@@ -52,6 +53,8 @@ pub fn tick(ctx: &ReducerContext, tick_schedule: TickSchedule) -> Result<(), Str
     moon_moon::check_moon_moon_collisions(ctx);
     
     user_bit::check_user_bit_collisions(ctx);
+
+    user_user::check_user_user_collisions(ctx);
 
     
     let last_tick = ctx.db.tick_meta().id().find(0);

@@ -8,6 +8,7 @@ pub mod pub_reducers;
 pub mod user_bit;
 pub mod user_moon;
 pub mod ai;
+pub mod user_user;
 
 // world
 pub const WORLD_WIDTH: i32 = 10000;
@@ -23,6 +24,7 @@ pub const UPDATE_OFFLINE_PLAYERS: bool = true;
 pub const USER_ACCELERATION: f32 = 2.0;
 pub const USER_STARTING_HEALTH: f32 = 1.0;
 pub const SPEED_BOOST_DECAY: f32 = 0.95;
+pub const MAX_USER_SIZE: f32 = 200.0;
 
 // moon spawning
 pub const MOON_COLOR_DIFF: i32 = 50;
@@ -38,12 +40,12 @@ pub const MAX_BIT_WORTH: f32 = 2.5;
 pub const MAX_BIT_SIZE: f32 = MAX_BIT_WORTH;
 
 // non-orbiting moon
-pub const NUM_NON_ORBITING_MOONS: u64 = 200;
-pub const MAX_MOON_SIZE: f32 = 5.0;
+pub const NUM_FREE_MOONS: u64 = 200;
+pub const MAX_FREE_MOON_SIZE: f32 = 5.0;
 pub const MIN_MOON_SIZE: f32 = 3.0;
 pub const MOON_DRIFT: f32 = 0.5;
 pub const MOON_ACCELERATION: f32 = 1.5;
-pub const PORTION_NON_ORBITING_MOONS_DIRECTION_UPDATED_PER_TICK: f64 = 0.005;
+pub const PORTION_FREE_MOONS_DIRECTION_UPDATED_PER_TICK: f64 = 0.005;
 
 // moon oribit
 pub const ORBIT_RADIUS_USER_SIZE_FACTOR_CLOSE: f32 = 0.2;
@@ -59,6 +61,9 @@ pub const ORBIT_MOVING_ACCELERATION_USER_SIZE_FACTOR: f32 = 0.5;
 pub const ORBIT_MOVING_ACCELERATION_ADD: f32 = 5.0;
 pub const ORBIT_STATIONARY_ACCELERATION_USER_SIZE_FACTOR: f32 = 0.2;
 pub const ORBIT_STATIONARY_ACCELERATION_ADD: f32 = 5.0;
+
+// moon common
+pub const MAX_POSSIBLE_MOON_SIZE: f32 = MAX_FREE_MOON_SIZE.max(MAX_HEALTH_SACRIFICE);
 
 // moon scarifice
 pub const MAX_MOON_SIZE_PER_HEALTH: f32 = 1.0;

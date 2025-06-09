@@ -9,6 +9,8 @@ pub struct User {
     #[primary_key]
     pub identity: Identity,
     pub online: bool,
+    #[index(btree)]
+    pub col_index: i32,
     pub x: f32,
     pub y: f32,
     pub dx: f32,
@@ -25,7 +27,7 @@ pub struct User {
 }
 
 pub fn get_user_size(health: f32) -> f32 {
-    return 100.0 * (0.0025 * health).atan() + 5.0;
+    return (100.0 * (0.0025 * health).atan() + 5.0).min(super::MAX_USER_SIZE);
 }
 
 pub fn handle_user_death(ctx: &ReducerContext, user: User) {
@@ -53,6 +55,7 @@ pub fn update_users(ctx: &ReducerContext) {
                 if user.is_ai {super::AI_ACCELERATION} else {super::USER_ACCELERATION} + user.speed_boost,
             );
             ctx.db.user().identity().update(User {
+                col_index: upd.x.round() as i32,
                 x: upd.x,
                 y: upd.y,
                 dx: upd.dx,

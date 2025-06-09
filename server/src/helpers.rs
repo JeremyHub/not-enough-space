@@ -81,3 +81,23 @@ pub fn toroidal_distance(x1: f32, y1: f32, x2: f32, y2: f32) -> f32 {
     let dy = ((y1 - y2).abs()).min(super::WORLD_HEIGHT as f32 - (y1 - y2).abs());
     (dx * dx + dy * dy).sqrt()
 }
+
+pub fn toroidal_vector(x1: f32, y1: f32, x2: f32, y2: f32) -> (f32, f32) {
+    let mut dir_vec_x = x1 - x2;
+    let mut dir_vec_y = y1 - y2;
+    if dir_vec_x.abs() > super::WORLD_WIDTH as f32 / 2.0 {
+        if dir_vec_x > 0.0 {
+            dir_vec_x -= super::WORLD_WIDTH as f32;
+        } else {
+            dir_vec_x += super::WORLD_WIDTH as f32;
+        }
+    }
+    if dir_vec_y.abs() > super::WORLD_HEIGHT as f32 / 2.0 {
+        if dir_vec_y > 0.0 {
+            dir_vec_y -= super::WORLD_HEIGHT as f32;
+        } else {
+            dir_vec_y += super::WORLD_HEIGHT as f32;
+        }
+    }
+    return (dir_vec_x, dir_vec_y);
+}

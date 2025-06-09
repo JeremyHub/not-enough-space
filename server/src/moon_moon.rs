@@ -57,7 +57,7 @@ pub fn check_moon_moon_collisions(ctx: &ReducerContext) {
         if to_destroy.contains(&moon.moon_id) {
             continue;
         }
-        let search_radius = (moon.size + super::MAX_MOON_SIZE.max(super::MAX_HEALTH_SACRIFICE)) as i32;
+        let search_radius = (moon.size + super::MAX_POSSIBLE_MOON_SIZE) as i32;
         for range in helpers::wrapped_ranges(moon.col_index, search_radius, super::WORLD_WIDTH) {
             for other in ctx.db.moon().col_index().filter(range) {
                 if other.moon_id == moon.moon_id {

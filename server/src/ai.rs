@@ -38,10 +38,12 @@ pub fn spawn_ai(ctx: &ReducerContext) {
                 g: ctx.rng().gen_range(0..=255),
                 b: ctx.rng().gen_range(0..=255),
             };
+            let x = ctx.rng().gen_range(0..=super::WORLD_WIDTH) as f32;
             ctx.db.user().insert(user::User {
                 identity: Identity::from_be_byte_array(ctx.rng().gen()),
                 online: true,
-                x: ctx.rng().gen_range(0..=super::WORLD_WIDTH) as f32,
+                x,
+                col_index: x.round() as i32,
                 y: ctx.rng().gen_range(0..=super::WORLD_HEIGHT) as f32,
                 dx: 0.0,
                 dy: 0.0,

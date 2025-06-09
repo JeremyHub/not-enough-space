@@ -40,11 +40,11 @@ pub struct Moon {
 
 
 pub fn spawn_moons(ctx: &ReducerContext) {
-    let num_moons = super::NUM_NON_ORBITING_MOONS - ctx.db.moon().is_orbiting().filter(false).count() as u64;
+    let num_moons = super::NUM_FREE_MOONS - ctx.db.moon().is_orbiting().filter(false).count() as u64;
     for _ in 0..num_moons {
         let x = ctx.rng().gen_range(0..=super::WORLD_WIDTH) as f32;
         let y = ctx.rng().gen_range(0..=super::WORLD_HEIGHT) as f32;
-        let size = ctx.rng().gen_range(super::MIN_MOON_SIZE..=super::MAX_MOON_SIZE);
+        let size = ctx.rng().gen_range(super::MIN_MOON_SIZE..=super::MAX_FREE_MOON_SIZE);
         ctx.db.moon().insert(Moon {
             moon_id: 0,
             col_index: x.round() as i32,
@@ -70,19 +70,19 @@ pub fn spawn_moons(ctx: &ReducerContext) {
 
 
 pub fn update_moons(ctx: &ReducerContext) {
-    update_non_oribiting_moons_directions(ctx);
+    update_free_moons_directions(ctx);
     update_oribiting_moons(ctx);
 
     for moon in ctx.db.moon().iter() {
         if moon.orbiting.is_none() {
-            move_non_oribiting_moons(ctx, moon);
+            move_free_moons(ctx, moon);
         } else {
             animate_moon_color(ctx, moon);
         }
     }
 }
 
-fn move_non_oribiting_moons(ctx: &ReducerContext, moon: Moon) {
+fn move_free_moons(ctx: &ReducerContext, moon: Moon) {
     let acceleration = super::MOON_ACCELERATION;
     let upd = helpers::move_character(
         moon.x,
@@ -164,24 +164,7 @@ fn update_oribiting_moons(ctx: &ReducerContext) {
                 let new_y = user_y + orbit_radius * orbit_angle.sin();
 
                 // compute minimal toroidal vector from moon's current position to desired position
-                let mut dir_vec_x = new_x - moon.x;
-                let mut dir_vec_y = new_y - moon.y;
-
-                // Proper toroidal wrapping for direction vector
-                if dir_vec_x.abs() > super::WORLD_WIDTH as f32 / 2.0 {
-                    if dir_vec_x > 0.0 {
-                        dir_vec_x -= super::WORLD_WIDTH as f32;
-                    } else {
-                        dir_vec_x += super::WORLD_WIDTH as f32;
-                    }
-                }
-                if dir_vec_y.abs() > super::WORLD_HEIGHT as f32 / 2.0 {
-                    if dir_vec_y > 0.0 {
-                        dir_vec_y -= super::WORLD_HEIGHT as f32;
-                    } else {
-                        dir_vec_y += super::WORLD_HEIGHT as f32;
-                    }
-                }
+                let (dir_vec_x, dir_vec_y) = helpers::toroidal_vector(new_x, new_y, moon.x, moon.y);
                 let dir_length = (dir_vec_x.powi(2) + dir_vec_y.powi(2)).sqrt();
 
                 // scale velocity increment by distance (clamped to avoid zero)
@@ -222,14 +205,14 @@ fn update_oribiting_moons(ctx: &ReducerContext) {
     }
 }
 
-fn update_non_oribiting_moons_directions(ctx: &ReducerContext) {
-    let mut non_orbiting_moons: Vec<_> = ctx.db.moon().iter().filter(|b| b.orbiting.is_none()).collect();
+fn update_free_moons_directions(ctx: &ReducerContext) {
+    let mut free_moons: Vec<_> = ctx.db.moon().iter().filter(|b| b.orbiting.is_none()).collect();
     use rand::seq::SliceRandom;
-    non_orbiting_moons.as_mut_slice().shuffle(&mut ctx.rng());
+    free_moons.as_mut_slice().shuffle(&mut ctx.rng());
     
-    let num_to_update = ((non_orbiting_moons.len() as f64) * super::PORTION_NON_ORBITING_MOONS_DIRECTION_UPDATED_PER_TICK)
+    let num_to_update = ((free_moons.len() as f64) * super::PORTION_FREE_MOONS_DIRECTION_UPDATED_PER_TICK)
         .ceil() as usize;
-    for moon in non_orbiting_moons.into_iter().take(num_to_update) {
+    for moon in free_moons.into_iter().take(num_to_update) {
         ctx.db.moon().moon_id().update(Moon {
             dir_vec_x: ((ctx.rng().gen_range(0..=100) as f32 / 100.0) * 2.0) - super::MOON_DRIFT,
             dir_vec_y: ((ctx.rng().gen_range(0..=100) as f32 / 100.0) * 2.0) - super::MOON_DRIFT,

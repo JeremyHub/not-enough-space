@@ -41,7 +41,7 @@ pub fn handle_user_and_oribiting_moon_collision(ctx: &ReducerContext, user: &use
     ctx.db.moon().delete(moon);
 }
 
-pub fn handle_user_non_oribiting_moon_collision(ctx: &ReducerContext, user: &user::User, moon: moon::Moon) -> f32 {
+pub fn handle_user_free_moon_collision(ctx: &ReducerContext, user: &user::User, moon: moon::Moon) -> f32 {
     // Pick a target color based on the user's color
     let (target_color, orbital_velocity) = moon::new_moon_params(ctx, &user.color);
     ctx.db.moon().moon_id().update(moon::Moon {
@@ -61,12 +61,12 @@ pub fn check_moon_user_collisions(ctx: &ReducerContext) {
     for user in ctx.db.user().iter() {
         if user.online || super::UPDATE_OFFLINE_PLAYERS {
             let mut new_user_moon_size = user.total_moon_size_oribiting;
-            for range in helpers::wrapped_ranges(user.x.round() as i32, (user.size + super::MAX_MOON_SIZE as f32) as i32, super::WORLD_WIDTH) {
+            for range in helpers::wrapped_ranges(user.x.round() as i32, (user.size + super::MAX_FREE_MOON_SIZE as f32) as i32, super::WORLD_WIDTH) {
                 for moon in ctx.db.moon().col_index().filter(range) {
                     if moon.orbiting.is_none() {
                         if can_get_moon_into_orbit(&user, moon.size) {
                             if helpers::toroidal_distance(user.x, user.y, moon.x, moon.y) <= (user.size + moon.size) {
-                                new_user_moon_size += handle_user_non_oribiting_moon_collision(ctx, &user, moon);
+                                new_user_moon_size += handle_user_free_moon_collision(ctx, &user, moon);
                             }
                         }
                     }
@@ -84,7 +84,7 @@ pub fn check_moon_user_collisions(ctx: &ReducerContext) {
 
     // user : oribiting-moon collision
     for user in ctx.db.user().iter() {
-        for range in helpers::wrapped_ranges(user.x.round() as i32, (user.size + super::MAX_MOON_SIZE as f32) as i32, super::WORLD_WIDTH) {
+        for range in helpers::wrapped_ranges(user.x.round() as i32, (user.size + super::MAX_FREE_MOON_SIZE as f32) as i32, super::WORLD_WIDTH) {
             for moon in ctx.db.moon().col_index().filter(range) {
                 if !moon.is_orbiting || moon.orbiting == Some(user.identity) {
                     continue;

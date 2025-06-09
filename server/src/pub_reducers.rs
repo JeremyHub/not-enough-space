@@ -130,10 +130,12 @@ pub fn client_connected(ctx: &ReducerContext) {
             b: color_vals[2],
         };
 
+        let x = rng.gen_range(0..=super::WORLD_WIDTH) as f32;
         ctx.db.user().insert(user::User {
             identity: ctx.sender,
             online: true,
-            x: rng.gen_range(0..=super::WORLD_WIDTH) as f32,
+            x,
+            col_index: x.round() as i32,
             y: rng.gen_range(0..=super::WORLD_HEIGHT) as f32,
             dx: 0.0,
             dy: 0.0,
