@@ -21,6 +21,7 @@ pub struct User {
     pub total_moon_size_oribiting: f32,
     #[index(btree)]
     pub is_ai: bool,
+    pub speed_boost: f32,
 }
 
 pub fn get_user_size(health: f32) -> f32 {
@@ -49,13 +50,14 @@ pub fn update_users(ctx: &ReducerContext) {
                 user.dy,
                 user.dir_vec_x,
                 user.dir_vec_y,
-                if user.is_ai {super::AI_ACCELERATION} else {super::USER_ACCELERATION}
+                if user.is_ai {super::AI_ACCELERATION} else {super::USER_ACCELERATION} + user.speed_boost,
             );
             ctx.db.user().identity().update(User {
                 x: upd.x,
                 y: upd.y,
                 dx: upd.dx,
                 dy: upd.dy,
+                speed_boost: if user.speed_boost > 0.1 {user.speed_boost * super::SPEED_BOOST_DECAY} else {0.0},
                 ..user
             });
         }

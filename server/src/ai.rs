@@ -52,6 +52,7 @@ pub fn spawn_ai(ctx: &ReducerContext) {
                 size: user::get_user_size(super::USER_STARTING_HEALTH),
                 total_moon_size_oribiting: 0.0,
                 is_ai: true,
+                speed_boost: 0.0,
             });
         }
     }

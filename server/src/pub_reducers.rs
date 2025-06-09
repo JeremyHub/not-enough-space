@@ -49,6 +49,7 @@ pub fn sacrifice_health_for_moon(ctx: &ReducerContext, user: user::User) -> Resu
         health: new_health,
         size: new_size,
         total_moon_size_oribiting: new_total_moon_size_oribiting,
+        speed_boost: user.speed_boost + super::SACRIFICE_SPEED_BOOST,
         ..user
     });
 
@@ -143,6 +144,7 @@ pub fn client_connected(ctx: &ReducerContext) {
             size: user::get_user_size(super::USER_STARTING_HEALTH),
             total_moon_size_oribiting: 0.0,
             is_ai: false,
+            speed_boost: 0.0,
         });
     }
 }

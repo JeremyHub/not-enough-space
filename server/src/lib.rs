@@ -22,6 +22,7 @@ pub const UPDATE_OFFLINE_PLAYERS: bool = true;
 // users
 pub const USER_ACCELERATION: f32 = 2.0;
 pub const USER_STARTING_HEALTH: f32 = 1.0;
+pub const SPEED_BOOST_DECAY: f32 = 0.95;
 
 // moon spawning
 pub const MOON_COLOR_DIFF: i32 = 50;
@@ -65,6 +66,7 @@ pub const MIN_MOON_SIZE_PER_HEALTH: f32 = 0.3;
 pub const PORTION_HEALTH_SACRIFICE: f32 = 1.0/40.0;
 pub const MAX_HEALTH_SACRIFICE: f32 = 10.0;
 pub const MIN_HEALTH_SACRIFICE: f32 = 2.0;
+pub const SACRIFICE_SPEED_BOOST: f32 = USER_ACCELERATION;
 
 // ai
 pub const PORTION_AI_USERS_DIRECTION_UPDATED_PER_TICK: f32 = 0.01;
