@@ -13,32 +13,35 @@ use super::bit;
 pub fn handle_user_and_oribiting_moon_collision(ctx: &ReducerContext, user: &user::User, moon: moon::Moon) {
     let new_health = user.health - moon.size;
     let new_size = user::get_user_size(new_health);
+
+    // Calculate angle from moon to user
+    let dx = user.x - moon.x;
+    let dy = user.y - moon.y;
+    let angle_to_user = dy.atan2(dx);
+
+    // Nudge the orbit angle away from the user
+    let nudge_amount = std::f32::consts::PI / 5.0;
+    let angle_diff = (moon.orbit_angle - angle_to_user).rem_euclid(2.0 * std::f32::consts::PI);
+
+    // If the moon is "ahead" of the user in its orbit, nudge forward, else backward
+    let new_orbit_angle = if angle_diff < std::f32::consts::PI {
+        moon.orbit_angle + nudge_amount
+    } else {
+        moon.orbit_angle - nudge_amount
+    };
+
     ctx.db.user().identity().update(user::User {
         health: new_health,
         size: new_size,
         color: user.color.clone(),
         ..*user
     });
-    // Turn moon into a bit at its position
-    ctx.db.bit().insert(bit::Bit {
-        bit_id: 0,
-        x: moon.x.round() as i32,
-        y: moon.y.round() as i32,
-        size: moon.size,
-        worth: moon.size*2.0, // hack to make it no net loss
-        color: moon.color.clone(),
+    ctx.db.moon().moon_id().update(moon::Moon {
+        orbit_angle: new_orbit_angle,
+        orbital_velocity: Some(-moon.orbital_velocity.unwrap_or(0.0)),
+        ..moon
     });
-    // Remove the moon and subtract from user's moon total
-    if let Some(orbiting_id) = moon.orbiting {
-        if let Some(orbiting_user) = ctx.db.user().identity().find(orbiting_id) {
-            let new_total = orbiting_user.total_moon_size_oribiting - moon.size;
-            ctx.db.user().identity().update(user::User {
-                total_moon_size_oribiting: new_total,
-                ..orbiting_user
-            });
-        }
-    }
-    ctx.db.moon().delete(moon);
+    // TODO bits fly towards player whose moon did the hit
 }
 
 pub fn handle_user_free_moon_collision(ctx: &ReducerContext, user: &user::User, moon: moon::Moon) -> f32 {
