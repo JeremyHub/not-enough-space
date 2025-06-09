@@ -139,11 +139,17 @@ type DrawProps = {
   identity: Identity;
 };
 
-function renderCircle(ctx: CanvasRenderingContext2D, size: number, x: number, y: number, color: Color) {
+function renderCircle(ctx: CanvasRenderingContext2D, size: number, x: number, y: number, color: Color, filled: boolean = true) {
   ctx.beginPath();
   ctx.arc(x, y, size, 0, Math.PI * 2);
-  ctx.fillStyle = `rgba(${color.r}, ${color.g}, ${color.b}, 1)`;
-  ctx.fill();
+  if (filled) {
+    ctx.fillStyle = `rgba(${color.r}, ${color.g}, ${color.b}, 1)`;
+    ctx.fill();
+  } else {
+    ctx.strokeStyle = `rgba(${color.r}, ${color.g}, ${color.b}, 1)`;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
   ctx.closePath();
 }
 
@@ -263,7 +269,7 @@ const draw = (ctx: CanvasRenderingContext2D | null, props: DrawProps) => {
   bits.forEach(bit => {
       const { x, y } = toScreen(bit);
       renderWithWrap(
-        (px, py) => renderCircle(ctx, bit.size, px, py, bit.color),
+        (px, py) => renderCircle(ctx, bit.size, px, py, bit.color, false), // not filled for bits
         metadata,
         canvasWidth,
         canvasHeight,
