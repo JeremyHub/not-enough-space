@@ -35,7 +35,7 @@ pub fn handle_user_death(ctx: &ReducerContext, user: User) {
             ctx.db.moon().delete(moon);
         }
     }
-    // TODO figure out what this does to the client who died
+    // TODO handle this on the client side
     ctx.db.user().delete(user);
 }
 
