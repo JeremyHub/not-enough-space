@@ -24,10 +24,22 @@ pub fn handle_user_and_oribiting_moon_collision(ctx: &ReducerContext, user: &use
     let angle_diff = (moon.orbit_angle - angle_to_user).rem_euclid(2.0 * std::f32::consts::PI);
 
     // If the moon is "ahead" of the user in its orbit, nudge forward, else backward
-    let new_orbit_angle = if angle_diff < std::f32::consts::PI {
-        moon.orbit_angle + nudge_amount
-    } else {
-        moon.orbit_angle - nudge_amount
+    let (new_orbit_angle, new_orbital_velocity) = {
+        let mut nudge = 0.0;
+        if angle_diff < std::f32::consts::PI {
+            nudge = nudge_amount;
+        } else {
+            nudge = -nudge_amount;
+        }
+        let new_angle = moon.orbit_angle + nudge;
+        let old_velocity = moon.orbital_velocity.unwrap_or(0.0);
+        // Only swap sign if nudge is in the opposite direction of velocity
+        let new_velocity = if old_velocity != 0.0 && nudge.signum() != old_velocity.signum() {
+            -old_velocity
+        } else {
+            old_velocity
+        };
+        (new_angle, Some(new_velocity))
     };
 
     ctx.db.user().identity().update(user::User {
@@ -38,7 +50,7 @@ pub fn handle_user_and_oribiting_moon_collision(ctx: &ReducerContext, user: &use
     });
     ctx.db.moon().moon_id().update(moon::Moon {
         orbit_angle: new_orbit_angle,
-        orbital_velocity: Some(-moon.orbital_velocity.unwrap_or(0.0)),
+        orbital_velocity: new_orbital_velocity,
         ..moon
     });
     // TODO bits fly towards player whose moon did the hit
