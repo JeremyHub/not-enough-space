@@ -101,3 +101,50 @@ pub fn toroidal_vector(x1: f32, y1: f32, x2: f32, y2: f32) -> (f32, f32) {
     }
     return (dir_vec_x, dir_vec_y);
 }
+
+
+pub fn elastic_collision(char1_x: f32, char1_y: f32, char1_dx: f32, char1_dy: f32, char1_size: f32, char2_x: f32, char2_y: f32, char2_dx: f32, char2_dy: f32, char2_size: f32) -> Option<(CharacterUpdate, CharacterUpdate)> {
+    let (dx, dy) = toroidal_vector(char1_x, char1_y, char2_x, char2_y);
+    let dist = (dx * dx + dy * dy).sqrt();
+    if dist == 0.0 {
+        return None; // avoid division by zero
+    }
+    let min_dist = char1_size + char2_size;
+    if dist > min_dist {
+        return None;
+    }
+    let m1 = char1_size;
+    let m2 = char2_size;
+    let nx = dx / dist;
+    let ny = dy / dist;
+    let dvx = char1_dx - char2_dx;
+    let dvy = char1_dy - char2_dy;
+    let rel_vel = dvx * nx + dvy * ny;
+    if rel_vel > 0.0 {
+        return None; // already moving apart
+    }
+    let impulse = (2.0 * rel_vel) / (m1 + m2);
+    let new_dx1 = char1_dx - impulse * m2 * nx;
+    let new_dy1 = char1_dy - impulse * m2 * ny;
+    let new_dx2 = char2_dx + impulse * m1 * nx;
+    let new_dy2 = char2_dy + impulse * m1 * ny;
+    let overlap = min_dist - dist;
+    let push1 = overlap * (m2 / (m1 + m2));
+    let push2 = overlap * (m1 / (m1 + m2));
+    let (new_x1, new_y1) = wrap_coords(char1_x + nx * push1, char1_y + ny * push1);
+    let (new_x2, new_y2) = wrap_coords(char2_x - nx * push2, char2_y - ny * push2);
+    Some((
+        CharacterUpdate {
+            x: new_x1,
+            y: new_y1,
+            dx: new_dx1,
+            dy: new_dy1,
+        },
+        CharacterUpdate {
+            x: new_x2,
+            y: new_y2,
+            dx: new_dx2,
+            dy: new_dy2,
+        },
+    ))
+}

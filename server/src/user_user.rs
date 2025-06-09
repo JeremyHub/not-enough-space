@@ -6,64 +6,23 @@ use super::user;
 use super::helpers;
 
 fn handle_user_user_collision(ctx: &ReducerContext, user1: &user::User, user2: &user::User) {
-    // Vector between centers (toroidal)
-    let (dx, dy) = helpers::toroidal_vector(user1.x, user1.y, user2.x, user2.y);
-    let dist = (dx * dx + dy * dy).sqrt();
-    if dist == 0.0 {
-        return; // avoid division by zero
-    }
-
-    // Only process if overlapping
-    let min_dist = user1.size + user2.size;
-    if dist > min_dist {
-        return;
-    }
-
-    // Mass proportional to size
-    let m1 = user1.size;
-    let m2 = user2.size;
-
-    // Normal vector
-    let nx = dx / dist;
-    let ny = dy / dist;
-
-    // Relative velocity
-    let dvx = user1.dx - user2.dx;
-    let dvy = user1.dy - user2.dy;
-
-    // Velocity along normal
-    let rel_vel = dvx * nx + dvy * ny;
-    if rel_vel > 0.0 {
-        return; // already moving apart
-    }
-
-    // 1D elastic collision along normal
-    let impulse = (2.0 * rel_vel) / (m1 + m2);
-
-    let new_dx1 = user1.dx - impulse * m2 * nx;
-    let new_dy1 = user1.dy - impulse * m2 * ny;
-    let new_dx2 = user2.dx + impulse * m1 * nx;
-    let new_dy2 = user2.dy + impulse * m1 * ny;
-
-    // Push users apart to avoid sticking
-    let overlap = min_dist - dist;
-    let push1 = overlap * (m2 / (m1 + m2));
-    let push2 = overlap * (m1 / (m1 + m2));
-    let (new_x1, new_y1) = helpers::wrap_coords(user1.x + nx * push1, user1.y + ny * push1);
-    let (new_x2, new_y2) = helpers::wrap_coords(user2.x - nx * push2, user2.y - ny * push2);
+    let (char1_upd, char2_upd) = match helpers::elastic_collision(user1.x, user1.y, user1.dx, user1.dy, user1.size, user2.x, user2.y, user2.dx, user2.dy, user2.size) {
+        Some(value) => value,
+        None => return,
+    };
 
     ctx.db.user().identity().update(user::User {
-        dx: new_dx1,
-        dy: new_dy1,
-        x: new_x1,
-        y: new_y1,
+        dx: char1_upd.dx,
+        dy: char1_upd.dy,
+        x: char1_upd.x,
+        y: char1_upd.y,
         ..*user1
     });
     ctx.db.user().identity().update(user::User {
-        dx: new_dx2,
-        dy: new_dy2,
-        x: new_x2,
-        y: new_y2,
+        dx: char2_upd.dx,
+        dy: char2_upd.dy,
+        x: char2_upd.x,
+        y: char2_upd.y,
         ..*user2
     });
 }
