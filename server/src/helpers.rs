@@ -41,31 +41,38 @@ pub fn wrap_coords(x: f32, y: f32) -> (f32, f32) {
     let mut new_x = x;
     let mut new_y = y;
 
-    if new_x < 0.0 { new_x = super::WORLD_WIDTH as f32 - new_x; }
-    else if new_x >= super::WORLD_WIDTH as f32 { new_x = new_x - super::WORLD_WIDTH as f32; }
+    if new_x < 0.0 { new_x = super::WORLD_WIDTH as f32 + new_x; }
+    else if new_x > super::WORLD_WIDTH as f32 { new_x = new_x - super::WORLD_WIDTH as f32; }
 
-    if new_y < 0.0 { new_y = super::WORLD_HEIGHT as f32 - new_y; }
+    if new_y < 0.0 { new_y = super::WORLD_HEIGHT as f32 + new_y; }
     else if new_y >= super::WORLD_HEIGHT as f32 { new_y = new_y - super::WORLD_HEIGHT as f32; }
 
     (new_x, new_y)
 }
 
 
-pub fn wrapped_ranges(center: i32, radius: i32, max: i32) -> Vec<core::ops::Range<i32>> {
-    let min = center - radius;
-    let max_range = center + radius;
-    if min < 0 {
+pub fn wrapped_ranges(center: i32, radius: i32, world_max: i32) -> Vec<core::ops::Range<i32>> {
+    let wrapped_center = if center < 0 {
+        world_max + center
+    } else if center > world_max {
+        center - world_max
+    } else {
+        center
+    };
+    let range_bottom = wrapped_center - radius;
+    let range_top = wrapped_center + radius;
+    if range_bottom < 0 {
         vec![
-            0..max_range.min(max),
-            (max + min)..max
+            0..range_top,
+            (world_max + range_bottom)..world_max
         ]
-    } else if max_range >= max {
+    } else if range_top > world_max {
         vec![
-            min..max,
-            0..(max_range - max)
+            range_bottom..world_max,
+            0..(range_top - world_max)
         ]
     } else {
-        vec![min..max_range]
+        vec![range_bottom..range_top]
     }
 }
 
