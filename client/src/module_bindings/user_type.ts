@@ -45,6 +45,7 @@ export type User = {
   health: number,
   size: number,
   totalMoonSizeOribiting: number,
+  isAi: boolean,
 };
 
 /**
@@ -69,6 +70,7 @@ export namespace User {
       new ProductTypeElement("health", AlgebraicType.createF32Type()),
       new ProductTypeElement("size", AlgebraicType.createF32Type()),
       new ProductTypeElement("totalMoonSizeOribiting", AlgebraicType.createF32Type()),
+      new ProductTypeElement("isAi", AlgebraicType.createBoolType()),
     ]);
   }
 

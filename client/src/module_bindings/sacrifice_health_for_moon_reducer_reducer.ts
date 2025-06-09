@@ -31,12 +31,12 @@ import {
   deepEqual,
 } from "@clockworklabs/spacetimedb-sdk";
 
-export type SacrificeHealthForMoon = {};
+export type SacrificeHealthForMoonReducer = {};
 
 /**
  * A namespace for generated helper functions.
  */
-export namespace SacrificeHealthForMoon {
+export namespace SacrificeHealthForMoonReducer {
   /**
   * A function which returns this type represented as an AlgebraicType.
   * This function is derived from the AlgebraicType used to generate this type.
@@ -46,12 +46,12 @@ export namespace SacrificeHealthForMoon {
     ]);
   }
 
-  export function serialize(writer: BinaryWriter, value: SacrificeHealthForMoon): void {
-    SacrificeHealthForMoon.getTypeScriptAlgebraicType().serialize(writer, value);
+  export function serialize(writer: BinaryWriter, value: SacrificeHealthForMoonReducer): void {
+    SacrificeHealthForMoonReducer.getTypeScriptAlgebraicType().serialize(writer, value);
   }
 
-  export function deserialize(reader: BinaryReader): SacrificeHealthForMoon {
-    return SacrificeHealthForMoon.getTypeScriptAlgebraicType().deserialize(reader);
+  export function deserialize(reader: BinaryReader): SacrificeHealthForMoonReducer {
+    return SacrificeHealthForMoonReducer.getTypeScriptAlgebraicType().deserialize(reader);
   }
 
 }

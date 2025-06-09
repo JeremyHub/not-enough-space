@@ -534,7 +534,7 @@ function App() {
       // Only trigger on first press (not repeat)
       if (key === ' ') {
         console.log(key)
-        conn.reducers.sacrificeHealthForMoon();
+        conn.reducers.sacrificeHealthForMoonReducer();
       }
       pressed.add(key);
       updateDirection();

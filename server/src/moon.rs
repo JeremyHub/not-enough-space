@@ -225,8 +225,7 @@ fn update_oribiting_moons(ctx: &ReducerContext) {
 fn update_non_oribiting_moons_directions(ctx: &ReducerContext) {
     let mut non_orbiting_moons: Vec<_> = ctx.db.moon().iter().filter(|b| b.orbiting.is_none()).collect();
     use rand::seq::SliceRandom;
-    let mut rng = ctx.rng();
-    non_orbiting_moons.as_mut_slice().shuffle(&mut rng);
+    non_orbiting_moons.as_mut_slice().shuffle(&mut ctx.rng());
     
     let num_to_update = ((non_orbiting_moons.len() as f64) * super::PORTION_NON_ORBITING_MOONS_DIRECTION_UPDATED_PER_TICK)
         .ceil() as usize;

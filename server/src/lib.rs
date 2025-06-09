@@ -7,6 +7,7 @@ pub mod moon_moon;
 pub mod pub_reducers;
 pub mod user_bit;
 pub mod user_moon;
+pub mod ai;
 
 // world
 pub const WORLD_WIDTH: i32 = 10000;
@@ -65,3 +66,8 @@ pub const PORTION_HEALTH_SACRIFICE: f32 = 1.0/40.0;
 pub const MAX_HEALTH_SACRIFICE: f32 = 10.0;
 pub const MIN_HEALTH_SACRIFICE: f32 = 2.0;
 
+// ai
+pub const PORTION_AI_USERS_DIRECTION_UPDATED_PER_TICK: f32 = 0.01;
+pub const CHANCE_UPDATED_AI_SPAWNS_MOON: f64 = 0.1;
+pub const NUM_AIS: usize = 50;
+pub const AI_ACCELERATION: f32 = USER_ACCELERATION/2.0;

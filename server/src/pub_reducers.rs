@@ -8,16 +8,20 @@ use crate::user::user as _;
 use super::user;
 use super::moon;
 use super::helpers;
-use crate::user_moon;
+use super::user_moon;
 
 #[reducer]
-pub fn sacrifice_health_for_moon(ctx: &ReducerContext) -> Result<(), String> {
-    let moon_size_per_health = ctx.rng().gen_range(super::MIN_MOON_SIZE_PER_HEALTH..=super::MAX_MOON_SIZE_PER_HEALTH);
-    
+pub fn sacrifice_health_for_moon_reducer(ctx: &ReducerContext) -> Result<(), String> {
     let user = match ctx.db.user().identity().find(ctx.sender) {
         Some(u) => u,
         None => return Err("User not found.".to_string()),
     };
+
+    return sacrifice_health_for_moon(ctx, user);
+}
+
+pub fn sacrifice_health_for_moon(ctx: &ReducerContext, user: user::User) -> Result<(), String> {
+    let moon_size_per_health = ctx.rng().gen_range(super::MIN_MOON_SIZE_PER_HEALTH..=super::MAX_MOON_SIZE_PER_HEALTH);
 
     let mut health_to_sacrifice = (user.health*super::PORTION_HEALTH_SACRIFICE).min(super::MAX_HEALTH_SACRIFICE);
     
@@ -138,6 +142,7 @@ pub fn client_connected(ctx: &ReducerContext) {
             health: super::USER_STARTING_HEALTH,
             size: user::get_user_size(super::USER_STARTING_HEALTH),
             total_moon_size_oribiting: 0.0,
+            is_ai: false,
         });
     }
 }

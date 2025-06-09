@@ -6,6 +6,7 @@ use super::bit;
 use super::user_moon;
 use super::moon_moon;
 use super::user_bit;
+use super::ai;
 
 #[table(name = tick_schedule, scheduled(tick))]
 pub struct TickSchedule {
@@ -38,8 +39,10 @@ pub fn tick(ctx: &ReducerContext, tick_schedule: TickSchedule) -> Result<(), Str
 
     bit::spawn_bits(ctx);
 
+    ai::spawn_ai(ctx);
+    ai::update_ai_directions(ctx);
+
     moon::spawn_moons(ctx);
-    
     moon::update_moons(ctx);
 
     user::update_users(ctx);

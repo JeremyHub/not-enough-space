@@ -1,6 +1,6 @@
 use spacetimedb::{SpacetimeType};
 
-#[derive(SpacetimeType, Clone, Debug, PartialEq)]
+#[derive(SpacetimeType, Clone, Debug, PartialEq, Copy)]
 pub struct Color {
     pub r: i32,
     pub g: i32,
