@@ -33,7 +33,7 @@ import {
 import { Color as __Color } from "./color_type";
 
 export type Bit = {
-  bitId: bigint,
+  bitId: number,
   x: number,
   y: number,
   size: number,
@@ -51,7 +51,7 @@ export namespace Bit {
   */
   export function getTypeScriptAlgebraicType(): AlgebraicType {
     return AlgebraicType.createProductType([
-      new ProductTypeElement("bitId", AlgebraicType.createU64Type()),
+      new ProductTypeElement("bitId", AlgebraicType.createI32Type()),
       new ProductTypeElement("x", AlgebraicType.createI32Type()),
       new ProductTypeElement("y", AlgebraicType.createI32Type()),
       new ProductTypeElement("size", AlgebraicType.createF32Type()),

@@ -57,23 +57,29 @@ function useUsers(conn: DbConnection | null): Map<string, User> {
   return users;
 }
 
-function useMoons(conn: DbConnection | null): Array<Moon> {
-  const [moons, setMoons] = useState<Array<Moon>>([]);
+function useMoons(conn: DbConnection | null): Map<number, Moon> {
+  const [moons, setMoons] = useState<Map<number, Moon>>(new Map());
 
   useEffect(() => {
     if (!conn) return;
     const onInsert = (_ctx: EventContext, moon: Moon) => {
-      setMoons(prev => [...prev, moon]);
+      setMoons(prev => new Map(prev.set(moon.moonId, moon)));
     };
     conn.db.moon.onInsert(onInsert);
 
     const onUpdate = (_ctx: EventContext, oldMoon: Moon, newMoon: Moon) => {
-      setMoons(prev => prev.map(moon => moon.moonId === oldMoon.moonId ? newMoon : moon));
+      setMoons(prev => {
+        prev.delete(oldMoon.moonId);
+        return new Map(prev.set(newMoon.moonId, newMoon));
+      });
     };
     conn.db.moon.onUpdate(onUpdate);
 
     const onDelete = (_ctx: EventContext, moon: Moon) => {
-      setMoons(prev => prev.filter(b => b.moonId !== moon.moonId));
+      setMoons(prev => {
+        prev.delete(moon.moonId);
+        return new Map(prev);
+      });
     };
     conn.db.moon.onDelete(onDelete);
 
@@ -86,23 +92,29 @@ function useMoons(conn: DbConnection | null): Array<Moon> {
   return moons;
 }
 
-function useBits(conn: DbConnection | null): Array<Bit> {
-  const [bits, setBits] = useState<Array<Bit>>([]);
+function useBits(conn: DbConnection | null): Map<number, Bit> {
+  const [bits, setBits] = useState<Map<number, Bit>>(new Map());
 
   useEffect(() => {
     if (!conn) return;
     const onInsert = (_ctx: EventContext, bit: Bit) => {
-      setBits(prev => [...prev, bit]);
+      setBits(prev => new Map(prev.set(bit.bitId, bit)));
     };
     conn.db.bit.onInsert(onInsert);
 
     const onUpdate = (_ctx: EventContext, oldBit: Bit, newBit: Bit) => {
-      setBits(prev => prev.map(bit => bit.bitId === oldBit.bitId ? newBit : bit));
+      setBits(prev => {
+        prev.delete(oldBit.bitId);
+        return new Map(prev.set(newBit.bitId, newBit));
+      });
     };
     conn.db.bit.onUpdate(onUpdate);
 
     const onDelete = (_ctx: EventContext, bit: Bit) => {
-      setBits(prev => prev.filter(b => b.bitId !== bit.bitId));
+      setBits(prev => {
+        prev.delete(bit.bitId);
+        return new Map(prev);
+      });
     };
     conn.db.bit.onDelete(onDelete);
 
@@ -122,8 +134,8 @@ type DrawProps = {
   renderBuffer: number,
   users: Map<string, User>;
   self: User;
-  bits: Array<Bit>;
-  moons: Array<Moon>;
+  bits: Map<number, Bit>;
+  moons: Map<number, Moon>;
   identity: Identity;
 };
 
@@ -249,18 +261,18 @@ const draw = (ctx: CanvasRenderingContext2D | null, props: DrawProps) => {
   });
 
   bits.forEach(bit => {
-    const { x, y } = toScreen(bit);
-    renderWithWrap(
-      (px, py) => renderCircle(ctx, bit.size, px, py, bit.color),
-      metadata,
-      canvasWidth,
-      canvasHeight,
-      renderBuffer,
-      self,
-      x,
-      y,
-    );
-  });
+      const { x, y } = toScreen(bit);
+      renderWithWrap(
+        (px, py) => renderCircle(ctx, bit.size, px, py, bit.color),
+        metadata,
+        canvasWidth,
+        canvasHeight,
+        renderBuffer,
+        self,
+        x,
+        y,
+      );
+    });
 
   users.forEach(user => {
     if (user.identity.data !== identity.data) {

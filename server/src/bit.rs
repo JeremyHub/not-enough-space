@@ -7,7 +7,7 @@ use super::helpers;
 pub struct Bit {
     #[primary_key]
     #[auto_inc]
-    pub bit_id: u64,
+    pub bit_id: i32,
     #[index(btree)]
     pub x: i32,
     pub y: i32,

@@ -6,7 +6,7 @@ use super::moon;
 use super::helpers;
 use super::bit;
 
-fn handle_moon_moon_collision(ctx: &ReducerContext, to_destroy: &mut Vec<u64>, explosions: &mut Vec<(f32, f32, f32, helpers::Color)>, moon: &moon::Moon, other: moon::Moon) {
+fn handle_moon_moon_collision(ctx: &ReducerContext, to_destroy: &mut Vec<i32>, explosions: &mut Vec<(f32, f32, f32, helpers::Color)>, moon: &moon::Moon, other: moon::Moon) {
     // Only destroy the smaller moon, reduce the size of the larger moon by the size of the smaller
     if moon.size > other.size {
         // Moon survives, other is destroyed
@@ -47,7 +47,7 @@ fn handle_moon_moon_collision(ctx: &ReducerContext, to_destroy: &mut Vec<u64>, e
 
 pub fn check_moon_moon_collisions(ctx: &ReducerContext) {
     // moon moon collisions
-    let mut to_destroy: Vec<u64> = Vec::new();
+    let mut to_destroy: Vec<i32> = Vec::new();
     let mut explosions: Vec<(f32, f32, f32, helpers::Color)> = Vec::new(); // (x, y, worth, color)
     let orbiting_moons: Vec<_> = ctx.db.moon().is_orbiting().filter(true).collect();
     for moon in &orbiting_moons {

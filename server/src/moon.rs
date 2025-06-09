@@ -16,7 +16,7 @@ pub enum OrbitState {
 pub struct Moon {
     #[primary_key]
     #[auto_inc]
-    pub moon_id: u64,
+    pub moon_id: i32,
     #[index(btree)]
     pub col_index: i32,
     pub x: f32,

@@ -34,7 +34,7 @@ import { Color as __Color } from "./color_type";
 import { OrbitState as __OrbitState } from "./orbit_state_type";
 
 export type Moon = {
-  moonId: bigint,
+  moonId: number,
   colIndex: number,
   x: number,
   y: number,
@@ -64,7 +64,7 @@ export namespace Moon {
   */
   export function getTypeScriptAlgebraicType(): AlgebraicType {
     return AlgebraicType.createProductType([
-      new ProductTypeElement("moonId", AlgebraicType.createU64Type()),
+      new ProductTypeElement("moonId", AlgebraicType.createI32Type()),
       new ProductTypeElement("colIndex", AlgebraicType.createI32Type()),
       new ProductTypeElement("x", AlgebraicType.createF32Type()),
       new ProductTypeElement("y", AlgebraicType.createF32Type()),

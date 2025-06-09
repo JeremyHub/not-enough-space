@@ -74,7 +74,7 @@ export class MoonTableHandle {
   moonId = {
     // Find the subscribed row whose `moonId` column value is equal to `col_val`,
     // if such a row is present in the client cache.
-    find: (col_val: bigint): Moon | undefined => {
+    find: (col_val: number): Moon | undefined => {
       for (let row of this.tableCache.iter()) {
         if (deepEqual(row.moonId, col_val)) {
           return row;
