@@ -550,7 +550,7 @@ function App() {
     const handleKeyDown = (e: KeyboardEvent) => {
       const key = e.key;
       // Only trigger on first press (not repeat)
-      if (key === ' ') {
+      if (key === ' ' && !pressed.has(' ')) {
         console.log(key)
         conn.reducers.sacrificeHealthForMoonReducer();
       }
