@@ -101,6 +101,7 @@ pub fn check_moon_user_collisions(ctx: &ReducerContext) {
 }
 
 pub fn can_get_moon_into_orbit(user: &user::User, moon_size: f32) -> bool {
+    // TODO consider moving back to size not health if its too laggy
     if user.health < user.total_moon_size_oribiting + moon_size {
         return false;
     }
