@@ -34,6 +34,9 @@ pub fn move_character(x: f32, y: f32, dx: f32, dy: f32, dir_vec_x: f32, dir_vec_
 
     (new_x, new_y) = wrap_coords(after_move_x, after_move_y);
 
+    new_dx = if new_dx.abs() < 0.01 {0.0} else {new_dx};
+    new_dy = if new_dy.abs() < 0.01 {0.0} else {new_dy};
+
     CharacterUpdate { x: new_x, y: new_y, dx: new_dx, dy: new_dy }
 }
 
