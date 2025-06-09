@@ -25,12 +25,11 @@ pub fn handle_user_and_oribiting_moon_collision(ctx: &ReducerContext, user: &use
 
     // If the moon is "ahead" of the user in its orbit, nudge forward, else backward
     let (new_orbit_angle, new_orbital_velocity) = {
-        let mut nudge = 0.0;
-        if angle_diff < std::f32::consts::PI {
-            nudge = nudge_amount;
+        let nudge = if angle_diff < std::f32::consts::PI {
+            nudge_amount
         } else {
-            nudge = -nudge_amount;
-        }
+            -nudge_amount
+        };
         let new_angle = moon.orbit_angle + nudge;
         let old_velocity = moon.orbital_velocity.unwrap_or(0.0);
         // Only swap sign if nudge is in the opposite direction of velocity
@@ -53,7 +52,22 @@ pub fn handle_user_and_oribiting_moon_collision(ctx: &ReducerContext, user: &use
         orbital_velocity: new_orbital_velocity,
         ..moon
     });
-    // spawn a bit at the collision point, going twards the user who owns the moon that did the hit
+    // spawn a bit at the collision point, going twards the user who owns the moon that did the hit, owned by the owner of the moon
+    if let Some(owner) = moon.orbiting {
+        ctx.db.bit().insert(bit::Bit {
+            bit_id: 0,
+            col_index: moon.x.round() as i32,
+            x: moon.x,
+            y: moon.y,
+            dx: user.x - moon.x,
+            dy: user.y - moon.y,
+            color: moon.color.clone(),
+            size: moon.size,
+            worth: moon.size,
+            owned_by: Some(owner),
+            moving: true,
+        });
+    }
 }
 
 pub fn handle_user_free_moon_collision(ctx: &ReducerContext, user: &user::User, moon: moon::Moon) -> f32 {

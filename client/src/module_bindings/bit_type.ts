@@ -43,6 +43,7 @@ export type Bit = {
   worth: number,
   color: __Color,
   moving: boolean,
+  ownedBy: Identity | undefined,
 };
 
 /**
@@ -65,6 +66,7 @@ export namespace Bit {
       new ProductTypeElement("worth", AlgebraicType.createF32Type()),
       new ProductTypeElement("color", __Color.getTypeScriptAlgebraicType()),
       new ProductTypeElement("moving", AlgebraicType.createBoolType()),
+      new ProductTypeElement("ownedBy", AlgebraicType.createOptionType(AlgebraicType.createIdentityType())),
     ]);
   }
 
