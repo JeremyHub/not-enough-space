@@ -20,7 +20,7 @@ pub fn handle_user_and_oribiting_moon_collision(ctx: &ReducerContext, user: &use
     let angle_to_user = dy.atan2(dx);
 
     // Nudge the orbit angle away from the user
-    let nudge_amount = std::f32::consts::PI / 5.0;
+    let nudge_amount = std::f32::consts::PI / 10.0;
     let angle_diff = (moon.orbit_angle - angle_to_user).rem_euclid(2.0 * std::f32::consts::PI);
 
     // If the moon is "ahead" of the user in its orbit, nudge forward, else backward

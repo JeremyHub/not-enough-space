@@ -34,11 +34,15 @@ import { Color as __Color } from "./color_type";
 
 export type Bit = {
   bitId: number,
+  colIndex: number,
   x: number,
   y: number,
+  dx: number,
+  dy: number,
   size: number,
   worth: number,
   color: __Color,
+  moving: boolean,
 };
 
 /**
@@ -52,11 +56,15 @@ export namespace Bit {
   export function getTypeScriptAlgebraicType(): AlgebraicType {
     return AlgebraicType.createProductType([
       new ProductTypeElement("bitId", AlgebraicType.createI32Type()),
-      new ProductTypeElement("x", AlgebraicType.createI32Type()),
-      new ProductTypeElement("y", AlgebraicType.createI32Type()),
+      new ProductTypeElement("colIndex", AlgebraicType.createI32Type()),
+      new ProductTypeElement("x", AlgebraicType.createF32Type()),
+      new ProductTypeElement("y", AlgebraicType.createF32Type()),
+      new ProductTypeElement("dx", AlgebraicType.createF32Type()),
+      new ProductTypeElement("dy", AlgebraicType.createF32Type()),
       new ProductTypeElement("size", AlgebraicType.createF32Type()),
       new ProductTypeElement("worth", AlgebraicType.createF32Type()),
       new ProductTypeElement("color", __Color.getTypeScriptAlgebraicType()),
+      new ProductTypeElement("moving", AlgebraicType.createBoolType()),
     ]);
   }
 

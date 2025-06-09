@@ -66,3 +66,30 @@ pub fn handle_explosion(ctx: &ReducerContext, x: f32, y: f32, worth: f32, color:
         moving: false,
     });
 }
+
+pub fn update_bits(ctx: &ReducerContext) {
+    for bit in ctx.db.bit().moving().filter(true) {
+        let upd = helpers::move_character(
+            bit.x,
+            bit.y,
+            bit.dx,
+            bit.dy,
+            0.0,
+            0.0,
+            super::BIT_ACCELERATION,
+        );
+        ctx.db.bit().bit_id().update(Bit {
+            col_index: upd.x.round() as i32,
+            x: upd.x,
+            y: upd.y,
+            dx: upd.dx,
+            dy: upd.dy,
+            moving: if bit.dx != 0.0 || bit.dy != 0.0 {
+                true
+            } else {
+                false
+            },
+            ..bit
+        });
+    }
+}

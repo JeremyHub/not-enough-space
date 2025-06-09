@@ -39,6 +39,7 @@ pub fn tick(ctx: &ReducerContext, tick_schedule: TickSchedule) -> Result<(), Str
     }
 
     bit::spawn_bits(ctx);
+    bit::update_bits(ctx);
 
     ai::spawn_ai(ctx);
     ai::update_ai_directions(ctx);

@@ -38,6 +38,7 @@ pub const MAX_BITS: u64 = (WORLD_HEIGHT as u64 *WORLD_WIDTH as u64)/MAX_AREA_PER
 pub const MIN_BIT_WORTH: f32 = 0.5;
 pub const MAX_BIT_WORTH: f32 = 2.5;
 pub const MAX_BIT_SIZE: f32 = MAX_BIT_WORTH;
+pub const BIT_ACCELERATION: f32 = USER_ACCELERATION;
 
 // non-orbiting moon
 pub const NUM_FREE_MOONS: u64 = 200;
