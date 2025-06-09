@@ -9,13 +9,17 @@ pub struct Bit {
     #[auto_inc]
     pub bit_id: i32,
     #[index(btree)]
-    pub x: i32,
-    pub y: i32,
+    pub col_index: i32,
+    pub x: f32,
+    pub y: f32,
+    pub dx: f32,
+    pub dy: f32,
     pub size: f32,
     pub worth: f32,
     pub color: helpers::Color,
+    #[index(btree)]
+    pub moving: bool,
 }
-
 
 pub fn spawn_bits(ctx: &ReducerContext) {
     let current_num_bits = ctx.db.bit().count();
@@ -24,8 +28,8 @@ pub fn spawn_bits(ctx: &ReducerContext) {
         for _ in 0..bits_to_spawn {
             let worth = ctx.rng().gen_range(super::MIN_BIT_WORTH..=super::MAX_BIT_WORTH);
             let size = worth;
-            let x = ctx.rng().gen_range(0..=super::WORLD_WIDTH);
-            let y = ctx.rng().gen_range(0..=super::WORLD_HEIGHT);
+            let x = ctx.rng().gen_range(0..=super::WORLD_WIDTH) as f32;
+            let y = ctx.rng().gen_range(0..=super::WORLD_HEIGHT) as f32;
             let color = helpers::Color {
                 r: ctx.rng().gen_range(0..=255),
                 g: ctx.rng().gen_range(0..=255),
@@ -33,11 +37,15 @@ pub fn spawn_bits(ctx: &ReducerContext) {
             };
             ctx.db.bit().insert(Bit {
                 bit_id: 0,
+                col_index: x.round() as i32,
                 x,
                 y,
+                dx: 0.0,
+                dy: 0.0,
                 size,
                 worth,
                 color,
+                moving: false,
             });
         }
     }
@@ -47,10 +55,14 @@ pub fn handle_explosion(ctx: &ReducerContext, x: f32, y: f32, worth: f32, color:
     // Spawn bits at the moon's position
     ctx.db.bit().insert(Bit {
         bit_id: 0,
-        x: x.round() as i32,
-        y: y.round() as i32,
+        col_index: x.round() as i32,
+        x: x,
+        y: y,
+        dx: 0.0,
+        dy: 0.0,
         size: worth,
         worth,
         color,
+        moving: false,
     });
 }
