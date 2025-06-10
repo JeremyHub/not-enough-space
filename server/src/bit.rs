@@ -58,8 +58,8 @@ pub fn handle_explosion(ctx: &ReducerContext, x: f32, y: f32, worth: f32, color:
     ctx.db.bit().insert(Bit {
         bit_id: 0,
         col_index: x.round() as i32,
-        x: x,
-        y: y,
+        x,
+        y,
         dx: 0.0,
         dy: 0.0,
         size: worth,
@@ -81,14 +81,14 @@ pub fn update_bits(ctx: &ReducerContext) {
             0.0,
             super::BIT_ACCELERATION,
         );
-        let moving = if bit.dx != 0.0 || bit.dy != 0.0 { true } else { false };
+        let moving = bit.dx != 0.0 || bit.dy != 0.0;
         ctx.db.bit().bit_id().update(Bit {
             col_index: upd.x.round() as i32,
             x: upd.x,
             y: upd.y,
             dx: upd.dx,
             dy: upd.dy,
-            moving: moving,
+            moving,
             owned_by: if moving {bit.owned_by} else {None},
             ..bit
         });

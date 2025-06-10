@@ -17,7 +17,7 @@ pub fn sacrifice_health_for_moon_reducer(ctx: &ReducerContext) -> Result<(), Str
         None => return Err("User not found.".to_string()),
     };
 
-    return sacrifice_health_for_moon(ctx, user);
+    sacrifice_health_for_moon(ctx, user)
 }
 
 pub fn sacrifice_health_for_moon(ctx: &ReducerContext, user: user::User) -> Result<(), String> {
@@ -26,14 +26,14 @@ pub fn sacrifice_health_for_moon(ctx: &ReducerContext, user: user::User) -> Resu
     let mut health_to_sacrifice = (user.health*super::PORTION_HEALTH_SACRIFICE).min(super::MAX_HEALTH_SACRIFICE);
     
     if health_to_sacrifice < super::MIN_HEALTH_SACRIFICE {
-        return Err(format!("You dont have enough health to sacrifice."));
+        return Err("You dont have enough health to sacrifice.".to_string());
     }
 
     if !user_moon::can_get_moon_into_orbit(&user, health_to_sacrifice*super::MAX_MOON_SIZE_PER_HEALTH) { // use max here so user can cheese to get the max every time
         if user_moon::can_get_moon_into_orbit(&user, super::MIN_HEALTH_SACRIFICE*super::MAX_MOON_SIZE_PER_HEALTH) {
             health_to_sacrifice = super::MIN_HEALTH_SACRIFICE
         } else {
-            return Err(format!("You already have too many moons."));
+            return Err("You already have too many moons.".to_string());
         }
     }
 
@@ -63,7 +63,7 @@ pub fn sacrifice_health_for_moon(ctx: &ReducerContext, user: user::User) -> Resu
         dy: 0.0,
         dir_vec_x: 0.0,
         dir_vec_y: 0.0,
-        color: moon_color.clone(),
+        color: moon_color,
         health: moon_size,
         size: moon_size,
         orbiting: Some(user.identity),

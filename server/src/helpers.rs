@@ -44,11 +44,11 @@ pub fn wrap_coords(x: f32, y: f32) -> (f32, f32) {
     let mut new_x = x;
     let mut new_y = y;
 
-    if new_x < 0.0 { new_x = super::WORLD_WIDTH as f32 + new_x; }
-    else if new_x > super::WORLD_WIDTH as f32 { new_x = new_x - super::WORLD_WIDTH as f32; }
+    if new_x < 0.0 { new_x += super::WORLD_WIDTH as f32; }
+    else if new_x > super::WORLD_WIDTH as f32 { new_x -= super::WORLD_WIDTH as f32; }
 
-    if new_y < 0.0 { new_y = super::WORLD_HEIGHT as f32 + new_y; }
-    else if new_y >= super::WORLD_HEIGHT as f32 { new_y = new_y - super::WORLD_HEIGHT as f32; }
+    if new_y < 0.0 { new_y += super::WORLD_HEIGHT as f32; }
+    else if new_y >= super::WORLD_HEIGHT as f32 { new_y -= super::WORLD_HEIGHT as f32; }
 
     (new_x, new_y)
 }
@@ -102,7 +102,7 @@ pub fn toroidal_vector(x1: f32, y1: f32, x2: f32, y2: f32) -> (f32, f32) {
             dir_vec_y += super::WORLD_HEIGHT as f32;
         }
     }
-    return (dir_vec_x, dir_vec_y);
+    (dir_vec_x, dir_vec_y)
 }
 
 

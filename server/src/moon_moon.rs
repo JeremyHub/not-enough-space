@@ -11,7 +11,7 @@ fn handle_moon_moon_collision(ctx: &ReducerContext, to_destroy: &mut Vec<i32>, e
     if moon.size > other.size {
         // Moon survives, other is destroyed
         to_destroy.push(other.moon_id);
-        explosions.push((other.x, other.y, other.size, other.color.clone()));
+        explosions.push((other.x, other.y, other.size, other.color));
         // Reduce moon's size
         if let Some(moon_obj) = ctx.db.moon().moon_id().find(moon.moon_id) {
             let new_size = moon.size - other.size;
@@ -25,7 +25,7 @@ fn handle_moon_moon_collision(ctx: &ReducerContext, to_destroy: &mut Vec<i32>, e
     } else if other.size > moon.size {
         // Other survives, moon is destroyed
         to_destroy.push(moon.moon_id);
-        explosions.push((moon.x, moon.y, moon.size, moon.color.clone()));
+        explosions.push((moon.x, moon.y, moon.size, moon.color));
         // Reduce other's size
         if let Some(other_obj) = ctx.db.moon().moon_id().find(other.moon_id) {
             let new_size = other.size - moon.size;
@@ -40,8 +40,8 @@ fn handle_moon_moon_collision(ctx: &ReducerContext, to_destroy: &mut Vec<i32>, e
         // Equal size, both destroyed
         to_destroy.push(moon.moon_id);
         to_destroy.push(other.moon_id);
-        explosions.push((moon.x, moon.y, moon.size, moon.color.clone()));
-        explosions.push((other.x, other.y, other.size, other.color.clone()));
+        explosions.push((moon.x, moon.y, moon.size, moon.color));
+        explosions.push((other.x, other.y, other.size, other.color));
     }
 }
 

@@ -13,7 +13,7 @@ pub fn update_ai_directions(ctx: &ReducerContext) {
     use rand::seq::SliceRandom;
     ai_users.as_mut_slice().shuffle(&mut ctx.rng());
     
-    let num_to_update = ((ai_users.len() as f32) * super::PORTION_AI_USERS_DIRECTION_UPDATED_PER_TICK as f32)
+    let num_to_update = ((ai_users.len() as f32) * super::PORTION_AI_USERS_DIRECTION_UPDATED_PER_TICK)
         .ceil() as usize;
 
     for ai in ai_users.into_iter().take(num_to_update) {

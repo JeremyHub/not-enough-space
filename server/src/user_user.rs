@@ -30,12 +30,10 @@ fn handle_user_user_collision(ctx: &ReducerContext, user1: &user::User, user2: &
 pub fn check_user_user_collisions(ctx: &ReducerContext) {
     for user1 in ctx.db.user().iter() {
         if user1.online || super::UPDATE_OFFLINE_PLAYERS {
-            for range in helpers::wrapped_ranges(user1.x.round() as i32, (user1.size + super::MAX_USER_SIZE as f32) as i32, super::WORLD_WIDTH) {
+            for range in helpers::wrapped_ranges(user1.x.round() as i32, (user1.size + super::MAX_USER_SIZE) as i32, super::WORLD_WIDTH) {
                 for user2 in ctx.db.user().col_index().filter(range) {
-                    if !(user1.identity == user2.identity) && (user2.online || super::UPDATE_OFFLINE_PLAYERS) {
-                        if helpers::toroidal_distance(user1.x, user1.y, user2.x, user2.y) <= (user1.size + user2.size) {
-                            handle_user_user_collision(ctx, &user1, &user2);
-                        }
+                    if (user1.identity != user2.identity) && (user2.online || super::UPDATE_OFFLINE_PLAYERS) && helpers::toroidal_distance(user1.x, user1.y, user2.x, user2.y) <= (user1.size + user2.size) {
+                        handle_user_user_collision(ctx, &user1, &user2);
                     }
                 }
             }

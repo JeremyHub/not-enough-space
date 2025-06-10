@@ -12,10 +12,8 @@ pub fn check_user_bit_collisions(ctx: &ReducerContext) {
             let mut bits_to_eat = Vec::new();
             for range in helpers::wrapped_ranges(user.x.round() as i32, (user.size + super::MAX_BIT_SIZE) as i32, super::WORLD_WIDTH) {
                 for bit in ctx.db.bit().col_index().filter(range) {
-                    if bit.owned_by.is_none() || bit.owned_by == Some(user.identity) {
-                        if helpers::toroidal_distance(user.x, user.y, bit.x, bit.y) <= (user.size + bit.size) {
-                            bits_to_eat.push(bit);
-                        }
+                    if (bit.owned_by.is_none() || bit.owned_by == Some(user.identity)) && helpers::toroidal_distance(user.x, user.y, bit.x, bit.y) <= (user.size + bit.size) {
+                        bits_to_eat.push(bit);
                     }
                 }
             }
