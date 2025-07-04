@@ -441,8 +441,9 @@ function App() {
   const [queriedY, setQueriedY] = useState<number | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [subscriptions, setSubscriptions] = useState<any | null>(null);
-  const canvasWidth = self?.size ? Math.min(Math.round(((self.size) * 100) / 2) * 2, 1500) : null;
-  const canvasHeight = self?.size ? Math.min(Math.round(((self.size) * 100) / 2) * 2, 1500) : null;
+  const canvasWidth = self?.size ? Math.min(Math.max((self.size * 100)/5) + 200, 1500) : null;
+  const canvasHeight = self?.size ? Math.min(Math.max((self.size * 100)/5) + 200, 1500) : null;
+  console.log('Canvas size:', canvasWidth, canvasHeight);
   const renderBuffer = 200;
   const extraUserRenderBuffer = 100;
 
@@ -468,6 +469,8 @@ function App() {
         if (prev === null) return canvasWidth;
         if (prev < canvasWidth) {
           return Math.min(prev + growSpeed, canvasWidth);
+        } else if (prev > canvasWidth) {
+          return Math.max(prev - growSpeed, canvasWidth);
         }
         return prev;
       });
@@ -475,6 +478,8 @@ function App() {
         if (prev === null) return canvasHeight;
         if (prev < canvasHeight) {
           return Math.min(prev + growSpeed, canvasHeight);
+        } else if (prev > canvasHeight) {
+          return Math.max(prev - growSpeed, canvasHeight);
         }
         return prev;
       });
@@ -628,7 +633,7 @@ function App() {
         console.log(key)
         conn.reducers.sacrificeHealthForMoonReducer();
       }
-      pressed.add(key);
+      pressed.add(key.toLowerCase());
       updateDirection();
     };
 
