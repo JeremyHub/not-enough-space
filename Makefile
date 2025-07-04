@@ -23,3 +23,6 @@ delete-and-restart-server:
 
 restart-server:
 	spacetime publish --project-path server nes
+
+delete-server:
+	spacetime delete nes
