@@ -17,12 +17,15 @@ dev-client:
 start-server:
 	spacetime start --in-memory
 
-delete-and-restart-server:
+delete-and-restart-server:	
 	spacetime delete nes
-	spacetime publish --project-path server nes
+	publish-server
 
-restart-server:
-	spacetime publish --project-path server nes
+publish-server:
+	ENV=PROD spacetime publish --project-path server nes
 
 delete-server:
 	spacetime delete nes
+
+generate-client:
+	spacetime generate --lang typescript --out-dir client/src/module_bindings --project-path server
