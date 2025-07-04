@@ -23,26 +23,26 @@ pub fn sacrifice_health_for_moon_reducer(ctx: &ReducerContext) -> Result<(), Str
 pub fn sacrifice_health_for_moon(ctx: &ReducerContext, user: user::User) -> Result<(), String> {
     let moon_size_per_health = ctx.rng().gen_range(super::MIN_MOON_SIZE_PER_HEALTH..=super::MAX_MOON_SIZE_PER_HEALTH);
 
-    let mut health_to_sacrifice = (user.health*super::PORTION_HEALTH_SACRIFICE).min(super::MAX_HEALTH_SACRIFICE);
+    let mut size_to_sacrifice = (user.size*super::PORTION_HEALTH_SACRIFICE).min(super::MAX_HEALTH_SACRIFICE);
     
-    if health_to_sacrifice < super::MIN_HEALTH_SACRIFICE {
+    if size_to_sacrifice < super::MIN_HEALTH_SACRIFICE {
         return Err("You dont have enough health to sacrifice.".to_string());
     }
 
-    if !user_moon::can_get_moon_into_orbit(&user, health_to_sacrifice*super::MAX_MOON_SIZE_PER_HEALTH) { // use max here so user can cheese to get the max every time
+    if !user_moon::can_get_moon_into_orbit(&user, size_to_sacrifice*super::MAX_MOON_SIZE_PER_HEALTH) { // use max here so user can cheese to get the max every time
         if user_moon::can_get_moon_into_orbit(&user, super::MIN_HEALTH_SACRIFICE*super::MAX_MOON_SIZE_PER_HEALTH) {
-            health_to_sacrifice = super::MIN_HEALTH_SACRIFICE
+            size_to_sacrifice = super::MIN_HEALTH_SACRIFICE
         } else {
             return Err("You already have too many moons.".to_string());
         }
     }
 
-    let moon_size = health_to_sacrifice * moon_size_per_health;
+    let moon_size = size_to_sacrifice * moon_size_per_health;
 
     let (moon_color, orbital_velocity) = moon::new_moon_params(ctx, &user.color);
 
     // Subtract health and update user, and add to total_moon_size_oribiting
-    let new_health = user.health - health_to_sacrifice;
+    let new_health = user.health - size_to_sacrifice;
     let new_size = user::get_user_size(new_health);
     let new_total_moon_size_oribiting = user.total_moon_size_oribiting + moon_size;
     ctx.db.user().identity().update(user::User {

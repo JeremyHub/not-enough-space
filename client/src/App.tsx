@@ -137,6 +137,7 @@ type DrawProps = {
   bits: Map<number, Bit>;
   moons: Map<number, Moon>;
   identity: Identity;
+  moonTrails?: Map<number, Array<{ x: number; y: number }>>;
 };
 
 function renderCircle(ctx: CanvasRenderingContext2D, size: number, x: number, y: number, color: Color, filled: boolean = true) {
@@ -190,7 +191,7 @@ function renderWithWrap(
 }
 
 const draw = (ctx: CanvasRenderingContext2D | null, props: DrawProps) => {
-  const { metadata, canvasWidth, canvasHeight, renderBuffer, users, self, bits, moons, identity } = props;
+  const { metadata, canvasWidth, canvasHeight, renderBuffer, users, self, bits, moons, identity, moonTrails } = props;
   if (!ctx) return;
 
   ctx.fillStyle = 'rgb(23, 23, 23)';
@@ -204,7 +205,7 @@ const draw = (ctx: CanvasRenderingContext2D | null, props: DrawProps) => {
   const worldLeft = self.x - canvasWidth / 2;
   const worldTop = self.y - canvasHeight / 2;
 
-  let firstGridX = Math.floor(worldLeft / GRID_SIZE) * GRID_SIZE;
+  const firstGridX = Math.floor(worldLeft / GRID_SIZE) * GRID_SIZE;
   for (
     let x = firstGridX;
     x < worldLeft + canvasWidth;
@@ -217,7 +218,7 @@ const draw = (ctx: CanvasRenderingContext2D | null, props: DrawProps) => {
     ctx.stroke();
   }
 
-  let firstGridY = Math.floor(worldTop / GRID_SIZE) * GRID_SIZE;
+  const firstGridY = Math.floor(worldTop / GRID_SIZE) * GRID_SIZE;
   for (
     let y = firstGridY;
     y < worldTop + canvasHeight;
@@ -298,6 +299,34 @@ const draw = (ctx: CanvasRenderingContext2D | null, props: DrawProps) => {
 
   renderCircle(ctx, self.size, canvasWidth / 2, canvasHeight / 2, self.color);
 
+  // Draw moon trails before drawing moons
+  if (moonTrails) {
+    moons.forEach(moon => {
+      const trail = moonTrails.get(moon.moonId) || [];
+      trail.forEach((pos, idx) => {
+        const { x, y } = toScreen(pos);
+        renderWithWrap(
+          (px, py) => {
+            ctx.save();
+            // Fade older trail segments more
+            const alpha = 0.2 * (idx + 1) / trail.length;
+            ctx.globalAlpha = alpha;
+            renderCircle(ctx, moon.size, px, py, moon.color);
+            ctx.globalAlpha = 1.0;
+            ctx.restore();
+          },
+          metadata,
+          canvasWidth,
+          canvasHeight,
+          renderBuffer,
+          self,
+          x,
+          y,
+        );
+      });
+    });
+  }
+
   moons.forEach(moon => {
     const { x, y } = toScreen(moon);
     renderWithWrap(
@@ -364,8 +393,37 @@ function App() {
   const self = identity ? users.get(identity.toHexString()) : null;
   const bits = useBits(conn);
   const moons = useMoons(conn);
-  const [quriedX, setQuriedX] = useState<number | null>(null);
-  const [quriedY, setQuriedY] = useState<number | null>(null);
+
+  // Add moonTrails state: Map<moonId, Array<{x, y}>>
+  const [moonTrails, setMoonTrails] = useState<Map<number, Array<{ x: number; y: number }>>>(new Map());
+
+  // Update moonTrails when moons move
+  useEffect(() => {
+    setMoonTrails(prev => {
+      const newTrails = new Map(prev);
+      moons.forEach(moon => {
+        const prevTrail = newTrails.get(moon.moonId) || [];
+        // Only add to trail if position changed
+        if (
+          prevTrail.length === 0 ||
+          prevTrail[prevTrail.length - 1].x !== moon.x ||
+          prevTrail[prevTrail.length - 1].y !== moon.y
+        ) {
+          // Limit trail length to, e.g., 20
+          const updatedTrail = [...prevTrail, { x: moon.x, y: moon.y }].slice(-20);
+          newTrails.set(moon.moonId, updatedTrail);
+        }
+      });
+      // Remove trails for moons that no longer exist
+      Array.from(newTrails.keys()).forEach(moonId => {
+        if (!moons.has(moonId)) newTrails.delete(moonId);
+      });
+      return newTrails;
+    });
+  }, [moons]);
+
+  const [queriedX, setQueriedX] = useState<number | null>(null);
+  const [queriedY, setQueriedY] = useState<number | null>(null);
   const [bitSubscription, setBitSubscription] = useState<any | null>(null);
   const canvasWidth = self?.size ? Math.min(Math.round(((self.size) * 100) / 2) * 2, 1500) : null;
   const canvasHeight = self?.size ? Math.min(Math.round(((self.size) * 100) / 2) * 2, 1500) : null;
@@ -471,12 +529,12 @@ function App() {
 
   function subscribeToNearbyObjs(conn: DbConnection, metadata: Metadata, x: number, y: number) {
 
-    if (!canvasHeight || !canvasWidth || (quriedX && quriedY && (Math.abs(quriedX-x) < renderBuffer && Math.abs(quriedY-y) < renderBuffer))) {
+    if (!canvasHeight || !canvasWidth || (queriedX && queriedY && (Math.abs(queriedX-x) < renderBuffer && Math.abs(queriedY-y) < renderBuffer))) {
       return
     }
 
-    setQuriedX(Math.round(x));
-    setQuriedY(Math.round(y));
+    setQueriedX(Math.round(x));
+    setQueriedY(Math.round(y));
   
     function getBaseQuery (renderBuffer: number): string {
       if (!canvasHeight || !canvasWidth) {
@@ -602,7 +660,8 @@ function App() {
           self,
           bits,
           moons,
-          identity
+          identity,
+          moonTrails // add this prop
         }}
       />
     </div>

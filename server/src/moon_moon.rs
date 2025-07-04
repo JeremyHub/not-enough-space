@@ -1,10 +1,12 @@
 use spacetimedb::{ReducerContext};
 
 use crate::moon::moon as _;
+use crate::user::user as _;
 
 use super::moon;
 use super::helpers;
 use super::bit;
+use super::user;
 
 fn handle_moon_moon_collision(ctx: &ReducerContext, to_destroy: &mut Vec<i32>, explosions: &mut Vec<(f32, f32, f32, helpers::Color)>, moon: &moon::Moon, other: moon::Moon) {
     // Only destroy the smaller moon, reduce the size of the larger moon by the size of the smaller
@@ -22,6 +24,23 @@ fn handle_moon_moon_collision(ctx: &ReducerContext, to_destroy: &mut Vec<i32>, e
                 ..moon_obj
             });
         }
+        // update both player's total moon sizes
+        if let Some(owner) = moon.orbiting {
+            if let Some(owner_obj) = ctx.db.user().identity().find(owner) {
+                ctx.db.user().identity().update(user::User {
+                    total_moon_size_oribiting: owner_obj.total_moon_size_oribiting - other.size,
+                    ..owner_obj
+                });
+            }
+        }
+        if let Some(other_owner) = other.orbiting {
+            if let Some(other_owner_obj) = ctx.db.user().identity().find(other_owner) {
+                ctx.db.user().identity().update(user::User {
+                    total_moon_size_oribiting: other_owner_obj.total_moon_size_oribiting - moon.size,
+                    ..other_owner_obj
+                });
+            }
+        }
     } else if other.size > moon.size {
         // Other survives, moon is destroyed
         to_destroy.push(moon.moon_id);
@@ -36,12 +55,46 @@ fn handle_moon_moon_collision(ctx: &ReducerContext, to_destroy: &mut Vec<i32>, e
                 ..other_obj
             });
         }
+        // update both player's total moon sizes
+        if let Some(owner) = moon.orbiting {
+            if let Some(owner_obj) = ctx.db.user().identity().find(owner) {
+                ctx.db.user().identity().update(user::User {
+                    total_moon_size_oribiting: owner_obj.total_moon_size_oribiting - moon.size,
+                    ..owner_obj
+                });
+            }
+        }
+        if let Some(other_owner) = other.orbiting {
+            if let Some(other_owner_obj) = ctx.db.user().identity().find(other_owner) {
+                ctx.db.user().identity().update(user::User {
+                    total_moon_size_oribiting: other_owner_obj.total_moon_size_oribiting - other.size,
+                    ..other_owner_obj
+                });
+            }
+        }
     } else {
         // Equal size, both destroyed
         to_destroy.push(moon.moon_id);
         to_destroy.push(other.moon_id);
         explosions.push((moon.x, moon.y, moon.size, moon.color));
         explosions.push((other.x, other.y, other.size, other.color));
+        // Update both players' total moon sizes
+        if let Some(owner) = moon.orbiting {
+            if let Some(owner_obj) = ctx.db.user().identity().find(owner) {
+                ctx.db.user().identity().update(user::User {
+                    total_moon_size_oribiting: owner_obj.total_moon_size_oribiting - moon.size,
+                    ..owner_obj
+                });
+            }
+        }
+        if let Some(other_owner) = other.orbiting {
+            if let Some(other_owner_obj) = ctx.db.user().identity().find(other_owner) {
+                ctx.db.user().identity().update(user::User {
+                    total_moon_size_oribiting: other_owner_obj.total_moon_size_oribiting - other.size,
+                    ..other_owner_obj
+                });
+            }
+        }
     }
 }
 
