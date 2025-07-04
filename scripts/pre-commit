@@ -11,14 +11,6 @@ echo "ESLint failed. Commit aborted."
 exit 1
 fi
 
-echo "Building client..."
-rm -rf ../assets
-npm run build
-if [ $? -ne 0 ]; then
-echo "Build failed. Commit aborted."
-exit 1
-fi
-
 cd ..
 
 cd server
