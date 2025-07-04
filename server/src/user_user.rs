@@ -6,7 +6,21 @@ use super::user;
 use super::helpers;
 
 fn handle_user_user_collision(ctx: &ReducerContext, user1: &user::User, user2: &user::User) {
-    let (char1_upd, char2_upd) = match helpers::elastic_collision(user1.x, user1.y, user1.dx, user1.dy, user1.size, user2.x, user2.y, user2.dx, user2.dy, user2.size) {
+    let char1 = helpers::Character {
+        x: user1.x,
+        y: user1.y,
+        dx: user1.dx,
+        dy: user1.dy,
+        size: user1.size,
+    };
+    let char2 = helpers::Character {
+        x: user2.x,
+        y: user2.y,
+        dx: user2.dx,
+        dy: user2.dy,
+        size: user2.size,
+    };
+    let (char1_upd, char2_upd) = match helpers::elastic_collision(&char1, &char2) {
         Some(value) => value,
         None => return,
     };

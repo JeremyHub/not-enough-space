@@ -424,7 +424,8 @@ function App() {
 
   const [queriedX, setQueriedX] = useState<number | null>(null);
   const [queriedY, setQueriedY] = useState<number | null>(null);
-  const [bitSubscription, setBitSubscription] = useState<any | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [subscriptions, setSubscriptions] = useState<any | null>(null);
   const canvasWidth = self?.size ? Math.min(Math.round(((self.size) * 100) / 2) * 2, 1500) : null;
   const canvasHeight = self?.size ? Math.min(Math.round(((self.size) * 100) / 2) * 2, 1500) : null;
   const renderBuffer = 200;
@@ -560,8 +561,8 @@ function App() {
       .subscriptionBuilder()
       .subscribe([bitQuery, moonQuery, userQuery]);
 
-    setBitSubscription(handle);
-    bitSubscription?.unsubscribe();
+    setSubscriptions(handle);
+    subscriptions?.unsubscribe();
   }
 
   useEffect(() => {

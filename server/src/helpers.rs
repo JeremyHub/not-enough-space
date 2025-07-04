@@ -7,6 +7,14 @@ pub struct Color {
     pub b: i32,
 }
 
+pub struct Character {
+    pub x: f32,
+    pub y: f32,
+    pub dx: f32,
+    pub dy: f32,
+    pub size: f32,
+}
+
 pub struct CharacterUpdate {
     pub x: f32,
     pub y: f32,
@@ -75,7 +83,9 @@ pub fn wrapped_ranges(center: i32, radius: i32, world_max: i32) -> Vec<core::ops
             0..(range_top - world_max)
         ]
     } else {
-        vec![range_bottom..range_top]
+        #[allow(clippy::single_range_in_vec_init)] {
+            vec![range_bottom..range_top]
+        }
     }
 }
 
@@ -105,37 +115,39 @@ pub fn toroidal_vector(x1: f32, y1: f32, x2: f32, y2: f32) -> (f32, f32) {
     (dir_vec_x, dir_vec_y)
 }
 
-
-pub fn elastic_collision(char1_x: f32, char1_y: f32, char1_dx: f32, char1_dy: f32, char1_size: f32, char2_x: f32, char2_y: f32, char2_dx: f32, char2_dy: f32, char2_size: f32) -> Option<(CharacterUpdate, CharacterUpdate)> {
-    let (dx, dy) = toroidal_vector(char1_x, char1_y, char2_x, char2_y);
+pub fn elastic_collision(
+    char1: &Character,
+    char2: &Character,
+) -> Option<(CharacterUpdate, CharacterUpdate)> {
+    let (dx, dy) = toroidal_vector(char1.x, char1.y, char2.x, char2.y);
     let dist = (dx * dx + dy * dy).sqrt();
     if dist == 0.0 {
         return None; // avoid division by zero
     }
-    let min_dist = char1_size + char2_size;
+    let min_dist = char1.size + char2.size;
     if dist > min_dist {
         return None;
     }
-    let m1 = char1_size;
-    let m2 = char2_size;
+    let m1 = char1.size;
+    let m2 = char2.size;
     let nx = dx / dist;
     let ny = dy / dist;
-    let dvx = char1_dx - char2_dx;
-    let dvy = char1_dy - char2_dy;
+    let dvx = char1.dx - char2.dx;
+    let dvy = char1.dy - char2.dy;
     let rel_vel = dvx * nx + dvy * ny;
     if rel_vel > 0.0 {
         return None; // already moving apart
     }
     let impulse = (2.0 * rel_vel) / (m1 + m2);
-    let new_dx1 = char1_dx - impulse * m2 * nx;
-    let new_dy1 = char1_dy - impulse * m2 * ny;
-    let new_dx2 = char2_dx + impulse * m1 * nx;
-    let new_dy2 = char2_dy + impulse * m1 * ny;
+    let new_dx1 = char1.dx - impulse * m2 * nx;
+    let new_dy1 = char1.dy - impulse * m2 * ny;
+    let new_dx2 = char2.dx + impulse * m1 * nx;
+    let new_dy2 = char2.dy + impulse * m1 * ny;
     let overlap = min_dist - dist;
     let push1 = overlap * (m2 / (m1 + m2));
     let push2 = overlap * (m1 / (m1 + m2));
-    let (new_x1, new_y1) = wrap_coords(char1_x + nx * push1, char1_y + ny * push1);
-    let (new_x2, new_y2) = wrap_coords(char2_x - nx * push2, char2_y - ny * push2);
+    let (new_x1, new_y1) = wrap_coords(char1.x + nx * push1, char1.y + ny * push1);
+    let (new_x2, new_y2) = wrap_coords(char2.x - nx * push2, char2.y - ny * push2);
     Some((
         CharacterUpdate {
             x: new_x1,

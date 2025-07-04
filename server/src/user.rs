@@ -27,7 +27,7 @@ pub struct User {
 }
 
 pub fn get_user_size(health: f32) -> f32 {
-    (100.0 * (0.0025 * health).atan() + 5.0).min(super::MAX_USER_SIZE).max(0.0)
+    (100.0 * (0.0025 * health).atan() + 5.0).clamp(0.0, super::MAX_USER_SIZE)
 }
 
 pub fn handle_user_death(ctx: &ReducerContext, user: User) {

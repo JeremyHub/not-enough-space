@@ -107,7 +107,7 @@ fn move_free_moons(ctx: &ReducerContext, moon: Moon) {
 
 pub fn new_moon_params(ctx: &ReducerContext, color: &helpers::Color) -> (helpers::Color, f32) {
     let mut rng = ctx.rng();
-    let clamp = |v: i32| v.max(0).min(255);
+    let clamp = |v: i32| v.clamp(0, 255);
     let offset = rng.gen_range(-super::MOON_COLOR_DIFF..=super::MOON_COLOR_DIFF);
     let target_color = helpers::Color {
         r: clamp(color.r + offset),
@@ -251,9 +251,9 @@ fn animate_moon_color(ctx: &ReducerContext, moon: Moon) {
                 new_b += (target_color.b - moon.color.b).signum() * super::MOON_COLOR_ANIMATION_SPEED;
             }
             let new_color = helpers::Color {
-                r: new_r.max(0).min(255),
-                g: new_g.max(0).min(255),
-                b: new_b.max(0).min(255),
+                r: new_r.clamp(0, 255),
+                g: new_g.clamp(0, 255),
+                b: new_b.clamp(0, 255),
             };
             ctx.db.moon().moon_id().update(Moon {
                 color: new_color,
