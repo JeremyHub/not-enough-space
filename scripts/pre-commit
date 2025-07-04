@@ -1,0 +1,31 @@
+#!/bin/sh
+
+echo "Setting up git hooks..."
+
+cd client
+
+echo "Running eslint..."
+npm run lint
+if [ $? -ne 0 ]; then
+echo "ESLint failed. Commit aborted."
+exit 1
+fi
+
+echo "Building client..."
+rm -rf ../assets
+npm run build
+if [ $? -ne 0 ]; then
+echo "Build failed. Commit aborted."
+exit 1
+fi
+
+cd ../server
+
+echo "Running cargo clippy..."
+(cargo clippy --all-targets --all-features -- -D warnings)
+if [ $? -ne 0 ]; then
+echo "Clippy failed. Commit aborted."
+exit 1
+fi
+
+exit 0
