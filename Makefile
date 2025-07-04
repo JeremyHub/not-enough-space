@@ -17,6 +17,9 @@ dev-client:
 start-server:
 	spacetime start --in-memory
 
-delete-and-restart:
+delete-and-restart-server:
 	spacetime delete nes
+	spacetime publish --project-path server nes
+
+restart-server:
 	spacetime publish --project-path server nes

@@ -53,20 +53,23 @@ pub fn handle_user_and_oribiting_moon_collision(ctx: &ReducerContext, user: &use
         ..moon
     });
     // spawn a bit at the collision point, going twards the user who owns the moon that did the hit, owned by the owner of the moon
-    if let Some(owner) = moon.orbiting {
-        ctx.db.bit().insert(bit::Bit {
-            bit_id: 0,
-            col_index: moon.x.round() as i32,
-            x: moon.x,
-            y: moon.y,
-            dx: (user.x - moon.x) * 3.0,
-            dy: (user.y - moon.y) * 3.0,
-            color: moon.color,
-            size: moon.size,
-            worth: moon.size,
-            owned_by: Some(owner),
-            moving: true,
-        });
+    if let Some(owner_identity) = moon.orbiting {
+        if let Some(owner) = ctx.db.user().identity().find(owner_identity) {
+            let (dx, dy) = helpers::toroidal_vector(owner.x, owner.y, user.x, user.y);
+            ctx.db.bit().insert(bit::Bit {
+                bit_id: 0,
+                col_index: moon.x.round() as i32,
+                x: moon.x,
+                y: moon.y,
+                dx: dx * 0.5,
+                dy: dy * 0.5,
+                color: moon.color,
+                size: moon.size,
+                worth: moon.size,
+                owned_by: Some(owner_identity),
+                moving: true,
+            });
+        }
     }
 }
 

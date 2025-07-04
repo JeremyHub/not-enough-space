@@ -436,7 +436,7 @@ function App() {
 
     useEffect(() => {
     let raf: number;
-    const growSpeed = 0.1;
+    const growSpeed = 0.5;
 
     
     function animate() {
