@@ -19,11 +19,9 @@ echo "Build failed. Commit aborted."
 exit 1
 fi
 
-echo "Adding built assets to git..."
-git add ../.
-git add ../index.html
+cd ..
 
-cd ../server
+cd server
 
 echo "Running cargo clippy..."
 (cargo clippy --all-targets --all-features -- -D warnings)

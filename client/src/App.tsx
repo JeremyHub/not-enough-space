@@ -137,7 +137,7 @@ type DrawProps = {
   bits: Map<number, Bit>;
   moons: Map<number, Moon>;
   identity: Identity;
-  moonTrails?: Map<number, Array<{ x: number; y: number }>>;
+  moonTrails?: Map<number, Array<{ relX: number; relY: number; parentId: string }>>;
 };
 
 function renderCircle(ctx: CanvasRenderingContext2D, size: number, x: number, y: number, color: Color, filled: boolean = true) {
@@ -303,8 +303,14 @@ const draw = (ctx: CanvasRenderingContext2D | null, props: DrawProps) => {
   if (moonTrails) {
     moons.forEach(moon => {
       const trail = moonTrails.get(moon.moonId) || [];
-      trail.forEach((pos, idx) => {
-        const { x, y } = toScreen(pos);
+      trail.forEach((trailPoint, idx) => {
+        // Find the parent user for this trail point
+        const parent = users.get(trailPoint.parentId);
+        if (!parent) return;
+        // Convert relative to absolute
+        const absX = parent.x + trailPoint.relX;
+        const absY = parent.y + trailPoint.relY;
+        const { x, y } = toScreen({ x: absX, y: absY });
         renderWithWrap(
           (px, py) => {
             ctx.save();
@@ -394,23 +400,32 @@ function App() {
   const bits = useBits(conn);
   const moons = useMoons(conn);
 
-  // Add moonTrails state: Map<moonId, Array<{x, y}>>
-  const [moonTrails, setMoonTrails] = useState<Map<number, Array<{ x: number; y: number }>>>(new Map());
+  // Add moonTrails state: Map<moonId, Array<{ relX: number; relY: number; parentId: string }>>
+  const [moonTrails, setMoonTrails] = useState<
+    Map<number, Array<{ relX: number; relY: number; parentId: string }>>
+  >(new Map());
 
-  // Update moonTrails when moons move
+  // Update moonTrails when moons move (relative to their parent user)
   useEffect(() => {
     setMoonTrails(prev => {
       const newTrails = new Map(prev);
       moons.forEach(moon => {
+        // Use moon.orbiting (Identity | undefined) as the parent user
+        const parentId = moon.orbiting?.toHexString?.() || null;
+        if (!parentId || !users.has(parentId)) return;
+        const parent = users.get(parentId);
+        if (!parent) return;
+        const relX = moon.x - parent.x;
+        const relY = moon.y - parent.y;
         const prevTrail = newTrails.get(moon.moonId) || [];
         // Only add to trail if position changed
         if (
           prevTrail.length === 0 ||
-          prevTrail[prevTrail.length - 1].x !== moon.x ||
-          prevTrail[prevTrail.length - 1].y !== moon.y
+          prevTrail[prevTrail.length - 1].relX !== relX ||
+          prevTrail[prevTrail.length - 1].relY !== relY
         ) {
           // Limit trail length to, e.g., 20
-          const updatedTrail = [...prevTrail, { x: moon.x, y: moon.y }].slice(-20);
+          const updatedTrail = [...prevTrail, { relX, relY, parentId }].slice(-20);
           newTrails.set(moon.moonId, updatedTrail);
         }
       });
@@ -420,7 +435,7 @@ function App() {
       });
       return newTrails;
     });
-  }, [moons]);
+  }, [moons, users]);
 
   const [queriedX, setQueriedX] = useState<number | null>(null);
   const [queriedY, setQueriedY] = useState<number | null>(null);
