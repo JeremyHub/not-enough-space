@@ -29,7 +29,7 @@ pub fn sacrifice_health_for_moon(ctx: &ReducerContext, user: user::User) -> Resu
         return Err("You dont have enough health to sacrifice.".to_string());
     }
 
-    if !user_moon::can_get_moon_into_orbit(&user, size_to_sacrifice*super::MAX_MOON_SIZE_PER_HEALTH) { // use max here so user can cheese to get the max every time
+    if !user_moon::can_get_moon_into_orbit(&user, size_to_sacrifice*super::MAX_MOON_SIZE_PER_HEALTH) { // use max here so user cant cheese to get the max every time
         if user_moon::can_get_moon_into_orbit(&user, super::MIN_HEALTH_SACRIFICE*super::MAX_MOON_SIZE_PER_HEALTH) {
             size_to_sacrifice = super::MIN_HEALTH_SACRIFICE
         } else {

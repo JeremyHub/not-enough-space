@@ -20,7 +20,7 @@ exit 1
 fi
 
 echo "Adding built assets to git..."
-git add ../assets
+git add ../.
 git add ../index.html
 
 cd ../server
