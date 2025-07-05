@@ -29,7 +29,7 @@ function App() {
           }} />
         </>
       }
-      {canvasOpen && connectionForm && <DBContextProvider connected={connected} setConnected={setConnected} uri={connectionForm.uri}>
+      {canvasOpen && connectionForm && <DBContextProvider connected={connected} setConnected={setConnected} connectionForm={connectionForm}>
         { connected && <CanvasWithInputHandler /> }
       </DBContextProvider>}
     </div>

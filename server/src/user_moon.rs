@@ -45,6 +45,7 @@ pub fn handle_user_and_oribiting_moon_collision(ctx: &ReducerContext, user: &use
         health: new_health,
         size: new_size,
         color: user.color,
+        username: user.username.clone(),
         ..*user
     });
     ctx.db.moon().moon_id().update(moon::Moon {

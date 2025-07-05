@@ -37,6 +37,7 @@ import { Color as __Color } from "./color_type";
 export type User = {
   identity: Identity,
   online: boolean,
+  username: string,
   colIndex: number,
   x: number,
   y: number,
@@ -64,6 +65,7 @@ export namespace User {
     return AlgebraicType.createProductType([
       new ProductTypeElement("identity", AlgebraicType.createIdentityType()),
       new ProductTypeElement("online", AlgebraicType.createBoolType()),
+      new ProductTypeElement("username", AlgebraicType.createStringType()),
       new ProductTypeElement("colIndex", AlgebraicType.createI32Type()),
       new ProductTypeElement("x", AlgebraicType.createF32Type()),
       new ProductTypeElement("y", AlgebraicType.createF32Type()),

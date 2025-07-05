@@ -20,6 +20,7 @@ pub fn update_ai_directions(ctx: &ReducerContext) {
         ctx.db.user().identity().update(user::User {
             dir_vec_x: (ctx.rng().gen_range(0..=100) as f32 / 100.0) - 1.0,
             dir_vec_y: (ctx.rng().gen_range(0..=100) as f32 / 100.0) - 1.0,
+            username: ai.username.clone(),
             ..ai
         });
         if ctx.rng().gen_bool(super::CHANCE_UPDATED_AI_SPAWNS_MOON) {
@@ -42,6 +43,7 @@ pub fn spawn_ai(ctx: &ReducerContext) {
             ctx.db.user().insert(user::User {
                 identity: Identity::from_be_byte_array(ctx.rng().gen()),
                 online: true,
+                username: format!("AI_{}", current_num_ais + 1),
                 x,
                 col_index: x.round() as i32,
                 y: ctx.rng().gen_range(0..=super::WORLD_HEIGHT) as f32,

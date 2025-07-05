@@ -25,6 +25,7 @@ pub const USER_ACCELERATION: f32 = 2.0;
 pub const USER_STARTING_HEALTH: f32 = 1.0;
 pub const SPEED_BOOST_DECAY: f32 = 0.95;
 pub const MAX_USER_SIZE: f32 = 200.0;
+pub const MIN_USERNAME_LENGTH: usize = 2;
 
 // moon spawning
 pub const MOON_COLOR_DIFF: i32 = 50;

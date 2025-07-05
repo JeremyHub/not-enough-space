@@ -1,4 +1,3 @@
-use spacetimedb::rand::seq::SliceRandom;
 use spacetimedb::{reducer, ReducerContext, Table};
 use spacetimedb::rand::Rng;
 
@@ -93,47 +92,46 @@ pub fn set_dir_vec(ctx: &ReducerContext, dir_vec_x: f32, dir_vec_y: f32) -> Resu
     }
 }
 
+#[reducer]
+pub fn set_user_meta(ctx: &ReducerContext, username: String, color: helpers::Color) -> Result<(), String> {
+    if username.len() < super::MIN_USERNAME_LENGTH {
+        log::warn!("User {} tried to connect with a too short username: {}", ctx.sender, username);
+        return Err("Username is too short".to_string());
+    }
+
+    fn is_color_too_white_or_black(color: &helpers::Color) -> bool {
+        let brightness = 0.299 * color.r as f32 + 0.587 * color.g as f32 + 0.114 * color.b as f32;
+        !(50.0..=200.0).contains(&brightness)
+    }
+
+    if is_color_too_white_or_black(&color) {
+        log::warn!("User {username} tried to connect with a color that is too white or black: {color:?}");
+        return Err("Invalid color".to_string());
+    }
+
+    if let Some(user) = ctx.db.user().identity().find(ctx.sender) {
+        ctx.db.user().identity().update(user::User { 
+            username,
+            color,
+            ..user
+        });
+        Ok(())
+    } else {
+        Err("Cannot set user meta for unknown user".to_string())
+    }
+}
+
 #[reducer(client_connected)]
 pub fn client_connected(ctx: &ReducerContext) {
     if let Some(user) = ctx.db.user().identity().find(ctx.sender) {
         ctx.db.user().identity().update(user::User { online: true, ..user });
     } else {
-        // Custom color generation logic
         let mut rng = ctx.rng();
-        let mut channels = [0, 1, 2];
-        channels.shuffle(&mut rng);
-
-        let mut color_vals = [0i32; 3];
-
-        // Pick first channel and assign random value
-        let first_idx = channels[0];
-        color_vals[first_idx] = rng.gen_range(50..=205);
-
-        // Pick second channel, value must not be within const
-        let second_idx = channels[1];
-        let mut second_val;
-        loop {
-            second_val = rng.gen_range(50..=205);
-            if (second_val - color_vals[first_idx]).abs() >= super::USER_SECOND_COLOR_ABS_DIFF {
-                break;
-            }
-        }
-        color_vals[second_idx] = second_val;
-
-        // Pick third channel, assign random value
-        let third_idx = channels[2];
-        color_vals[third_idx] = rng.gen_range(50..=205);
-
-        let color = helpers::Color {
-            r: color_vals[0],
-            g: color_vals[1],
-            b: color_vals[2],
-        };
-
         let x = rng.gen_range(0..=super::WORLD_WIDTH) as f32;
         ctx.db.user().insert(user::User {
             identity: ctx.sender,
             online: true,
+            username: "connecting...".to_string(),
             x,
             col_index: x.round() as i32,
             y: rng.gen_range(0..=super::WORLD_HEIGHT) as f32,
@@ -141,7 +139,11 @@ pub fn client_connected(ctx: &ReducerContext) {
             dy: 0.0,
             dir_vec_x: 0.0,
             dir_vec_y: 0.0,
-            color,
+            color: helpers::Color {
+                r: 255,
+                g: 0,
+                b: 0,
+            },
             health: super::USER_STARTING_HEALTH,
             size: user::get_user_size(super::USER_STARTING_HEALTH),
             total_moon_size_oribiting: 0.0,

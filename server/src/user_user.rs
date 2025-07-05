@@ -30,6 +30,7 @@ fn handle_user_user_collision(ctx: &ReducerContext, user1: &user::User, user2: &
         dy: char1_upd.dy,
         x: char1_upd.x,
         y: char1_upd.y,
+        username: user1.username.clone(),
         ..*user1
     });
     ctx.db.user().identity().update(user::User {
@@ -37,6 +38,7 @@ fn handle_user_user_collision(ctx: &ReducerContext, user1: &user::User, user2: &
         dy: char2_upd.dy,
         x: char2_upd.x,
         y: char2_upd.y,
+        username: user2.username.clone(),   
         ..*user2
     });
 }

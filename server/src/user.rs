@@ -9,6 +9,7 @@ pub struct User {
     #[primary_key]
     pub identity: Identity,
     pub online: bool,
+    pub username: String,
     #[index(btree)]
     pub col_index: i32,
     pub x: f32,
@@ -37,7 +38,6 @@ pub fn handle_user_death(ctx: &ReducerContext, user: User) {
             ctx.db.moon().delete(moon);
         }
     }
-    // TODO handle this on the client side
     ctx.db.user().delete(user);
 }
 

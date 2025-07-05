@@ -3,6 +3,8 @@ import { Bit, Moon, DbConnection, ErrorContext, EventContext, Metadata, User } f
 import { Identity } from '@clockworklabs/spacetimedb-sdk';
 import React from 'react';
 import { DBContext } from './DBContext';
+import { ConnectionFormSchema } from './ConnectionForm';
+import z from 'zod';
 
 function useMetadata(conn: DbConnection | null): Metadata | null {
   const [metadata, setMetadata] = useState<Metadata | null>(null);
@@ -131,12 +133,12 @@ function useBits(conn: DbConnection | null): Map<number, Bit> {
 export function DBContextProvider({
   connected,
   setConnected,
-  uri,
+  connectionForm,
   children,
 }: {
   connected: boolean;
   setConnected: (connected: boolean) => void;
-  uri: string;
+  connectionForm: z.infer<typeof ConnectionFormSchema>;
   children: React.ReactNode;
 }) {
   const [identity, setIdentity] = useState<Identity | null>(null);
@@ -183,8 +185,20 @@ export function DBContextProvider({
             'Connected to SpacetimeDB with identity:',
             identity.toHexString()
           );
-  
-          subscribeToQueries(conn, [`SELECT * FROM user WHERE identity = '${identity.toHexString()}';`, "SELECT * FROM metadata;"]);
+
+          conn.reducers.setUserMeta(
+            connectionForm.username,
+            {
+              r: parseInt(connectionForm.color.slice(1, 3), 16),
+              g: parseInt(connectionForm.color.slice(3, 5), 16),
+              b: parseInt(connectionForm.color.slice(5, 7), 16),
+            }
+          );
+
+          subscribeToQueries(conn, [
+            `SELECT * FROM user WHERE identity = '${identity.toHexString()}';`,
+            "SELECT * FROM metadata;"
+          ]);
         };
   
         const onDisconnect = () => {
@@ -198,8 +212,7 @@ export function DBContextProvider({
   
         setConn(
           DbConnection.builder()
-            // .withUri('ws://localhost:3000')
-            .withUri(uri)
+            .withUri(connectionForm.uri)
             .withModuleName('nes')
             // .withToken(localStorage.getItem('auth_token') || '')
             .withToken('') // use the above line instead for persisting connection across refreshes
@@ -208,7 +221,7 @@ export function DBContextProvider({
             .onConnectError(onConnectError)
             .build()
         );
-    }, []);
+    }, [connectionForm, setConnected]);
   
     useEffect(() => {
       function subscribeToNearbyObjs(conn: DbConnection, metadata: Metadata, x: number, y: number) {

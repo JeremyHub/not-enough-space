@@ -42,6 +42,8 @@ import { SacrificeHealthForMoonReducer } from "./sacrifice_health_for_moon_reduc
 export { SacrificeHealthForMoonReducer };
 import { SetDirVec } from "./set_dir_vec_reducer.ts";
 export { SetDirVec };
+import { SetUserMeta } from "./set_user_meta_reducer.ts";
+export { SetUserMeta };
 import { Tick } from "./tick_reducer.ts";
 export { Tick };
 
@@ -146,6 +148,10 @@ const REMOTE_MODULE = {
       reducerName: "set_dir_vec",
       argsType: SetDirVec.getTypeScriptAlgebraicType(),
     },
+    set_user_meta: {
+      reducerName: "set_user_meta",
+      argsType: SetUserMeta.getTypeScriptAlgebraicType(),
+    },
     tick: {
       reducerName: "tick",
       argsType: Tick.getTypeScriptAlgebraicType(),
@@ -184,6 +190,7 @@ export type Reducer = never
 | { name: "IdentityDisconnected", args: IdentityDisconnected }
 | { name: "SacrificeHealthForMoonReducer", args: SacrificeHealthForMoonReducer }
 | { name: "SetDirVec", args: SetDirVec }
+| { name: "SetUserMeta", args: SetUserMeta }
 | { name: "Tick", args: Tick }
 ;
 
@@ -234,6 +241,22 @@ export class RemoteReducers {
     this.connection.offReducer("set_dir_vec", callback);
   }
 
+  setUserMeta(username: string, color: Color) {
+    const __args = { username, color };
+    let __writer = new BinaryWriter(1024);
+    SetUserMeta.getTypeScriptAlgebraicType().serialize(__writer, __args);
+    let __argsBuffer = __writer.getBuffer();
+    this.connection.callReducer("set_user_meta", __argsBuffer, this.setCallReducerFlags.setUserMetaFlags);
+  }
+
+  onSetUserMeta(callback: (ctx: ReducerEventContext, username: string, color: Color) => void) {
+    this.connection.onReducer("set_user_meta", callback);
+  }
+
+  removeOnSetUserMeta(callback: (ctx: ReducerEventContext, username: string, color: Color) => void) {
+    this.connection.offReducer("set_user_meta", callback);
+  }
+
   tick(tickSchedule: TickSchedule) {
     const __args = { tickSchedule };
     let __writer = new BinaryWriter(1024);
@@ -261,6 +284,11 @@ export class SetReducerFlags {
   setDirVecFlags: CallReducerFlags = 'FullUpdate';
   setDirVec(flags: CallReducerFlags) {
     this.setDirVecFlags = flags;
+  }
+
+  setUserMetaFlags: CallReducerFlags = 'FullUpdate';
+  setUserMeta(flags: CallReducerFlags) {
+    this.setUserMetaFlags = flags;
   }
 
   tickFlags: CallReducerFlags = 'FullUpdate';
