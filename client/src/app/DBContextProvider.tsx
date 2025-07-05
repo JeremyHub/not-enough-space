@@ -129,11 +129,16 @@ function useBits(conn: DbConnection | null): Map<number, Bit> {
 }
 
 export function DBContextProvider({
+  connected,
+  setConnected,
+  uri,
   children,
 }: {
+  connected: boolean;
+  setConnected: (connected: boolean) => void;
+  uri: string;
   children: React.ReactNode;
 }) {
-  const [connected, setConnected] = useState<boolean>(false);
   const [identity, setIdentity] = useState<Identity | null>(null);
   const [conn, setConn] = useState<DbConnection | null>(null);
   const connectingRef = useRef(false);
@@ -153,7 +158,6 @@ export function DBContextProvider({
   const canvasHeight = self?.size ? Math.min(Math.max((self.size * 100)/5) + 200, 1500) : null;
   const renderBuffer = 200;
   const extraUserRenderBuffer = 100;
-
 
     useEffect(() => {
       if (connectingRef.current) return;
@@ -191,8 +195,6 @@ export function DBContextProvider({
         const onConnectError = (_ctx: ErrorContext, err: Error) => {
           console.log('Error connecting to SpacetimeDB:', err);
         };
-  
-        const uri = window.prompt('Enter SpacetimeDB URI:', 'ws://localhost:3000') || 'ws://localhost:3000';
   
         setConn(
           DbConnection.builder()
@@ -252,9 +254,7 @@ export function DBContextProvider({
 
   if (!conn || !connected || !identity || !metadata || !self || !canvasHeight || !canvasWidth) {
     return (
-      <div className="App">
-        <h1>Connecting...</h1>
-      </div>
+      <h1>Connecting...</h1>
     );
   }
 
