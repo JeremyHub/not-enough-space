@@ -14,7 +14,7 @@ function App() {
   const [connectionForm, setConnectionForm] = useState<z.infer<typeof ConnectionFormSchema> | undefined>(undefined);
 
   return (
-    <div className="flex min-h-svh flex-col items-center justify-center bg-zinc-950 dark:bg-white text-primary-foreground dark:text-black">
+    <div className="flex min-h-svh flex-col items-center justify-center bg-zinc-950 text-primary-foreground">
       {!canvasOpen &&
         <>
           <h2 className="scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight first:mt-0 mb-4">
