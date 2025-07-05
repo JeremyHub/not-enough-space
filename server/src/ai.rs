@@ -33,7 +33,7 @@ pub fn spawn_ai(ctx: &ReducerContext) {
     let current_num_ais = ctx.db.user().is_ai().filter(true).count();
     if current_num_ais < super::NUM_AIS {
         let ais_to_spawn = super::NUM_AIS - current_num_ais;
-        for _ in 0..ais_to_spawn {
+        for i in 0..ais_to_spawn {
             let color = helpers::Color {
                 r: ctx.rng().gen_range(0..=255),
                 g: ctx.rng().gen_range(0..=255),
@@ -43,7 +43,7 @@ pub fn spawn_ai(ctx: &ReducerContext) {
             ctx.db.user().insert(user::User {
                 identity: Identity::from_be_byte_array(ctx.rng().gen()),
                 online: true,
-                username: format!("AI_{}", current_num_ais + 1),
+                username: format!("AI_{}", current_num_ais + i),
                 x,
                 col_index: x.round() as i32,
                 y: ctx.rng().gen_range(0..=super::WORLD_HEIGHT) as f32,
