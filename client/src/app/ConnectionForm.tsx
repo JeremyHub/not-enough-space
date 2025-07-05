@@ -69,7 +69,7 @@ export function ConnectionForm(
             </FormItem>
           )}
         />
-        <Button type="submit">Submit</Button>
+        <Button type="submit">Connect</Button>
       </form>
     </Form>
   )

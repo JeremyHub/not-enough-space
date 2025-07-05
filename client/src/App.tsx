@@ -14,16 +14,23 @@ function App() {
   const [connectionForm, setConnectionForm] = useState<z.infer<typeof ConnectionFormSchema> | undefined>(undefined);
 
   return (
-    <div className="flex min-h-svh flex-col items-center justify-center bg-zinc-950 dark:bg-white text-white dark:text-black">
+    <div className="flex min-h-svh flex-col items-center justify-center bg-zinc-950 dark:bg-white text-primary-foreground dark:text-black">
       {!canvasOpen &&
-        <ConnectionForm onSubmit={(data) => {
-          setConnectionForm(data);
-          setConnected(true);
-          setCanvasOpen(true);
-        }} />
+        <>
+          <h2 className="scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight first:mt-0 mb-4">
+            Not Enough Space
+          </h2>
+          <p className="text-lg text-muted-foreground mb-16">
+            A multiplayer web game built on SpacetimeDB
+          </p>
+          <ConnectionForm onSubmit={(data) => {
+            setConnectionForm(data);
+            setCanvasOpen(true);
+          }} />
+        </>
       }
       {canvasOpen && connectionForm && <DBContextProvider connected={connected} setConnected={setConnected} uri={connectionForm.uri}>
-        <CanvasWithInputHandler />
+        { connected && <CanvasWithInputHandler /> }
       </DBContextProvider>}
     </div>
   );
