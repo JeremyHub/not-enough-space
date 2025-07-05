@@ -16,6 +16,18 @@ type DrawProps = {
   moonTrails?: Map<number, Array<{ relX: number; relY: number; parentId: string }>>;
 };
 
+function renderTextInCircle(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, radius: number, color = "#fff") {
+  const dpr = window.devicePixelRatio || 1;
+  const bestFontSize = Math.floor(radius * 0.8 * dpr) / text.length;
+  ctx.font = `bold ${bestFontSize}px sans-serif`;
+  ctx.fillStyle = color;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.shadowColor = "rgba(0,0,0,0.7)";
+  ctx.shadowBlur = 4 * dpr;
+  ctx.fillText(text, x, y);
+}
+
 function renderCircle(ctx: CanvasRenderingContext2D, size: number, x: number, y: number, color: Color, filled: boolean = true) {
   ctx.beginPath();
   ctx.arc(x, y, size, 0, Math.PI * 2);
@@ -158,10 +170,19 @@ const draw = (ctx: CanvasRenderingContext2D | null, props: DrawProps) => {
     });
 
   users.forEach(user => {
+    // Draw user circle
     if (user.identity.data !== identity.data) {
       const { x, y } = toScreen(user);
       renderWithWrap(
-        (px, py) => renderCircle(ctx, user.size, px, py, user.color),
+        (px, py) => {
+          renderCircle(ctx, user.size, px, py, user.color);
+          // Draw username inside the user's circle if present
+          if (user.username) {
+            ctx.save();
+            renderTextInCircle(ctx, user.username, px, py, user.size * (window.devicePixelRatio || 1));
+            ctx.restore();
+          }
+        },
         metadata,
         canvasWidth,
         canvasHeight,
@@ -173,7 +194,14 @@ const draw = (ctx: CanvasRenderingContext2D | null, props: DrawProps) => {
     }
   });
 
+  // Draw self circle
   renderCircle(ctx, self.size, canvasWidth / 2, canvasHeight / 2, self.color);
+  // Draw self username inside self circle
+  if (self.username) {
+    ctx.save();
+    renderTextInCircle(ctx, self.username, canvasWidth / 2, canvasHeight / 2, self.size * (window.devicePixelRatio || 1));
+    ctx.restore();
+  }
 
   // Draw moon trails before drawing moons
   if (moonTrails) {
