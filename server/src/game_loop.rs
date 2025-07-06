@@ -8,6 +8,7 @@ use super::user_user;
 use super::moon_moon;
 use super::user_bit;
 use super::ai;
+use super::leaderboard;
 
 #[table(name = tick_schedule, scheduled(tick))]
 pub struct TickSchedule {
@@ -57,7 +58,6 @@ pub fn tick(ctx: &ReducerContext, tick_schedule: TickSchedule) -> Result<(), Str
 
     user_user::check_user_user_collisions(ctx);
 
-    
     let last_tick = ctx.db.tick_meta().id().find(0);
     let mut next_tick_schedule = super::TICK_TIME;
     if let Some(meta) = last_tick {
@@ -91,5 +91,6 @@ pub fn init(ctx: &ReducerContext) -> Result<(), String> {
         id: 0,
         scheduled_at: ScheduleAt::Time(ctx.timestamp),
     });
+    leaderboard::init_leaderboard_schedule(ctx)?;
     Ok(())
 }

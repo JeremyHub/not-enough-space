@@ -9,6 +9,7 @@ pub mod user_bit;
 pub mod user_moon;
 pub mod ai;
 pub mod user_user;
+pub mod leaderboard;
 
 // world
 pub const WORLD_WIDTH: i32 = 10000;
@@ -80,3 +81,6 @@ pub const PORTION_AI_USERS_DIRECTION_UPDATED_PER_TICK: f32 = 0.01;
 pub const CHANCE_UPDATED_AI_SPAWNS_MOON: f64 = 0.1;
 pub const NUM_AIS: usize = 50;
 pub const AI_ACCELERATION: f32 = USER_ACCELERATION/2.0;
+
+// leaderboard
+pub const LEADERBOARD_UPDATE_INTERVAL_MICROS: i64 = 500_000; // 0.5 seconds

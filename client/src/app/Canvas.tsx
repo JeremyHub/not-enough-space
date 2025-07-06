@@ -2,6 +2,7 @@ import { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { Bit, Moon, Color, Metadata, User } from '.././module_bindings';
 import { Identity } from '@clockworklabs/spacetimedb-sdk';
 import { DBContext } from './DBContext';
+import { Card, CardContent } from '@/components/ui/card';
 
 type DrawProps = {
   metadata: Metadata,
@@ -389,11 +390,15 @@ export function Canvas() {
   }, [drawProps]);
 
   return (
-    <canvas
-      ref={canvasRef}
-      width={animatedHeight || canvasHeight}
-      height={animatedWidth || canvasWidth}
-      className="nes-canvas"
-    />
+    <Card className="border-4 border-zinc-800 bg-zinc-900 shadow-lg flex items-center justify-center aspect-square max-w-[1000px] max-h-[1000px] w-[min(100vw,100vh)] h-[min(100vw,100vh)] mx-auto my-auto absolute inset-0">
+      <CardContent className="flex items-center justify-center p-0 w-full h-full">
+        <canvas
+          ref={canvasRef}
+          width={animatedWidth || canvasWidth}
+          height={animatedHeight || canvasHeight}
+          className="w-full h-full block"
+        />
+      </CardContent>
+    </Card>
   );
 };

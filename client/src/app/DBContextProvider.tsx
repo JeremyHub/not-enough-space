@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Bit, Moon, DbConnection, ErrorContext, EventContext, Metadata, User } from '.././module_bindings';
+import { Bit, Moon, DbConnection, ErrorContext, EventContext, Metadata, User, LeaderboardEntry } from '.././module_bindings';
 import { Identity } from '@clockworklabs/spacetimedb-sdk';
 import React from 'react';
 import { DBContext } from './DBContext';
@@ -130,6 +130,41 @@ function useBits(conn: DbConnection | null): Map<number, Bit> {
   return bits;
 }
 
+function useLeaderboardEntries(conn: DbConnection | null): Map<Identity, LeaderboardEntry> {
+  const [leaderboardEntries, setLeaderboardEntries] = useState<Map<Identity, LeaderboardEntry>>(new Map());
+  useEffect(() => {
+    if (!conn) return;
+
+    const onInsert = (_ctx: EventContext, entry: LeaderboardEntry) => {
+      setLeaderboardEntries(prev => new Map(prev.set(entry.identity, entry)));
+    };
+    conn.db.leaderboardEntry.onInsert(onInsert);
+
+    const onUpdate = (_ctx: EventContext, oldEntry: LeaderboardEntry, newEntry: LeaderboardEntry) => {
+      setLeaderboardEntries(prev => {
+        prev.delete(oldEntry.identity);
+        return new Map(prev.set(newEntry.identity, newEntry));
+      });
+    };
+    conn.db.leaderboardEntry.onUpdate(onUpdate);
+
+    const onDelete = (_ctx: EventContext, entry: LeaderboardEntry) => {
+      setLeaderboardEntries(prev => {
+        prev.delete(entry.identity);
+        return new Map(prev);
+      });
+    };
+    conn.db.leaderboardEntry.onDelete(onDelete);
+
+    return () => {
+      conn.db.leaderboardEntry.removeOnInsert(onInsert);
+      conn.db.leaderboardEntry.removeOnUpdate(onUpdate);
+      conn.db.leaderboardEntry.removeOnDelete(onDelete);
+    };
+  }, [conn]);
+  return leaderboardEntries;
+}
+
 export function DBContextProvider({
   connected,
   setConnected,
@@ -150,6 +185,7 @@ export function DBContextProvider({
   const self = identity ? users.get(identity.toHexString()) : null;
   const bits = useBits(conn);
   const moons = useMoons(conn);
+  const leaderboardEntries = useLeaderboardEntries(conn);
 
   const [queriedX, setQueriedX] = useState<number | null>(null);
   const [queriedY, setQueriedY] = useState<number | null>(null);
@@ -197,7 +233,8 @@ export function DBContextProvider({
 
           subscribeToQueries(conn, [
             `SELECT * FROM user WHERE identity = '${identity.toHexString()}';`,
-            "SELECT * FROM metadata;"
+            "SELECT * FROM metadata;",
+            `SELECT * FROM leaderboard_entry WHERE identity = '${identity.toHexString()}' OR rank <= 10;`
           ]);
         };
   
@@ -256,8 +293,8 @@ export function DBContextProvider({
           .subscriptionBuilder()
           .subscribe([bitQuery, moonQuery, userQuery]);
     
-        setSubscriptions(handle);
         subscriptions?.unsubscribe();
+        setSubscriptions(handle);
       }
       if (conn && self && metadata) {
         subscribeToNearbyObjs(conn, metadata, self.x, self.y);
@@ -280,6 +317,7 @@ export function DBContextProvider({
         users,
         bits,
         moons,
+        leaderboardEntries,
         metadata,
         canvasWidth,
         canvasHeight,

@@ -22,7 +22,7 @@ delete-and-restart-server:
 	make publish-server
 
 publish-server:
-	ENV=PROD spacetime publish --project-path server nes
+	spacetime publish --project-path server nes
 
 delete-server:
 	spacetime delete nes

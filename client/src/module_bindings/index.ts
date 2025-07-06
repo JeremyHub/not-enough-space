@@ -46,10 +46,16 @@ import { SetUserMeta } from "./set_user_meta_reducer.ts";
 export { SetUserMeta };
 import { Tick } from "./tick_reducer.ts";
 export { Tick };
+import { UpdateLeaderboard } from "./update_leaderboard_reducer.ts";
+export { UpdateLeaderboard };
 
 // Import and reexport all table handle types
 import { BitTableHandle } from "./bit_table.ts";
 export { BitTableHandle };
+import { LeaderboardEntryTableHandle } from "./leaderboard_entry_table.ts";
+export { LeaderboardEntryTableHandle };
+import { LeaderboardUpdateScheduleTableHandle } from "./leaderboard_update_schedule_table.ts";
+export { LeaderboardUpdateScheduleTableHandle };
 import { MetadataTableHandle } from "./metadata_table.ts";
 export { MetadataTableHandle };
 import { MoonTableHandle } from "./moon_table.ts";
@@ -66,6 +72,10 @@ import { Bit } from "./bit_type.ts";
 export { Bit };
 import { Color } from "./color_type.ts";
 export { Color };
+import { LeaderboardEntry } from "./leaderboard_entry_type.ts";
+export { LeaderboardEntry };
+import { LeaderboardUpdateSchedule } from "./leaderboard_update_schedule_type.ts";
+export { LeaderboardUpdateSchedule };
 import { Metadata } from "./metadata_type.ts";
 export { Metadata };
 import { Moon } from "./moon_type.ts";
@@ -88,6 +98,24 @@ const REMOTE_MODULE = {
       primaryKeyInfo: {
         colName: "bitId",
         colType: Bit.getTypeScriptAlgebraicType().product.elements[0].algebraicType,
+      },
+    },
+    leaderboard_entry: {
+      tableName: "leaderboard_entry",
+      rowType: LeaderboardEntry.getTypeScriptAlgebraicType(),
+      primaryKey: "identity",
+      primaryKeyInfo: {
+        colName: "identity",
+        colType: LeaderboardEntry.getTypeScriptAlgebraicType().product.elements[1].algebraicType,
+      },
+    },
+    leaderboard_update_schedule: {
+      tableName: "leaderboard_update_schedule",
+      rowType: LeaderboardUpdateSchedule.getTypeScriptAlgebraicType(),
+      primaryKey: "id",
+      primaryKeyInfo: {
+        colName: "id",
+        colType: LeaderboardUpdateSchedule.getTypeScriptAlgebraicType().product.elements[0].algebraicType,
       },
     },
     metadata: {
@@ -156,6 +184,10 @@ const REMOTE_MODULE = {
       reducerName: "tick",
       argsType: Tick.getTypeScriptAlgebraicType(),
     },
+    update_leaderboard: {
+      reducerName: "update_leaderboard",
+      argsType: UpdateLeaderboard.getTypeScriptAlgebraicType(),
+    },
   },
   versionInfo: {
     cliVersion: "1.2.0",
@@ -192,6 +224,7 @@ export type Reducer = never
 | { name: "SetDirVec", args: SetDirVec }
 | { name: "SetUserMeta", args: SetUserMeta }
 | { name: "Tick", args: Tick }
+| { name: "UpdateLeaderboard", args: UpdateLeaderboard }
 ;
 
 export class RemoteReducers {
@@ -273,6 +306,22 @@ export class RemoteReducers {
     this.connection.offReducer("tick", callback);
   }
 
+  updateLeaderboard(leaderboardUpdateSchedule: LeaderboardUpdateSchedule) {
+    const __args = { leaderboardUpdateSchedule };
+    let __writer = new BinaryWriter(1024);
+    UpdateLeaderboard.getTypeScriptAlgebraicType().serialize(__writer, __args);
+    let __argsBuffer = __writer.getBuffer();
+    this.connection.callReducer("update_leaderboard", __argsBuffer, this.setCallReducerFlags.updateLeaderboardFlags);
+  }
+
+  onUpdateLeaderboard(callback: (ctx: ReducerEventContext, leaderboardUpdateSchedule: LeaderboardUpdateSchedule) => void) {
+    this.connection.onReducer("update_leaderboard", callback);
+  }
+
+  removeOnUpdateLeaderboard(callback: (ctx: ReducerEventContext, leaderboardUpdateSchedule: LeaderboardUpdateSchedule) => void) {
+    this.connection.offReducer("update_leaderboard", callback);
+  }
+
 }
 
 export class SetReducerFlags {
@@ -296,6 +345,11 @@ export class SetReducerFlags {
     this.tickFlags = flags;
   }
 
+  updateLeaderboardFlags: CallReducerFlags = 'FullUpdate';
+  updateLeaderboard(flags: CallReducerFlags) {
+    this.updateLeaderboardFlags = flags;
+  }
+
 }
 
 export class RemoteTables {
@@ -303,6 +357,14 @@ export class RemoteTables {
 
   get bit(): BitTableHandle {
     return new BitTableHandle(this.connection.clientCache.getOrCreateTable<Bit>(REMOTE_MODULE.tables.bit));
+  }
+
+  get leaderboardEntry(): LeaderboardEntryTableHandle {
+    return new LeaderboardEntryTableHandle(this.connection.clientCache.getOrCreateTable<LeaderboardEntry>(REMOTE_MODULE.tables.leaderboard_entry));
+  }
+
+  get leaderboardUpdateSchedule(): LeaderboardUpdateScheduleTableHandle {
+    return new LeaderboardUpdateScheduleTableHandle(this.connection.clientCache.getOrCreateTable<LeaderboardUpdateSchedule>(REMOTE_MODULE.tables.leaderboard_update_schedule));
   }
 
   get metadata(): MetadataTableHandle {

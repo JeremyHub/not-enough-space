@@ -1,4 +1,3 @@
-import './App.css';
 import { DBContextProvider } from './app/DBContextProvider';
 import { Canvas } from './app/Canvas';
 import { useInputHandler } from './app/InputHandler';
@@ -6,6 +5,7 @@ import { useContext, useState } from 'react';
 import { DBContext } from './app/DBContext';
 import { ConnectionForm, ConnectionFormSchema } from './app/ConnectionForm';
 import z from 'zod';
+import { Leaderboard } from './app/Leaderboard';
 
 function App() {
 
@@ -30,7 +30,16 @@ function App() {
         </>
       }
       {canvasOpen && connectionForm && <DBContextProvider connected={connected} setConnected={setConnected} connectionForm={connectionForm}>
-        { connected && <CanvasWithInputHandler /> }
+        { connected &&
+          <div className="flex flex-row items-center justify-center w-full h-full gap-8">
+            <div className="flex-shrink-0 max-w-[400px] w-full">
+              <Leaderboard />
+            </div>
+            <div className="flex-grow flex items-center justify-center">
+              <CanvasWithInputHandler />
+            </div>
+          </div>
+        }
       </DBContextProvider>}
     </div>
   );
