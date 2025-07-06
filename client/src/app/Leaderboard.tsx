@@ -37,7 +37,7 @@ export function Leaderboard() {
               .filter(entry => entry.rank <= 10 || entry.identity.data === self.identity.data)
               .map((entry) => (
                 <TableRow
-                  key={String(entry.identity)}
+                  key={String(entry.identity.data)}
                   className={
                     entry.identity.data === self.identity.data
                       ? "bg-zinc-700/80 font-bold"
