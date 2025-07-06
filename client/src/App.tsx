@@ -31,8 +31,8 @@ function App() {
       }
       {canvasOpen && connectionForm && <DBContextProvider connected={connected} setConnected={setConnected} connectionForm={connectionForm}>
         { connected &&
-          <div className="flex flex-row items-center justify-center w-full h-full gap-8">
-            <div className="flex-shrink-0 max-w-[400px] w-full">
+          <div className="flex flex-row items-center justify-center w-full h-full">
+            <div className="flex-shrink-0 w-full">
               <Leaderboard />
             </div>
             <div className="flex-grow flex items-center justify-center">

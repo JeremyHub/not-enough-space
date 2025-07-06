@@ -17,6 +17,7 @@ export function Leaderboard() {
     }
     const {
         leaderboardEntries,
+        self,
     } = context;
 
   return (
@@ -31,12 +32,22 @@ export function Leaderboard() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {Array.from(leaderboardEntries.values()).sort((a, b) => a.rank - b.rank).map((entry) => (
-              <TableRow key={String(entry.identity)}>
-                <TableCell className="text-zinc-300">{entry.rank}</TableCell>
-                <TableCell className="font-medium text-zinc-300">{entry.username}</TableCell>
-                <TableCell className="text-zinc-300">{entry.size}</TableCell>
-              </TableRow>
+            {Array.from(leaderboardEntries.values())
+              .sort((a, b) => a.rank - b.rank)
+              .filter(entry => entry.rank <= 10 || entry.identity.data === self.identity.data)
+              .map((entry) => (
+                <TableRow
+                  key={String(entry.identity)}
+                  className={
+                    entry.identity.data === self.identity.data
+                      ? "bg-zinc-700/80 font-bold"
+                      : ""
+                  }
+                >
+                  <TableCell className="text-zinc-300">{entry.rank}</TableCell>
+                  <TableCell className="font-medium text-zinc-300">{entry.username}</TableCell>
+                  <TableCell className="text-zinc-300">{Math.round(entry.size)}</TableCell>
+                </TableRow>
             ))}
           </TableBody>
         </Table>

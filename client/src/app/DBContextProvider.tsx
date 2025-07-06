@@ -234,7 +234,7 @@ export function DBContextProvider({
           subscribeToQueries(conn, [
             `SELECT * FROM user WHERE identity = '${identity.toHexString()}';`,
             "SELECT * FROM metadata;",
-            `SELECT * FROM leaderboard_entry WHERE identity = '${identity.toHexString()}' OR rank <= 10;`
+            `SELECT * FROM leaderboard_entry;`
           ]);
         };
   
