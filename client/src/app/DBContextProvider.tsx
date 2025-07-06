@@ -1,31 +1,28 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { Bit, Moon, DbConnection, ErrorContext, EventContext, Metadata, User, LeaderboardEntry } from '.././module_bindings';
 import { Identity } from '@clockworklabs/spacetimedb-sdk';
 import React from 'react';
 import { DBContext } from './DBContext';
 import { ConnectionFormSchema } from './ConnectionForm';
 import z from 'zod';
+import { SettingsSchema } from './Settings';
 
-function useMetadata(conn: DbConnection | null): Metadata | null {
+// Helper hook to manage all DB state and provide reset capability
+function useDBState(conn: DbConnection | null, ownIdentity: Identity | null, onDeath: () => void) {
+  // --- Metadata ---
   const [metadata, setMetadata] = useState<Metadata | null>(null);
-
   useEffect(() => {
     if (!conn) return;
-
-    const onMetadataUpdate = (_ctx: EventContext, newMetadata: Metadata) => {
-      setMetadata(newMetadata);
-    };
-
+    const onMetadataUpdate = (_ctx: EventContext, newMetadata: Metadata) => setMetadata(newMetadata);
     conn.db.metadata.onInsert(onMetadataUpdate);
-    conn.db.metadata.onDelete(() => {
-      setMetadata(null);
-    });
+    conn.db.metadata.onDelete(() => setMetadata(null));
+    return () => {
+      conn.db.metadata.removeOnInsert(onMetadataUpdate);
+      conn.db.metadata.removeOnDelete(() => setMetadata(null));
+    };
   }, [conn]);
 
-  return metadata;
-}
-
-function useUsers(conn: DbConnection | null): Map<string, User> {
+  // --- Users ---
   const [users, setUsers] = useState<Map<string, User>>(new Map());
   useEffect(() => {
     if (!conn) return;
@@ -43,6 +40,9 @@ function useUsers(conn: DbConnection | null): Map<string, User> {
     conn.db.user.onUpdate(onUpdate);
 
     const onDelete = (_ctx: EventContext, user: User) => {
+      if (ownIdentity && user.identity.toHexString() === ownIdentity.toHexString()) {
+        onDeath();
+      }
       setUsers(prev => {
         prev.delete(user.identity.toHexString());
         return new Map(prev);
@@ -55,14 +55,10 @@ function useUsers(conn: DbConnection | null): Map<string, User> {
       conn.db.user.removeOnUpdate(onUpdate);
       conn.db.user.removeOnDelete(onDelete);
     };
-  }, [conn]);
+  }, [conn, ownIdentity, onDeath]);
 
-  return users;
-}
-
-function useMoons(conn: DbConnection | null): Map<number, Moon> {
+  // --- Moons ---
   const [moons, setMoons] = useState<Map<number, Moon>>(new Map());
-
   useEffect(() => {
     if (!conn) return;
     const onInsert = (_ctx: EventContext, moon: Moon) => {
@@ -92,12 +88,9 @@ function useMoons(conn: DbConnection | null): Map<number, Moon> {
       conn.db.moon.removeOnDelete(onDelete);
     };
   }, [conn]);
-  return moons;
-}
 
-function useBits(conn: DbConnection | null): Map<number, Bit> {
+  // --- Bits ---
   const [bits, setBits] = useState<Map<number, Bit>>(new Map());
-
   useEffect(() => {
     if (!conn) return;
     const onInsert = (_ctx: EventContext, bit: Bit) => {
@@ -127,14 +120,11 @@ function useBits(conn: DbConnection | null): Map<number, Bit> {
       conn.db.bit.removeOnDelete(onDelete);
     };
   }, [conn]);
-  return bits;
-}
 
-function useLeaderboardEntries(conn: DbConnection | null): Map<Identity, LeaderboardEntry> {
+  // --- Leaderboard Entries ---
   const [leaderboardEntries, setLeaderboardEntries] = useState<Map<Identity, LeaderboardEntry>>(new Map());
   useEffect(() => {
     if (!conn) return;
-
     const onInsert = (_ctx: EventContext, entry: LeaderboardEntry) => {
       setLeaderboardEntries(prev => new Map(prev.set(entry.identity, entry)));
     };
@@ -162,30 +152,70 @@ function useLeaderboardEntries(conn: DbConnection | null): Map<Identity, Leaderb
       conn.db.leaderboardEntry.removeOnDelete(onDelete);
     };
   }, [conn]);
-  return leaderboardEntries;
+
+  // Reset function to clear all state
+  const resetDBState = useCallback(() => {
+    setMetadata(null);
+    setUsers(new Map());
+    setMoons(new Map());
+    setBits(new Map());
+    setLeaderboardEntries(new Map());
+  }, []);
+
+  return {
+    metadata, setMetadata,
+    users, setUsers,
+    moons, setMoons,
+    bits, setBits,
+    leaderboardEntries, setLeaderboardEntries,
+    resetDBState
+  };
 }
 
 export function DBContextProvider({
   connected,
   setConnected,
   connectionForm,
+  settings,
   children,
 }: {
   connected: boolean;
   setConnected: (connected: boolean) => void;
   connectionForm: z.infer<typeof ConnectionFormSchema>;
+  settings: z.infer<typeof SettingsSchema>;
   children: React.ReactNode;
 }) {
   const [identity, setIdentity] = useState<Identity | null>(null);
   const [conn, setConn] = useState<DbConnection | null>(null);
   const connectingRef = useRef(false);
 
-  const users = useUsers(conn);
-  const metadata = useMetadata(conn);
+  // Use the helper hook for all DB state
+  const {
+    metadata,
+    users,
+    bits,
+    moons,
+    leaderboardEntries,
+    resetDBState
+  } = useDBState(conn, identity, () => {
+    if (settings.auto_reconnect_on_death) {
+      console.log('User died, attempting to reconnect...');
+      reconnect();
+    }
+  });
+
+  function reconnect() {
+    setConn(null);
+    connectingRef.current = false;
+    resetDBState();
+    // TODO make the below a setting
+    // setIdentity(null);
+    // localStorage.removeItem('auth_token');
+    console.log('Reconnecting...');
+    setConnected(false);
+  }
+
   const self = identity ? users.get(identity.toHexString()) : null;
-  const bits = useBits(conn);
-  const moons = useMoons(conn);
-  const leaderboardEntries = useLeaderboardEntries(conn);
 
   const [queriedX, setQueriedX] = useState<number | null>(null);
   const [queriedY, setQueriedY] = useState<number | null>(null);
@@ -199,6 +229,7 @@ export function DBContextProvider({
 
     useEffect(() => {
       if (connectingRef.current) return;
+      console.log('Connecting to SpacetimeDB...');
       connectingRef.current = true;
         const subscribeToQueries = (conn: DbConnection, queries: string[]) => {
           conn
@@ -241,6 +272,10 @@ export function DBContextProvider({
         const onDisconnect = () => {
           console.log('Disconnected from SpacetimeDB');
           setConnected(false);
+          if (settings.auto_reconnect_on_disconnect) {
+            console.log('Attempting to reconnect...');
+            reconnect();
+          }
         };
   
         const onConnectError = (_ctx: ErrorContext, err: Error) => {
@@ -258,8 +293,8 @@ export function DBContextProvider({
             .onConnectError(onConnectError)
             .build()
         );
-    }, [connectionForm, setConnected]);
-  
+    }, [connectionForm, setConnected, settings, connectingRef.current]);
+
     useEffect(() => {
       function subscribeToNearbyObjs(conn: DbConnection, metadata: Metadata, x: number, y: number) {
         if (!canvasHeight || !canvasWidth || (queriedX && queriedY && (Math.abs(queriedX-x) < renderBuffer && Math.abs(queriedY-y) < renderBuffer))) {
@@ -300,7 +335,6 @@ export function DBContextProvider({
         subscribeToNearbyObjs(conn, metadata, self.x, self.y);
       }
     }, [canvasHeight, canvasWidth, conn, metadata, queriedX, queriedY, self, subscriptions]);
-
 
   if (!conn || !connected || !identity || !metadata || !self || !canvasHeight || !canvasWidth) {
     return (

@@ -7,16 +7,14 @@ import { ConnectionForm, ConnectionFormSchema } from './app/ConnectionForm';
 import z from 'zod';
 import { Leaderboard } from './app/Leaderboard';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from './components/ui/resizable';
-import { Settings, SettingsSchema } from './app/Settings';
+import { getDefaultSettings, Settings, SettingsSchema } from './app/Settings';
 
 function App() {
 
   const [connected, setConnected] = useState<boolean>(false);
   const [canvasOpen, setCanvasOpen] = useState<boolean>(false);
   const [connectionForm, setConnectionForm] = useState<z.infer<typeof ConnectionFormSchema> | undefined>(undefined);
-  const [settings, setSettings] = useState<z.infer<typeof SettingsSchema> | undefined>(undefined);
-
-  console.log(settings)
+  const [settings, setSettings] = useState<z.infer<typeof SettingsSchema>>(getDefaultSettings());
 
   return (
     <div className="flex min-h-svh flex-col items-center justify-center bg-zinc-950 text-primary-foreground">
@@ -34,40 +32,46 @@ function App() {
           }} />
         </>
       }
-      {canvasOpen && connectionForm && <DBContextProvider connected={connected} setConnected={setConnected} connectionForm={connectionForm}>
-        { connected &&
-            <ResizablePanelGroup
-              direction="horizontal"
-              className="w-full h-full"
-            >
-              <ResizablePanel defaultSize={25} minSize={15}>
-                <ResizablePanelGroup
-                  direction="vertical"
-                  className="w-full h-full"
-                >
-                  <ResizablePanel defaultSize={25} minSize={15}>
-                    <div className="flex flex-col h-full">
-                      <Leaderboard />
-                    </div>
-                  </ResizablePanel>
-                  <ResizableHandle className="bg-zinc-900 border-none" />
-                  <ResizablePanel defaultSize={25} minSize={15}>
-                    <div className="flex flex-col h-full">
-                      <Settings
-                        setSettings={setSettings}
-                      />
-                    </div>
-                  </ResizablePanel>
-                </ResizablePanelGroup>
-              </ResizablePanel>
-              <ResizableHandle className="bg-zinc-900 border-none" />
-              <ResizablePanel defaultSize={75} minSize={40}>
-                <div className="flex flex-col h-full items-center justify-center">
-                  <CanvasWithInputHandler />
-                </div>
-              </ResizablePanel>
-            </ResizablePanelGroup>
-        }
+      {canvasOpen && connectionForm &&
+        <DBContextProvider
+          connected={connected}
+          setConnected={setConnected}
+          connectionForm={connectionForm}
+          settings={settings}
+        >
+          { connected &&
+              <ResizablePanelGroup
+                direction="horizontal"
+                className="w-full h-full"
+              >
+                <ResizablePanel defaultSize={25} minSize={15}>
+                  <ResizablePanelGroup
+                    direction="vertical"
+                    className="w-full h-full"
+                  >
+                    <ResizablePanel defaultSize={50} minSize={15}>
+                      <div className="flex flex-col h-full">
+                        <Leaderboard />
+                      </div>
+                    </ResizablePanel>
+                    <ResizableHandle className="bg-zinc-900 border-none" />
+                    <ResizablePanel defaultSize={50} minSize={15}>
+                      <div className="flex flex-col h-full">
+                        <Settings
+                          setSettings={setSettings}
+                        />
+                      </div>
+                    </ResizablePanel>
+                  </ResizablePanelGroup>
+                </ResizablePanel>
+                <ResizableHandle className="bg-zinc-900 border-none" />
+                <ResizablePanel defaultSize={75} minSize={40}>
+                  <div className="flex flex-col h-full items-center justify-center">
+                    <CanvasWithInputHandler />
+                  </div>
+                </ResizablePanel>
+              </ResizablePanelGroup>
+          }
       </DBContextProvider>}
     </div>
   );
