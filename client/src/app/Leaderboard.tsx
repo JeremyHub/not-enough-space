@@ -21,7 +21,7 @@ export function Leaderboard() {
     } = context;
 
   return (
-    <Card className="border-4 border-zinc-800 bg-zinc-900 shadow-lg w-full h-full flex flex-col p-0">
+    <Card className="border-4 border-zinc-800 bg-zinc-900 shadow-lg w-full h-full flex flex-col p-0 bg-zinc-950">
       <CardContent className="p-0 flex-1 flex flex-col overflow-auto">
         <Table className="w-full">
           <TableHeader>
