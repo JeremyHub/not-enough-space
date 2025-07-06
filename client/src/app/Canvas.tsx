@@ -390,8 +390,8 @@ export function Canvas() {
   }, [drawProps]);
 
   return (
-    <Card className="border-4 border-zinc-800 bg-zinc-900 shadow-lg flex items-center justify-center w-full h-full max-h-[100vh] max-w-[100vh] min-w-[100vh] min-h-[100vh]">
-      <CardContent className="flex items-center justify-center p-0 w-full h-full">
+    <Card className="border-4 border-zinc-800 bg-zinc-900 shadow-lg flex items-center justify-center w-full h-full max-h-[100vh] min-w-[100vh] min-h-[100vh]">
+      <CardContent className="flex items-center justify-center p-0 w-full h-full max-w-[100vh]">
         <canvas
           ref={canvasRef}
           width={animatedWidth || canvasWidth}
