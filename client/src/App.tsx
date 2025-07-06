@@ -6,6 +6,7 @@ import { DBContext } from './app/DBContext';
 import { ConnectionForm, ConnectionFormSchema } from './app/ConnectionForm';
 import z from 'zod';
 import { Leaderboard } from './app/Leaderboard';
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from './components/ui/resizable';
 
 function App() {
 
@@ -31,14 +32,22 @@ function App() {
       }
       {canvasOpen && connectionForm && <DBContextProvider connected={connected} setConnected={setConnected} connectionForm={connectionForm}>
         { connected &&
-          <div className="flex flex-row items-center justify-center w-full h-full">
-            <div className="flex-shrink-0 w-full">
-              <Leaderboard />
-            </div>
-            <div className="flex-grow flex items-center justify-center">
-              <CanvasWithInputHandler />
-            </div>
-          </div>
+            <ResizablePanelGroup
+              direction="horizontal"
+              className="w-full h-full"
+            >
+              <ResizablePanel defaultSize={25}>
+                <div className="flex flex-col h-full">
+                  <Leaderboard />
+                </div>
+              </ResizablePanel>
+              <ResizableHandle className="bg-zinc-900 border-none" />
+              <ResizablePanel defaultSize={75}>
+                <div className="flex flex-col h-full items-center justify-center">
+                  <CanvasWithInputHandler />
+                </div>
+              </ResizablePanel>
+            </ResizablePanelGroup>
         }
       </DBContextProvider>}
     </div>

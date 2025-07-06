@@ -390,7 +390,7 @@ export function Canvas() {
   }, [drawProps]);
 
   return (
-    <Card className="border-4 border-zinc-800 bg-zinc-900 shadow-lg flex items-center justify-center aspect-square max-w-[1000px] max-h-[1000px] w-[min(100vw,100vh)] h-[min(100vw,100vh)] mx-auto my-auto absolute inset-0">
+    <Card className="border-4 border-zinc-800 bg-zinc-900 shadow-lg flex items-center justify-center w-full h-full max-h-[100vh] max-w-[100vh] min-w-[100vh] min-h-[100vh]">
       <CardContent className="flex items-center justify-center p-0 w-full h-full">
         <canvas
           ref={canvasRef}

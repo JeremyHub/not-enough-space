@@ -21,9 +21,9 @@ export function Leaderboard() {
     } = context;
 
   return (
-    <Card className="border-4 border-zinc-800 bg-zinc-900 shadow-lg max-w-[400px] w-full">
-      <CardContent className="p-0">
-        <Table>
+    <Card className="border-4 border-zinc-800 bg-zinc-900 shadow-lg w-full h-full flex flex-col">
+      <CardContent className="p-0 flex-1 flex flex-col overflow-auto">
+        <Table className="w-full">
           <TableHeader>
             <TableRow>
               <TableHead className="text-white">Rank</TableHead>
