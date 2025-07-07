@@ -15,14 +15,13 @@ pub mod leaderboard;
 pub const WORLD_WIDTH: i32 = 10000;
 pub const WORLD_HEIGHT: i32 = 10000;
 pub const TICK_TIME: i64 = 20000;
-pub const VELOCITY_MULTIPLIER: f32 = 0.1;
 pub const FRICTION: f32 = 0.9;
 
 // debug
 pub const UPDATE_OFFLINE_PLAYERS: bool = true;
 
 // users
-pub const USER_ACCELERATION: f32 = 2.0;
+pub const USER_ACCELERATION: f32 = 0.2;
 pub const USER_STARTING_HEALTH: f32 = 1.0;
 pub const SPEED_BOOST_DECAY: f32 = 0.95;
 pub const MAX_USER_SIZE: f32 = 200.0;
@@ -47,7 +46,7 @@ pub const NUM_FREE_MOONS: u64 = 200;
 pub const MAX_FREE_MOON_SIZE: f32 = 5.0;
 pub const MIN_MOON_SIZE: f32 = 3.0;
 pub const MOON_DRIFT: f32 = 0.5;
-pub const MOON_ACCELERATION: f32 = 1.5;
+pub const MOON_ACCELERATION: f32 = 0.15;
 pub const PORTION_FREE_MOONS_DIRECTION_UPDATED_PER_TICK: f64 = 0.005;
 
 // moon oribit
@@ -59,7 +58,7 @@ pub const ADDITIONAL_ORBIT_RADIUS_MOON_SIZE_FACTOR_FAR: f32 = 21.0;
 pub const ADDITIONAL_ORBIT_RADIUS_MOON_SIZE_FACTOR_CLOSE: f32 = 5.0;
 pub const ORBIT_ANGULAR_VEL_RADIUS_FACTOR_CLOSE: f32 = 0.006;
 pub const ORBIT_ANGULAR_VEL_RADIUS_FACTOR_FAR: f32 = 0.004;
-pub const USER_SPEED_ORBIT_THRESHOLD: f32 = 5.0;
+pub const USER_SPEED_ORBIT_THRESHOLD: f32 = 0.5;
 pub const ORBIT_MOVING_ACCELERATION_USER_SIZE_FACTOR: f32 = 0.5;
 pub const ORBIT_MOVING_ACCELERATION_ADD: f32 = 5.0;
 pub const ORBIT_STATIONARY_ACCELERATION_USER_SIZE_FACTOR: f32 = 0.2;
