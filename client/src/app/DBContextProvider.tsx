@@ -211,7 +211,6 @@ export function DBContextProvider({
     resetDBState
   } = useDBState(conn, identity, () => {
     if (settings.auto_reconnect_on_death) {
-      console.log('User died, attempting to reconnect...');
       reconnect();
     }
   });
@@ -289,14 +288,17 @@ export function DBContextProvider({
           setConnected(false);
           setLoadingMinDuration(startTime, setIsLoadingConnection);
           if (settings.auto_reconnect_on_disconnect) {
-            console.log('Attempting to reconnect...');
             reconnect();
           }
         };
   
         const onConnectError = (_ctx: ErrorContext, err: Error) => {
           console.log('Error connecting to SpacetimeDB:', err);
+          setConnected(false);
           setLoadingMinDuration(startTime, setIsLoadingConnection);
+          if (settings.auto_reconnect_on_disconnect) {
+            reconnect();
+          }
         };
   
         setConn(
