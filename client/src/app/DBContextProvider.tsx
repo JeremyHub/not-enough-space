@@ -6,6 +6,7 @@ import { DBContext } from './DBContext';
 import { ConnectionFormSchema } from './ConnectionForm';
 import z from 'zod';
 import { SettingsSchema } from './Settings';
+import { Button } from '@/components/ui/button';
 
 // Helper hook to manage all DB state and provide reset capability
 function useDBState(conn: DbConnection | null, ownIdentity: Identity | null, onDeath: () => void) {
@@ -188,6 +189,17 @@ export function DBContextProvider({
   const [identity, setIdentity] = useState<Identity | null>(null);
   const [conn, setConn] = useState<DbConnection | null>(null);
   const connectingRef = useRef(false);
+  const [isLoadingConnection, setIsLoadingConnection] = useState(false);
+
+  // Helper to ensure loading state is set for at least minMs milliseconds
+  function setLoadingMinDuration(startTime: number, setLoading: (v: boolean) => void, minMs = 500) {
+    const elapsed = Date.now() - startTime;
+    if (elapsed < minMs) {
+      setTimeout(() => setLoading(false), minMs - elapsed);
+    } else {
+      setLoading(false);
+    }
+  }
 
   // Use the helper hook for all DB state
   const {
@@ -231,6 +243,8 @@ export function DBContextProvider({
       if (connectingRef.current) return;
       console.log('Connecting to SpacetimeDB...');
       connectingRef.current = true;
+      setIsLoadingConnection(true);
+      const startTime = Date.now();
         const subscribeToQueries = (conn: DbConnection, queries: string[]) => {
           conn
             ?.subscriptionBuilder()
@@ -247,6 +261,7 @@ export function DBContextProvider({
         ) => {
           setIdentity(identity);
           setConnected(true);
+          setLoadingMinDuration(startTime, setIsLoadingConnection);
           localStorage.setItem('auth_token', token);
           console.log(
             'Connected to SpacetimeDB with identity:',
@@ -272,6 +287,7 @@ export function DBContextProvider({
         const onDisconnect = () => {
           console.log('Disconnected from SpacetimeDB');
           setConnected(false);
+          setLoadingMinDuration(startTime, setIsLoadingConnection);
           if (settings.auto_reconnect_on_disconnect) {
             console.log('Attempting to reconnect...');
             reconnect();
@@ -280,6 +296,7 @@ export function DBContextProvider({
   
         const onConnectError = (_ctx: ErrorContext, err: Error) => {
           console.log('Error connecting to SpacetimeDB:', err);
+          setLoadingMinDuration(startTime, setIsLoadingConnection);
         };
   
         setConn(
@@ -338,7 +355,22 @@ export function DBContextProvider({
 
   if (!conn || !connected || !identity || !metadata || !self || !canvasHeight || !canvasWidth) {
     return (
-      <h1>Connecting...</h1>
+      <>
+        <h2 className="scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight first:mt-0 mb-4">
+          Connecting to server...
+        </h2>
+        <p className="text-lg text-muted-foreground mb-4">
+          If this takes more than a couple seconds, the server is probably down.
+        </p>
+        <Button
+          variant="outline"
+          className="text-black"
+          onClick={() => reconnect()}
+          disabled={isLoadingConnection}
+        >
+          {isLoadingConnection ? "Connecting..." : "Retry"}
+        </Button>
+      </>
     );
   }
 
