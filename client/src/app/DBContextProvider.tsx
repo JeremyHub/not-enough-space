@@ -6,7 +6,6 @@ import { DBContext } from './DBContext';
 import { ConnectionFormSchema } from './ConnectionForm';
 import z from 'zod';
 import { SettingsSchema } from './Settings';
-import { Button } from '@/components/ui/button';
 
 // Helper hook to manage all DB state and provide reset capability
 function useDBState(conn: DbConnection | null, ownIdentity: Identity | null, onDeath: () => void) {
@@ -189,17 +188,10 @@ export function DBContextProvider({
   const [identity, setIdentity] = useState<Identity | null>(null);
   const [conn, setConn] = useState<DbConnection | null>(null);
   const connectingRef = useRef(false);
-  const [isLoadingConnection, setIsLoadingConnection] = useState(false);
 
-  // Helper to ensure loading state is set for at least minMs milliseconds
-  function setLoadingMinDuration(startTime: number, setLoading: (v: boolean) => void, minMs = 500) {
-    const elapsed = Date.now() - startTime;
-    if (elapsed < minMs) {
-      setTimeout(() => setLoading(false), minMs - elapsed);
-    } else {
-      setLoading(false);
-    }
-  }
+  // Add refs for connect and reconnect
+  const connectRef = useRef<() => void>(() => {});
+  const reconnectRef = useRef<() => void>(() => {});
 
   // Use the helper hook for all DB state
   const {
@@ -215,17 +207,6 @@ export function DBContextProvider({
     }
   });
 
-  function reconnect() {
-    setConn(null);
-    connectingRef.current = false;
-    resetDBState();
-    // TODO make the below a setting
-    // setIdentity(null);
-    // localStorage.removeItem('auth_token');
-    console.log('Reconnecting...');
-    setConnected(false);
-  }
-
   const self = identity ? users.get(identity.toHexString()) : null;
 
   const [queriedX, setQueriedX] = useState<number | null>(null);
@@ -238,122 +219,137 @@ export function DBContextProvider({
   const renderBuffer = 200;
   const extraUserRenderBuffer = 100;
 
-    useEffect(() => {
-      if (connectingRef.current) return;
-      console.log('Connecting to SpacetimeDB...');
-      connectingRef.current = true;
-      setIsLoadingConnection(true);
-      const startTime = Date.now();
-        const subscribeToQueries = (conn: DbConnection, queries: string[]) => {
-          conn
-            ?.subscriptionBuilder()
-            .onApplied(() => {
-              console.log('SDK client cache initialized.');
-            })
-            .subscribe(queries);
-        };
-  
-        const onConnect = (
-          conn: DbConnection,
-          identity: Identity,
-          token: string
-        ) => {
-          setIdentity(identity);
-          setConnected(true);
-          setLoadingMinDuration(startTime, setIsLoadingConnection);
-          localStorage.setItem('auth_token', token);
-          console.log(
-            'Connected to SpacetimeDB with identity:',
-            identity.toHexString()
-          );
+  const subscribeToQueries = useCallback((conn: DbConnection, queries: string[]) => {
+    conn
+      ?.subscriptionBuilder()
+      .onApplied(() => {
+        console.log('SDK client cache initialized.');
+      })
+      .subscribe(queries);
+  }, []);
 
-          conn.reducers.setUserMeta(
-            connectionForm.username,
-            {
-              r: parseInt(connectionForm.color.slice(1, 3), 16),
-              g: parseInt(connectionForm.color.slice(3, 5), 16),
-              b: parseInt(connectionForm.color.slice(5, 7), 16),
-            }
-          );
+  const onConnect = useCallback((
+    conn: DbConnection,
+    identity: Identity,
+    token: string
+  ) => {
+    setIdentity(identity);
+    setConnected(true);
+    localStorage.setItem('auth_token', token);
+    console.log(
+      'Connected to SpacetimeDB with identity:',
+      identity.toHexString()
+    );
 
-          subscribeToQueries(conn, [
-            `SELECT * FROM user WHERE identity = '${identity.toHexString()}';`,
-            "SELECT * FROM metadata;",
-            `SELECT * FROM leaderboard_entry;`
-          ]);
-        };
-  
-        const onDisconnect = () => {
-          console.log('Disconnected from SpacetimeDB');
-          setConnected(false);
-          setLoadingMinDuration(startTime, setIsLoadingConnection);
-          if (settings.auto_reconnect_on_disconnect) {
-            reconnect();
-          }
-        };
-  
-        const onConnectError = (_ctx: ErrorContext, err: Error) => {
-          console.log('Error connecting to SpacetimeDB:', err);
-          setConnected(false);
-          setLoadingMinDuration(startTime, setIsLoadingConnection);
-          if (settings.auto_reconnect_on_disconnect) {
-            reconnect();
-          }
-        };
-  
-        setConn(
-          DbConnection.builder()
-            .withUri(connectionForm.uri)
-            .withModuleName('nes')
-            // .withToken(localStorage.getItem('auth_token') || '')
-            .withToken('') // use the above line instead for persisting connection across refreshes
-            .onConnect(onConnect)
-            .onDisconnect(onDisconnect)
-            .onConnectError(onConnectError)
-            .build()
-        );
-    }, [connectionForm, setConnected, settings, connectingRef.current]);
-
-    useEffect(() => {
-      function subscribeToNearbyObjs(conn: DbConnection, metadata: Metadata, x: number, y: number) {
-        if (!canvasHeight || !canvasWidth || (queriedX && queriedY && (Math.abs(queriedX-x) < renderBuffer && Math.abs(queriedY-y) < renderBuffer))) {
-          return
-        }
-    
-        setQueriedX(Math.round(x));
-        setQueriedY(Math.round(y));
-      
-        function getBaseQuery (renderBuffer: number): string {
-          if (!canvasHeight || !canvasWidth) {
-            return ""
-          }
-          const withinScreenQuery = `x < ${Math.round(x) + renderBuffer + canvasWidth / 2} AND x > ${Math.round(x) - renderBuffer - canvasWidth / 2} AND y < ${Math.round(y) + renderBuffer + canvasHeight / 2} AND y > ${Math.round(y) - renderBuffer - canvasHeight / 2}`
-          const leftEdgeQuery = (x-renderBuffer < canvasWidth/2) ? ` OR (x > ${metadata.worldWidth - ((canvasWidth/2)+renderBuffer-Math.round(x))} AND (y > ${Math.round(y) - ((canvasHeight/2)+renderBuffer)}) AND (y < ${Math.round(y) + ((canvasHeight/2)+renderBuffer)}))` : "";
-          const rightEdgeQuery = (x+renderBuffer > metadata.worldWidth - (canvasWidth/2)) ? ` OR (x < ${((canvasWidth/2)+renderBuffer+Math.round(x)) - metadata.worldWidth} AND (y > ${Math.round(y) - ((canvasHeight/2)+renderBuffer)}) AND (y < ${Math.round(y) + ((canvasHeight/2)+renderBuffer)}))` : "";
-          const topEdgeQuery = (y-renderBuffer < canvasHeight/2) ? ` OR (y > ${metadata.worldHeight - ((canvasHeight/2)+renderBuffer-Math.round(y))} AND (x > ${Math.round(x) - ((canvasWidth/2)+renderBuffer)}) AND (x < ${Math.round(x) + ((canvasWidth/2)+renderBuffer)}))` : "";
-          const bottomEdgeQuery = (y+renderBuffer > metadata.worldHeight - (canvasHeight/2)) ? ` OR (y < ${((canvasHeight/2)+renderBuffer+Math.round(y)) - metadata.worldHeight} AND (x > ${Math.round(x) - ((canvasWidth/2)+renderBuffer)}) AND (x < ${Math.round(x) + ((canvasWidth/2)+renderBuffer)}))` : "";
-          const topLeftCornerQuery = (x-renderBuffer < canvasWidth/2 && y-renderBuffer < canvasHeight/2) ? ` OR (x > ${metadata.worldWidth - ((canvasWidth/2)+renderBuffer-Math.round(x))} AND y > ${metadata.worldHeight - ((canvasHeight/2)+renderBuffer-Math.round(y))})` : "";
-          const topRightCornerQuery = (x+renderBuffer > metadata.worldWidth - (canvasWidth/2) && y-renderBuffer < canvasHeight/2) ? ` OR (x < ${((canvasWidth/2)+renderBuffer+Math.round(x)) - metadata.worldWidth} AND y > ${metadata.worldHeight - ((canvasHeight/2)+renderBuffer-Math.round(y))})` : "";
-          const bottomLeftCornerQuery = (x-renderBuffer < canvasWidth/2 && y+renderBuffer > metadata.worldHeight - (canvasHeight/2)) ? ` OR (x > ${metadata.worldWidth - ((canvasWidth/2)+renderBuffer-Math.round(x))} AND y < ${((canvasHeight/2)+renderBuffer+Math.round(y)) - metadata.worldHeight})` : "";
-          const bottomRightCornerQuery = (x+renderBuffer > metadata.worldWidth - (canvasWidth/2) && y+renderBuffer > metadata.worldHeight - (canvasHeight/2)) ? ` OR (x < ${((canvasWidth/2)+renderBuffer+Math.round(x)) - metadata.worldWidth} AND y < ${((canvasHeight/2)+renderBuffer+Math.round(y)) - metadata.worldHeight})` : "";
-      
-          return `WHERE (${withinScreenQuery}${leftEdgeQuery}${rightEdgeQuery}${topEdgeQuery}${bottomEdgeQuery}${topLeftCornerQuery}${topRightCornerQuery}${bottomLeftCornerQuery}${bottomRightCornerQuery})`;
-        }
-        const bitQuery = "SELECT * FROM bit " + getBaseQuery(renderBuffer);
-        const moonQuery = "SELECT * FROM moon " + getBaseQuery(renderBuffer);
-        const userQuery = "SELECT * FROM user " + getBaseQuery(renderBuffer+extraUserRenderBuffer);
-    
-        const handle = conn
-          .subscriptionBuilder()
-          .subscribe([bitQuery, moonQuery, userQuery]);
-    
-        subscriptions?.unsubscribe();
-        setSubscriptions(handle);
+    conn.reducers.setUserMeta(
+      connectionForm.username,
+      {
+        r: parseInt(connectionForm.color.slice(1, 3), 16),
+        g: parseInt(connectionForm.color.slice(3, 5), 16),
+        b: parseInt(connectionForm.color.slice(5, 7), 16),
       }
-      if (conn && self && metadata) {
-        subscribeToNearbyObjs(conn, metadata, self.x, self.y);
+    );
+
+    subscribeToQueries(conn, [
+      `SELECT * FROM user WHERE identity = '${identity.toHexString()}';`,
+      "SELECT * FROM metadata;",
+      `SELECT * FROM leaderboard_entry;`
+    ]);
+  }, [setIdentity, setConnected, connectionForm, subscribeToQueries]);
+
+  const onDisconnect = useCallback(() => {
+    console.log('Disconnected from SpacetimeDB');
+    setConnected(false);
+    reconnectRef.current();
+  }, [setConnected]);
+
+  const onConnectError = useCallback((_ctx: ErrorContext, err: Error) => {
+    console.log('Error connecting to SpacetimeDB:', err);
+    setConnected(false);
+    reconnectRef.current();
+  }, [setConnected]);
+
+  const connect = useCallback(() => {
+    if (connectingRef.current) return;
+    console.log('Connecting to SpacetimeDB...');
+    connectingRef.current = true;
+
+    setConn(
+      DbConnection.builder()
+        .withUri(connectionForm.uri)
+        .withModuleName('nes')
+        // .withToken(localStorage.getItem('auth_token') || '')
+        .withToken('') // use the above line instead for persisting connection across refreshes
+        .onConnect(onConnect)
+        .onDisconnect(onDisconnect)
+        .onConnectError(onConnectError)
+        .build()
+    );
+  }, [connectionForm, onConnect, onDisconnect, onConnectError]);
+
+  const reconnect = useCallback(() => {
+    setTimeout(() => {
+      setConn(null);
+      connectingRef.current = false;
+      resetDBState();
+      // TODO make the below a setting
+      // setIdentity(null);
+      // localStorage.removeItem('auth_token');
+      console.log('Reconnecting...');
+      setConnected(false);
+      connectRef.current();
+    }, 1000); // delay loading
+  }, [resetDBState, setConnected]);
+
+  // Assign the latest connect/reconnect to refs so they can call each other
+  connectRef.current = connect;
+  reconnectRef.current = reconnect;
+
+  // Call connect on first render
+  useEffect(() => {
+    connectRef.current();
+  }, []);
+
+  useEffect(() => {
+    function subscribeToNearbyObjs(conn: DbConnection, metadata: Metadata, x: number, y: number) {
+      if (!canvasHeight || !canvasWidth || (queriedX && queriedY && (Math.abs(queriedX-x) < renderBuffer && Math.abs(queriedY-y) < renderBuffer))) {
+        return
       }
-    }, [canvasHeight, canvasWidth, conn, metadata, queriedX, queriedY, self, subscriptions]);
+  
+      setQueriedX(Math.round(x));
+      setQueriedY(Math.round(y));
+    
+      function getBaseQuery (renderBuffer: number): string {
+        if (!canvasHeight || !canvasWidth) {
+          return ""
+        }
+        const withinScreenQuery = `x < ${Math.round(x) + renderBuffer + canvasWidth / 2} AND x > ${Math.round(x) - renderBuffer - canvasWidth / 2} AND y < ${Math.round(y) + renderBuffer + canvasHeight / 2} AND y > ${Math.round(y) - renderBuffer - canvasHeight / 2}`
+        const leftEdgeQuery = (x-renderBuffer < canvasWidth/2) ? ` OR (x > ${metadata.worldWidth - ((canvasWidth/2)+renderBuffer-Math.round(x))} AND (y > ${Math.round(y) - ((canvasHeight/2)+renderBuffer)}) AND (y < ${Math.round(y) + ((canvasHeight/2)+renderBuffer)}))` : "";
+        const rightEdgeQuery = (x+renderBuffer > metadata.worldWidth - (canvasWidth/2)) ? ` OR (x < ${((canvasWidth/2)+renderBuffer+Math.round(x)) - metadata.worldWidth} AND (y > ${Math.round(y) - ((canvasHeight/2)+renderBuffer)}) AND (y < ${Math.round(y) + ((canvasHeight/2)+renderBuffer)}))` : "";
+        const topEdgeQuery = (y-renderBuffer < canvasHeight/2) ? ` OR (y > ${metadata.worldHeight - ((canvasHeight/2)+renderBuffer-Math.round(y))} AND (x > ${Math.round(x) - ((canvasWidth/2)+renderBuffer)}) AND (x < ${Math.round(x) + ((canvasWidth/2)+renderBuffer)}))` : "";
+        const bottomEdgeQuery = (y+renderBuffer > metadata.worldHeight - (canvasHeight/2)) ? ` OR (y < ${((canvasHeight/2)+renderBuffer+Math.round(y)) - metadata.worldHeight} AND (x > ${Math.round(x) - ((canvasWidth/2)+renderBuffer)}) AND (x < ${Math.round(x) + ((canvasWidth/2)+renderBuffer)}))` : "";
+        const topLeftCornerQuery = (x-renderBuffer < canvasWidth/2 && y-renderBuffer < canvasHeight/2) ? ` OR (x > ${metadata.worldWidth - ((canvasWidth/2)+renderBuffer-Math.round(x))} AND y > ${metadata.worldHeight - ((canvasHeight/2)+renderBuffer-Math.round(y))})` : "";
+        const topRightCornerQuery = (x+renderBuffer > metadata.worldWidth - (canvasWidth/2) && y-renderBuffer < canvasHeight/2) ? ` OR (x < ${((canvasWidth/2)+renderBuffer+Math.round(x)) - metadata.worldWidth} AND y > ${metadata.worldHeight - ((canvasHeight/2)+renderBuffer-Math.round(y))})` : "";
+        const bottomLeftCornerQuery = (x-renderBuffer < canvasWidth/2 && y+renderBuffer > metadata.worldHeight - (canvasHeight/2)) ? ` OR (x > ${metadata.worldWidth - ((canvasWidth/2)+renderBuffer-Math.round(x))} AND y < ${((canvasHeight/2)+renderBuffer+Math.round(y)) - metadata.worldHeight})` : "";
+        const bottomRightCornerQuery = (x+renderBuffer > metadata.worldWidth - (canvasWidth/2) && y+renderBuffer > metadata.worldHeight - (canvasHeight/2)) ? ` OR (x < ${((canvasWidth/2)+renderBuffer+Math.round(x)) - metadata.worldWidth} AND y < ${((canvasHeight/2)+renderBuffer+Math.round(y)) - metadata.worldHeight})` : "";
+    
+        return `WHERE (${withinScreenQuery}${leftEdgeQuery}${rightEdgeQuery}${topEdgeQuery}${bottomEdgeQuery}${topLeftCornerQuery}${topRightCornerQuery}${bottomLeftCornerQuery}${bottomRightCornerQuery})`;
+      }
+      const bitQuery = "SELECT * FROM bit " + getBaseQuery(renderBuffer);
+      const moonQuery = "SELECT * FROM moon " + getBaseQuery(renderBuffer);
+      const userQuery = "SELECT * FROM user " + getBaseQuery(renderBuffer+extraUserRenderBuffer);
+  
+      const handle = conn
+        .subscriptionBuilder()
+        .subscribe([bitQuery, moonQuery, userQuery]);
+  
+      subscriptions?.unsubscribe();
+      setSubscriptions(handle);
+    }
+    if (conn && self && metadata) {
+      subscribeToNearbyObjs(conn, metadata, self.x, self.y);
+    }
+  }, [canvasHeight, canvasWidth, conn, metadata, queriedX, queriedY, self, subscriptions]);
 
   if (!conn || !connected || !identity || !metadata || !self || !canvasHeight || !canvasWidth) {
     return (
@@ -364,14 +360,6 @@ export function DBContextProvider({
         <p className="text-lg text-muted-foreground mb-4">
           If this takes more than a couple seconds, the server is probably down.
         </p>
-        <Button
-          variant="outline"
-          className="text-black"
-          onClick={() => reconnect()}
-          disabled={isLoadingConnection}
-        >
-          {isLoadingConnection ? "Connecting..." : "Retry"}
-        </Button>
       </>
     );
   }
