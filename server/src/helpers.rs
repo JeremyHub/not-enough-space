@@ -34,8 +34,8 @@ pub fn move_character(x: f32, y: f32, dx: f32, dy: f32, dir_vec_x: f32, dir_vec_
         }
     }
 
-    let after_move_x = x + (dx * super::VELOCITY_MULTIPLIER);
-    let after_move_y = y + (dy * super::VELOCITY_MULTIPLIER);
+    let after_move_x = x + (new_dx * super::VELOCITY_MULTIPLIER);
+    let after_move_y = y + (new_dy * super::VELOCITY_MULTIPLIER);
 
     let new_x;
     let new_y;
