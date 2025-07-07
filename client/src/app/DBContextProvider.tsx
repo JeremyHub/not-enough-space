@@ -204,6 +204,8 @@ export function DBContextProvider({
   } = useDBState(conn, identity, () => {
     if (settings.auto_reconnect_on_death) {
       reconnect();
+    } else {
+      window.location.reload();
     }
   });
 
