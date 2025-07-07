@@ -312,40 +312,39 @@ export function Canvas() {
   const [animatedWidth, setAnimatedWidth] = useState<number | null>(null);
   const [animatedHeight, setAnimatedHeight] = useState<number | null>(null);
 
-    useEffect(() => {
+  // Use refs to always have the latest target values
+  const targetWidthRef = useRef(canvasWidth);
+  const targetHeightRef = useRef(canvasHeight);
+
+  useEffect(() => {
+    targetWidthRef.current = canvasWidth;
+    targetHeightRef.current = canvasHeight;
+  }, [canvasWidth, canvasHeight]);
+
+  useEffect(() => {
     let raf: number;
     const growSpeed = 0.5;
+
     function animate() {
-      if (!canvasWidth || !canvasHeight) {
-        raf = requestAnimationFrame(animate);
-        return;
-      }
       setAnimatedWidth(prev => {
-        if (prev === null) return canvasWidth;
-        if (prev < canvasWidth) {
-          return Math.min(prev + growSpeed, canvasWidth);
-        } else if (prev > canvasWidth) {
-          return Math.max(prev - growSpeed, canvasWidth);
-        }
+        const target = targetWidthRef.current;
+        if (prev === null) return target;
+        if (prev < target) return Math.min(prev + growSpeed, target);
+        if (prev > target) return Math.max(prev - growSpeed, target);
         return prev;
       });
       setAnimatedHeight(prev => {
-        if (prev === null) return canvasHeight;
-        if (prev < canvasHeight) {
-          return Math.min(prev + growSpeed, canvasHeight);
-        } else if (prev > canvasHeight) {
-          return Math.max(prev - growSpeed, canvasHeight);
-        }
+        const target = targetHeightRef.current;
+        if (prev === null) return target;
+        if (prev < target) return Math.min(prev + growSpeed, target);
+        if (prev > target) return Math.max(prev - growSpeed, target);
         return prev;
       });
-      if (animatedWidth !== canvasWidth || animatedHeight !== canvasHeight) {
-        raf = requestAnimationFrame(animate);
-      }
+      raf = requestAnimationFrame(animate);
     }
     raf = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(raf);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [canvasWidth, canvasHeight]);
+  }, []); // Only run once
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
