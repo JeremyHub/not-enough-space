@@ -25,6 +25,8 @@ pub struct User {
     #[index(btree)]
     pub is_ai: bool,
     pub speed_boost: f32,
+    pub kills: u32,
+    pub damage: f32,
 }
 
 pub fn get_user_size(health: f32) -> f32 {

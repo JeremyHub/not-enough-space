@@ -16,8 +16,10 @@ pub struct LeaderboardEntry {
     pub rank: u32,
     #[primary_key]
     pub identity: Identity,
-    pub size: f32,
+    pub size: u32,
     pub username: String,
+    pub kills: u32,
+    pub damage: u32,
 }
 
 pub fn init_leaderboard_schedule(ctx: &ReducerContext) -> Result<(), String> {
@@ -36,9 +38,9 @@ pub fn update_leaderboard(ctx: &ReducerContext, _leaderboard_update_schedule: Le
         return Err("Reducer `update_leaderboard` may only be invoked by the scheduler.".into());
     }
     
-    // Collect all users and their sizes and usernames
-    let mut users: Vec<(Identity, f32, String)> = ctx.db.user().iter()
-        .map(|u| (u.identity, u.size, u.username.clone()))
+    // Collect all users and their sizes, usernames, kills, and damage
+    let mut users: Vec<(Identity, f32, String, u32, f32)> = ctx.db.user().iter()
+        .map(|u| (u.identity, u.size, u.username.clone(), u.kills, u.damage))
         .collect();
     // Sort by size descending
     users.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
@@ -49,12 +51,14 @@ pub fn update_leaderboard(ctx: &ReducerContext, _leaderboard_update_schedule: Le
     }
 
     // Insert sorted users into leaderboard with rank, size, and username
-    for (i, (identity, size, username)) in users.iter().enumerate() {
+    for (i, (identity, size, username, kills, damage)) in users.iter().enumerate() {
         ctx.db.leaderboard_entry().insert(LeaderboardEntry {
             rank: (i + 1) as u32,
             identity: *identity,
-            size: *size,
+            size: size.round() as u32,
             username: username.clone(),
+            kills: *kills,
+            damage: damage.round() as u32,
         });
     }
 

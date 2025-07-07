@@ -44,7 +44,7 @@ function App() {
                 direction="horizontal"
                 className="w-full h-full"
               >
-                <ResizablePanel defaultSize={25} minSize={15}>
+                <ResizablePanel defaultSize={27} minSize={15}>
                   <ResizablePanelGroup
                     direction="vertical"
                     className="w-full h-full"
@@ -55,7 +55,7 @@ function App() {
                       </div>
                     </ResizablePanel>
                     <ResizableHandle className="bg-zinc-900 border-none" />
-                    <ResizablePanel defaultSize={50} minSize={15}>
+                    <ResizablePanel minSize={15}>
                       <div className="flex flex-col h-full">
                         <Settings
                           setSettings={setSettings}
@@ -65,7 +65,7 @@ function App() {
                   </ResizablePanelGroup>
                 </ResizablePanel>
                 <ResizableHandle className="bg-zinc-900 border-none" />
-                <ResizablePanel defaultSize={75} minSize={40}>
+                <ResizablePanel minSize={40}>
                   <div className="flex flex-col h-full items-center justify-center">
                     <CanvasWithInputHandler />
                   </div>

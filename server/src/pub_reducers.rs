@@ -149,6 +149,8 @@ pub fn client_connected(ctx: &ReducerContext) {
             total_moon_size_oribiting: 0.0,
             is_ai: false,
             speed_boost: 0.0,
+            kills: 0,
+            damage: 0.0,
         });
     }
 }

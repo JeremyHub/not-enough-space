@@ -51,6 +51,8 @@ export type User = {
   totalMoonSizeOribiting: number,
   isAi: boolean,
   speedBoost: number,
+  kills: number,
+  damage: number,
 };
 
 /**
@@ -79,6 +81,8 @@ export namespace User {
       new ProductTypeElement("totalMoonSizeOribiting", AlgebraicType.createF32Type()),
       new ProductTypeElement("isAi", AlgebraicType.createBoolType()),
       new ProductTypeElement("speedBoost", AlgebraicType.createF32Type()),
+      new ProductTypeElement("kills", AlgebraicType.createU32Type()),
+      new ProductTypeElement("damage", AlgebraicType.createF32Type()),
     ]);
   }
 

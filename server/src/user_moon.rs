@@ -40,7 +40,7 @@ pub fn handle_user_and_oribiting_moon_collision(ctx: &ReducerContext, user: &use
         };
         (new_angle, Some(new_velocity))
     };
-
+    // Update user and moon with new health, size, orbit angle, and orbital velocity
     ctx.db.user().identity().update(user::User {
         health: new_health,
         size: new_size,
@@ -53,6 +53,16 @@ pub fn handle_user_and_oribiting_moon_collision(ctx: &ReducerContext, user: &use
         orbital_velocity: new_orbital_velocity,
         ..moon
     });
+    // update the owning user's damage or kills
+    if let Some(owner_identity) = moon.orbiting {
+        if let Some(owner) = ctx.db.user().identity().find(owner_identity) {
+            ctx.db.user().identity().update(user::User {
+                damage: owner.damage + moon.size,
+                kills: if new_health <= 0.0 { owner.kills + 1 } else { owner.kills },
+                ..owner
+            });
+        }
+    }
     // spawn a bit at the collision point, going twards the user who owns the moon that did the hit, owned by the owner of the moon
     if let Some(owner_identity) = moon.orbiting {
         if let Some(owner) = ctx.db.user().identity().find(owner_identity) {

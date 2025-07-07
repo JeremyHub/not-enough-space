@@ -37,6 +37,8 @@ export type LeaderboardEntry = {
   identity: Identity,
   size: number,
   username: string,
+  kills: number,
+  damage: number,
 };
 
 /**
@@ -51,8 +53,10 @@ export namespace LeaderboardEntry {
     return AlgebraicType.createProductType([
       new ProductTypeElement("rank", AlgebraicType.createU32Type()),
       new ProductTypeElement("identity", AlgebraicType.createIdentityType()),
-      new ProductTypeElement("size", AlgebraicType.createF32Type()),
+      new ProductTypeElement("size", AlgebraicType.createU32Type()),
       new ProductTypeElement("username", AlgebraicType.createStringType()),
+      new ProductTypeElement("kills", AlgebraicType.createU32Type()),
+      new ProductTypeElement("damage", AlgebraicType.createU32Type()),
     ]);
   }
 
