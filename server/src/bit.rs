@@ -79,7 +79,7 @@ pub fn update_bits(ctx: &ReducerContext) {
             bit.dy,
             0.0,
             0.0,
-            super::BIT_ACCELERATION,
+            0.0,
         );
         let moving = bit.dx != 0.0 || bit.dy != 0.0;
         ctx.db.bit().bit_id().update(Bit {
