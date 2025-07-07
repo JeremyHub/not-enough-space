@@ -315,16 +315,9 @@ export function Canvas() {
     useEffect(() => {
     let raf: number;
     const growSpeed = 0.5;
-
-    
     function animate() {
       if (!canvasWidth || !canvasHeight) {
         raf = requestAnimationFrame(animate);
-        return;
-      }
-      if ((animatedWidth === null || animatedHeight === null)) {
-        setAnimatedWidth(canvasWidth);
-        setAnimatedHeight(canvasHeight);
         return;
       }
       setAnimatedWidth(prev => {
@@ -345,17 +338,14 @@ export function Canvas() {
         }
         return prev;
       });
-      if (animatedWidth < canvasWidth || animatedHeight < canvasHeight) {
+      if (animatedWidth !== canvasWidth || animatedHeight !== canvasHeight) {
         raf = requestAnimationFrame(animate);
       }
     }
-
-    setAnimatedWidth(animatedWidth);
-    setAnimatedHeight(animatedHeight);
     raf = requestAnimationFrame(animate);
-
     return () => cancelAnimationFrame(raf);
-  }, [canvasWidth, canvasHeight, animatedWidth, animatedHeight]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canvasWidth, canvasHeight]);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
