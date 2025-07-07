@@ -23,7 +23,7 @@ pub fn update_ai_directions(ctx: &ReducerContext) {
             username: ai.username.clone(),
             ..ai
         });
-        if ctx.rng().gen_bool(super::CHANCE_UPDATED_AI_SPAWNS_MOON) {
+        if ctx.rng().gen_bool(super::CHANCE_UPDATED_AI_SPAWNS_MOON as f64) {
             let _ = pub_reducers::sacrifice_health_for_moon(ctx, ai);
         }
     }

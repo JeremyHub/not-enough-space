@@ -66,7 +66,8 @@ pub fn handle_user_and_oribiting_moon_collision(ctx: &ReducerContext, user: &use
     // spawn a bit at the collision point, going twards the user who owns the moon that did the hit, owned by the owner of the moon
     if let Some(owner_identity) = moon.orbiting {
         if let Some(owner) = ctx.db.user().identity().find(owner_identity) {
-            let (dx, dy) = helpers::toroidal_vector(owner.x, owner.y, user.x, user.y);
+            // dont normalize so that the bit is launched with a velocity proportional to the distance from the moon to the user
+            let (dx, dy) = helpers::toroidal_vector(owner.x, owner.y, moon.x, moon.y);
             ctx.db.bit().insert(bit::Bit {
                 bit_id: 0,
                 col_index: moon.x.round() as i32,

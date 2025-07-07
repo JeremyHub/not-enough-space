@@ -210,7 +210,7 @@ fn update_free_moons_directions(ctx: &ReducerContext) {
     use rand::seq::SliceRandom;
     free_moons.as_mut_slice().shuffle(&mut ctx.rng());
     
-    let num_to_update = ((free_moons.len() as f64) * super::PORTION_FREE_MOONS_DIRECTION_UPDATED_PER_TICK)
+    let num_to_update = ((free_moons.len() as f32) * super::PORTION_FREE_MOONS_DIRECTION_UPDATED_PER_TICK)
         .ceil() as usize;
     for moon in free_moons.into_iter().take(num_to_update) {
         ctx.db.moon().moon_id().update(Moon {
