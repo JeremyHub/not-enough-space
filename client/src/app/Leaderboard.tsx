@@ -26,7 +26,7 @@ export function Leaderboard() {
         <Table className="w-full">
           <TableHeader>
             <TableRow>
-              <TableHead className="text-white">Rank</TableHead>
+              <TableHead className="text-white">Rank {`(total ${leaderboardEntries.size})`}</TableHead>
               <TableHead className="w-[100px] text-white">Username</TableHead>
               <TableHead className="text-white">Size</TableHead>
             </TableRow>
