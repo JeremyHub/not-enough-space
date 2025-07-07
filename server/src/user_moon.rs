@@ -64,7 +64,7 @@ pub fn handle_user_and_oribiting_moon_collision(ctx: &ReducerContext, user: &use
                 y: moon.y,
                 dx: dx * 0.5,
                 dy: dy * 0.5,
-                color: moon.color,
+                color: user.color,
                 size: moon.size,
                 worth: moon.size,
                 owned_by: Some(owner_identity),
