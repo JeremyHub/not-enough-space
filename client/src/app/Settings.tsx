@@ -15,13 +15,11 @@ import { Switch } from "@/components/ui/switch"
 import { Card, CardContent } from "@/components/ui/card"
 
 export const SettingsSchema = z.object({
-    auto_reconnect_on_disconnect: z.boolean(),
     auto_reconnect_on_death: z.boolean(),
 })
 
 export function getDefaultSettings(): z.infer<typeof SettingsSchema> {
   return {
-    auto_reconnect_on_disconnect: true,
     auto_reconnect_on_death: true,
   }
 }
@@ -49,26 +47,6 @@ export function Settings({ setSettings }: {
             <div>
             <h3 className="mb-6 text-lg font-medium text-primary-foreground">Settings</h3>
             <div className="space-y-4">
-                <FormField
-                control={form.control}
-                name="auto_reconnect_on_disconnect"
-                render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                    <div className="space-y-0.5">
-                        <FormLabel className="text-primary-foreground">Auto-reconnect On Disconnect</FormLabel>
-                        <FormDescription>
-                        Enable automatic reconnection to the server if the connection is lost.
-                        </FormDescription>
-                    </div>
-                    <FormControl>
-                        <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                        />
-                    </FormControl>
-                    </FormItem>
-                )}
-                />
                 <FormField
                 control={form.control}
                 name="auto_reconnect_on_death"
