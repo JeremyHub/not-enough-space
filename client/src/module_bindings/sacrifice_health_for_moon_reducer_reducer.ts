@@ -40,21 +40,28 @@ export type SacrificeHealthForMoonReducer = {};
  */
 export namespace SacrificeHealthForMoonReducer {
   /**
-  * A function which returns this type represented as an AlgebraicType.
-  * This function is derived from the AlgebraicType used to generate this type.
-  */
+   * A function which returns this type represented as an AlgebraicType.
+   * This function is derived from the AlgebraicType used to generate this type.
+   */
   export function getTypeScriptAlgebraicType(): AlgebraicType {
-    return AlgebraicType.createProductType([
-    ]);
+    return AlgebraicType.createProductType([]);
   }
 
-  export function serialize(writer: BinaryWriter, value: SacrificeHealthForMoonReducer): void {
-    SacrificeHealthForMoonReducer.getTypeScriptAlgebraicType().serialize(writer, value);
+  export function serialize(
+    writer: BinaryWriter,
+    value: SacrificeHealthForMoonReducer,
+  ): void {
+    SacrificeHealthForMoonReducer.getTypeScriptAlgebraicType().serialize(
+      writer,
+      value,
+    );
   }
 
-  export function deserialize(reader: BinaryReader): SacrificeHealthForMoonReducer {
-    return SacrificeHealthForMoonReducer.getTypeScriptAlgebraicType().deserialize(reader);
+  export function deserialize(
+    reader: BinaryReader,
+  ): SacrificeHealthForMoonReducer {
+    return SacrificeHealthForMoonReducer.getTypeScriptAlgebraicType().deserialize(
+      reader,
+    );
   }
-
 }
-

@@ -35,17 +35,17 @@ import {
 import { Color as __Color } from "./color_type";
 
 export type Bit = {
-  bitId: number,
-  colIndex: number,
-  x: number,
-  y: number,
-  dx: number,
-  dy: number,
-  size: number,
-  worth: number,
-  color: __Color,
-  moving: boolean,
-  ownedBy: Identity | undefined,
+  bitId: number;
+  colIndex: number;
+  x: number;
+  y: number;
+  dx: number;
+  dy: number;
+  size: number;
+  worth: number;
+  color: __Color;
+  moving: boolean;
+  ownedBy: Identity | undefined;
 };
 
 /**
@@ -53,9 +53,9 @@ export type Bit = {
  */
 export namespace Bit {
   /**
-  * A function which returns this type represented as an AlgebraicType.
-  * This function is derived from the AlgebraicType used to generate this type.
-  */
+   * A function which returns this type represented as an AlgebraicType.
+   * This function is derived from the AlgebraicType used to generate this type.
+   */
   export function getTypeScriptAlgebraicType(): AlgebraicType {
     return AlgebraicType.createProductType([
       new ProductTypeElement("bitId", AlgebraicType.createI32Type()),
@@ -68,7 +68,10 @@ export namespace Bit {
       new ProductTypeElement("worth", AlgebraicType.createF32Type()),
       new ProductTypeElement("color", __Color.getTypeScriptAlgebraicType()),
       new ProductTypeElement("moving", AlgebraicType.createBoolType()),
-      new ProductTypeElement("ownedBy", AlgebraicType.createOptionType(AlgebraicType.createIdentityType())),
+      new ProductTypeElement(
+        "ownedBy",
+        AlgebraicType.createOptionType(AlgebraicType.createIdentityType()),
+      ),
     ]);
   }
 
@@ -79,7 +82,4 @@ export namespace Bit {
   export function deserialize(reader: BinaryReader): Bit {
     return Bit.getTypeScriptAlgebraicType().deserialize(reader);
   }
-
 }
-
-

@@ -36,8 +36,8 @@ import {
 import { Color as __Color } from "./color_type";
 
 export type SetUserMeta = {
-  username: string,
-  color: __Color,
+  username: string;
+  color: __Color;
 };
 
 /**
@@ -45,9 +45,9 @@ export type SetUserMeta = {
  */
 export namespace SetUserMeta {
   /**
-  * A function which returns this type represented as an AlgebraicType.
-  * This function is derived from the AlgebraicType used to generate this type.
-  */
+   * A function which returns this type represented as an AlgebraicType.
+   * This function is derived from the AlgebraicType used to generate this type.
+   */
   export function getTypeScriptAlgebraicType(): AlgebraicType {
     return AlgebraicType.createProductType([
       new ProductTypeElement("username", AlgebraicType.createStringType()),
@@ -62,6 +62,4 @@ export namespace SetUserMeta {
   export function deserialize(reader: BinaryReader): SetUserMeta {
     return SetUserMeta.getTypeScriptAlgebraicType().deserialize(reader);
   }
-
 }
-

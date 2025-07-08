@@ -33,9 +33,9 @@ import {
   type SubscriptionEventContextInterface,
 } from "@clockworklabs/spacetimedb-sdk";
 export type Color = {
-  r: number,
-  g: number,
-  b: number,
+  r: number;
+  g: number;
+  b: number;
 };
 
 /**
@@ -43,9 +43,9 @@ export type Color = {
  */
 export namespace Color {
   /**
-  * A function which returns this type represented as an AlgebraicType.
-  * This function is derived from the AlgebraicType used to generate this type.
-  */
+   * A function which returns this type represented as an AlgebraicType.
+   * This function is derived from the AlgebraicType used to generate this type.
+   */
   export function getTypeScriptAlgebraicType(): AlgebraicType {
     return AlgebraicType.createProductType([
       new ProductTypeElement("r", AlgebraicType.createI32Type()),
@@ -61,7 +61,4 @@ export namespace Color {
   export function deserialize(reader: BinaryReader): Color {
     return Color.getTypeScriptAlgebraicType().deserialize(reader);
   }
-
 }
-
-

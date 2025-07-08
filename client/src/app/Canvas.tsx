@@ -1,23 +1,33 @@
-import { useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { Bit, Moon, Color, Metadata, User } from '.././module_bindings';
-import { Identity } from '@clockworklabs/spacetimedb-sdk';
-import { DBContext } from './DBContext';
-import { Card, CardContent } from '@/components/ui/card';
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
+import { Bit, Moon, Color, Metadata, User } from ".././module_bindings";
+import { Identity } from "@clockworklabs/spacetimedb-sdk";
+import { DBContext } from "./DBContext";
+import { Card, CardContent } from "@/components/ui/card";
 
 type DrawProps = {
-  metadata: Metadata,
-  canvasWidth: number,
-  canvasHeight: number,
-  renderBuffer: number,
+  metadata: Metadata;
+  canvasWidth: number;
+  canvasHeight: number;
+  renderBuffer: number;
   users: Map<string, User>;
   self: User;
   bits: Map<number, Bit>;
   moons: Map<number, Moon>;
   identity: Identity;
-  moonTrails?: Map<number, Array<{ relX: number; relY: number; parentId: string }>>;
+  moonTrails?: Map<
+    number,
+    Array<{ relX: number; relY: number; parentId: string }>
+  >;
 };
 
-function renderTextInCircle(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, radius: number, color = "#fff") {
+function renderTextInCircle(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  radius: number,
+  color = "#fff",
+) {
   const dpr = window.devicePixelRatio || 1;
   const bestFontSize = Math.floor(radius * 0.8 * dpr) / text.length;
   ctx.font = `bold ${bestFontSize}px sans-serif`;
@@ -29,7 +39,14 @@ function renderTextInCircle(ctx: CanvasRenderingContext2D, text: string, x: numb
   ctx.fillText(text, x, y);
 }
 
-function renderCircle(ctx: CanvasRenderingContext2D, size: number, x: number, y: number, color: Color, filled: boolean = true) {
+function renderCircle(
+  ctx: CanvasRenderingContext2D,
+  size: number,
+  x: number,
+  y: number,
+  color: Color,
+  filled: boolean = true,
+) {
   ctx.beginPath();
   ctx.arc(x, y, size, 0, Math.PI * 2);
   if (filled) {
@@ -55,9 +72,9 @@ function renderWithWrap(
 ) {
   let new_x: number = x;
   let new_y: number = y;
-  if (self.x < canvasWidth/2) {
-    if (x > canvasWidth+renderBuffer) {
-      new_x = x-metadata.worldWidth;
+  if (self.x < canvasWidth / 2) {
+    if (x > canvasWidth + renderBuffer) {
+      new_x = x - metadata.worldWidth;
     }
   }
   if (self.x > metadata.worldWidth - canvasWidth / 2) {
@@ -80,26 +97,33 @@ function renderWithWrap(
 }
 
 const draw = (ctx: CanvasRenderingContext2D | null, props: DrawProps) => {
-  const { metadata, canvasWidth, canvasHeight, renderBuffer, users, self, bits, moons, identity, moonTrails } = props;
+  const {
+    metadata,
+    canvasWidth,
+    canvasHeight,
+    renderBuffer,
+    users,
+    self,
+    bits,
+    moons,
+    identity,
+    moonTrails,
+  } = props;
   if (!ctx) return;
 
-  ctx.fillStyle = 'rgb(23, 23, 23)';
+  ctx.fillStyle = "rgb(23, 23, 23)";
   ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
-  const GRID_SIZE = 60
+  const GRID_SIZE = 60;
 
-  ctx.strokeStyle = 'rgba(200,200,200,0.3)';
+  ctx.strokeStyle = "rgba(200,200,200,0.3)";
   ctx.lineWidth = 0.08;
 
   const worldLeft = self.x - canvasWidth / 2;
   const worldTop = self.y - canvasHeight / 2;
 
   const firstGridX = Math.floor(worldLeft / GRID_SIZE) * GRID_SIZE;
-  for (
-    let x = firstGridX;
-    x < worldLeft + canvasWidth;
-    x += GRID_SIZE
-  ) {
+  for (let x = firstGridX; x < worldLeft + canvasWidth; x += GRID_SIZE) {
     const screenX = x - worldLeft;
     ctx.beginPath();
     ctx.moveTo(screenX, 0);
@@ -108,11 +132,7 @@ const draw = (ctx: CanvasRenderingContext2D | null, props: DrawProps) => {
   }
 
   const firstGridY = Math.floor(worldTop / GRID_SIZE) * GRID_SIZE;
-  for (
-    let y = firstGridY;
-    y < worldTop + canvasHeight;
-    y += GRID_SIZE
-  ) {
+  for (let y = firstGridY; y < worldTop + canvasHeight; y += GRID_SIZE) {
     const screenY = y - worldTop;
     ctx.beginPath();
     ctx.moveTo(0, screenY);
@@ -121,13 +141,15 @@ const draw = (ctx: CanvasRenderingContext2D | null, props: DrawProps) => {
   }
 
   ctx.save();
-  ctx.strokeStyle = 'rgba(255,0,0,0.7)';
+  ctx.strokeStyle = "rgba(255,0,0,0.7)";
   ctx.lineWidth = 2;
 
   const leftBorderX = metadata.worldWidth > 0 ? 0 - worldLeft : 0;
-  const rightBorderX = metadata.worldWidth > 0 ? metadata.worldWidth - worldLeft : canvasWidth;
+  const rightBorderX =
+    metadata.worldWidth > 0 ? metadata.worldWidth - worldLeft : canvasWidth;
   const topBorderY = metadata.worldHeight > 0 ? 0 - worldTop : 0;
-  const bottomBorderY = metadata.worldHeight > 0 ? metadata.worldHeight - worldTop : canvasHeight;
+  const bottomBorderY =
+    metadata.worldHeight > 0 ? metadata.worldHeight - worldTop : canvasHeight;
 
   ctx.beginPath();
   ctx.moveTo(leftBorderX, 0);
@@ -156,21 +178,21 @@ const draw = (ctx: CanvasRenderingContext2D | null, props: DrawProps) => {
     y: obj.y - self.y + canvasHeight / 2,
   });
 
-  bits.forEach(bit => {
-      const { x, y } = toScreen(bit);
-      renderWithWrap(
-        (px, py) => renderCircle(ctx, bit.size, px, py, bit.color, false), // not filled for bits
-        metadata,
-        canvasWidth,
-        canvasHeight,
-        renderBuffer,
-        self,
-        x,
-        y,
-      );
-    });
+  bits.forEach((bit) => {
+    const { x, y } = toScreen(bit);
+    renderWithWrap(
+      (px, py) => renderCircle(ctx, bit.size, px, py, bit.color, false), // not filled for bits
+      metadata,
+      canvasWidth,
+      canvasHeight,
+      renderBuffer,
+      self,
+      x,
+      y,
+    );
+  });
 
-  users.forEach(user => {
+  users.forEach((user) => {
     // Draw user circle
     if (user.identity.data !== identity.data) {
       const { x, y } = toScreen(user);
@@ -180,7 +202,13 @@ const draw = (ctx: CanvasRenderingContext2D | null, props: DrawProps) => {
           // Draw username inside the user's circle if present
           if (user.username) {
             ctx.save();
-            renderTextInCircle(ctx, user.username, px, py, user.size * (window.devicePixelRatio || 1));
+            renderTextInCircle(
+              ctx,
+              user.username,
+              px,
+              py,
+              user.size * (window.devicePixelRatio || 1),
+            );
             ctx.restore();
           }
         },
@@ -200,13 +228,19 @@ const draw = (ctx: CanvasRenderingContext2D | null, props: DrawProps) => {
   // Draw self username inside self circle
   if (self.username) {
     ctx.save();
-    renderTextInCircle(ctx, self.username, canvasWidth / 2, canvasHeight / 2, self.size * (window.devicePixelRatio || 1));
+    renderTextInCircle(
+      ctx,
+      self.username,
+      canvasWidth / 2,
+      canvasHeight / 2,
+      self.size * (window.devicePixelRatio || 1),
+    );
     ctx.restore();
   }
 
   // Draw moon trails before drawing moons
   if (moonTrails) {
-    moons.forEach(moon => {
+    moons.forEach((moon) => {
       const trail = moonTrails.get(moon.moonId) || [];
       trail.forEach((trailPoint, idx) => {
         // Find the parent user for this trail point
@@ -220,7 +254,7 @@ const draw = (ctx: CanvasRenderingContext2D | null, props: DrawProps) => {
           (px, py) => {
             ctx.save();
             // Fade older trail segments more
-            const alpha = 0.2 * (idx + 1) / trail.length;
+            const alpha = (0.2 * (idx + 1)) / trail.length;
             ctx.globalAlpha = alpha;
             renderCircle(ctx, moon.size, px, py, moon.color);
             ctx.globalAlpha = 1.0;
@@ -238,7 +272,7 @@ const draw = (ctx: CanvasRenderingContext2D | null, props: DrawProps) => {
     });
   }
 
-  moons.forEach(moon => {
+  moons.forEach((moon) => {
     const { x, y } = toScreen(moon);
     renderWithWrap(
       (px, py) => renderCircle(ctx, moon.size, px, py, moon.color),
@@ -253,12 +287,10 @@ const draw = (ctx: CanvasRenderingContext2D | null, props: DrawProps) => {
   });
 };
 
-
 export function Canvas() {
-
   const context = useContext(DBContext);
   if (!context) {
-    throw new Error('DBContext is not available');
+    throw new Error("DBContext is not available");
   }
   const {
     identity,
@@ -279,9 +311,9 @@ export function Canvas() {
 
   // Update moonTrails when moons move (relative to their parent user)
   useEffect(() => {
-    setMoonTrails(prev => {
+    setMoonTrails((prev) => {
       const newTrails = new Map(prev);
-      moons.forEach(moon => {
+      moons.forEach((moon) => {
         // Use moon.orbiting (Identity | undefined) as the parent user
         const parentId = moon.orbiting?.toHexString?.() || null;
         if (!parentId || !users.has(parentId)) return;
@@ -297,12 +329,14 @@ export function Canvas() {
           prevTrail[prevTrail.length - 1].relY !== relY
         ) {
           // Limit trail length to, e.g., 20
-          const updatedTrail = [...prevTrail, { relX, relY, parentId }].slice(-20);
+          const updatedTrail = [...prevTrail, { relX, relY, parentId }].slice(
+            -20,
+          );
           newTrails.set(moon.moonId, updatedTrail);
         }
       });
       // Remove trails for moons that no longer exist
-      Array.from(newTrails.keys()).forEach(moonId => {
+      Array.from(newTrails.keys()).forEach((moonId) => {
         if (!moons.has(moonId)) newTrails.delete(moonId);
       });
       return newTrails;
@@ -326,14 +360,14 @@ export function Canvas() {
     const growSpeed = 0.5;
 
     function animate() {
-      setAnimatedWidth(prev => {
+      setAnimatedWidth((prev) => {
         const target = targetWidthRef.current;
         if (prev === null) return target;
         if (prev < target) return Math.min(prev + growSpeed, target);
         if (prev > target) return Math.max(prev - growSpeed, target);
         return prev;
       });
-      setAnimatedHeight(prev => {
+      setAnimatedHeight((prev) => {
         const target = targetHeightRef.current;
         if (prev === null) return target;
         if (prev < target) return Math.min(prev + growSpeed, target);
@@ -348,24 +382,40 @@ export function Canvas() {
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  const drawProps = useMemo(() => ({
-    metadata,
-    canvasWidth: animatedWidth ?? canvasWidth,
-    canvasHeight: animatedHeight ?? canvasHeight,
-    renderBuffer,
-    users,
-    self,
-    bits,
-    moons,
-    identity,
-    moonTrails,
-  }), [metadata, animatedWidth, canvasWidth, animatedHeight, canvasHeight, renderBuffer, users, self, bits, moons, identity, moonTrails]);
+  const drawProps = useMemo(
+    () => ({
+      metadata,
+      canvasWidth: animatedWidth ?? canvasWidth,
+      canvasHeight: animatedHeight ?? canvasHeight,
+      renderBuffer,
+      users,
+      self,
+      bits,
+      moons,
+      identity,
+      moonTrails,
+    }),
+    [
+      metadata,
+      animatedWidth,
+      canvasWidth,
+      animatedHeight,
+      canvasHeight,
+      renderBuffer,
+      users,
+      self,
+      bits,
+      moons,
+      identity,
+      moonTrails,
+    ],
+  );
 
   useEffect(() => {
     let animationFrameId: number;
     const canvas = canvasRef.current as HTMLCanvasElement | null;
     if (!canvas) return;
-    const context = canvas.getContext('2d');
+    const context = canvas.getContext("2d");
 
     const render = () => {
       draw(context, drawProps);
@@ -390,4 +440,4 @@ export function Canvas() {
       </CardContent>
     </Card>
   );
-};
+}

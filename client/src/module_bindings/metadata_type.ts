@@ -33,8 +33,8 @@ import {
   type SubscriptionEventContextInterface,
 } from "@clockworklabs/spacetimedb-sdk";
 export type Metadata = {
-  worldHeight: number,
-  worldWidth: number,
+  worldHeight: number;
+  worldWidth: number;
 };
 
 /**
@@ -42,9 +42,9 @@ export type Metadata = {
  */
 export namespace Metadata {
   /**
-  * A function which returns this type represented as an AlgebraicType.
-  * This function is derived from the AlgebraicType used to generate this type.
-  */
+   * A function which returns this type represented as an AlgebraicType.
+   * This function is derived from the AlgebraicType used to generate this type.
+   */
   export function getTypeScriptAlgebraicType(): AlgebraicType {
     return AlgebraicType.createProductType([
       new ProductTypeElement("worldHeight", AlgebraicType.createI32Type()),
@@ -59,7 +59,4 @@ export namespace Metadata {
   export function deserialize(reader: BinaryReader): Metadata {
     return Metadata.getTypeScriptAlgebraicType().deserialize(reader);
   }
-
 }
-
-

@@ -33,12 +33,12 @@ import {
   type SubscriptionEventContextInterface,
 } from "@clockworklabs/spacetimedb-sdk";
 export type LeaderboardEntry = {
-  rank: number,
-  identity: Identity,
-  size: number,
-  username: string,
-  kills: number,
-  damage: number,
+  rank: number;
+  identity: Identity;
+  size: number;
+  username: string;
+  kills: number;
+  damage: number;
 };
 
 /**
@@ -46,9 +46,9 @@ export type LeaderboardEntry = {
  */
 export namespace LeaderboardEntry {
   /**
-  * A function which returns this type represented as an AlgebraicType.
-  * This function is derived from the AlgebraicType used to generate this type.
-  */
+   * A function which returns this type represented as an AlgebraicType.
+   * This function is derived from the AlgebraicType used to generate this type.
+   */
   export function getTypeScriptAlgebraicType(): AlgebraicType {
     return AlgebraicType.createProductType([
       new ProductTypeElement("rank", AlgebraicType.createU32Type()),
@@ -60,14 +60,14 @@ export namespace LeaderboardEntry {
     ]);
   }
 
-  export function serialize(writer: BinaryWriter, value: LeaderboardEntry): void {
+  export function serialize(
+    writer: BinaryWriter,
+    value: LeaderboardEntry,
+  ): void {
     LeaderboardEntry.getTypeScriptAlgebraicType().serialize(writer, value);
   }
 
   export function deserialize(reader: BinaryReader): LeaderboardEntry {
     return LeaderboardEntry.getTypeScriptAlgebraicType().deserialize(reader);
   }
-
 }
-
-

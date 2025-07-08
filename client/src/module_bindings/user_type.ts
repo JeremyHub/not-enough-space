@@ -35,24 +35,24 @@ import {
 import { Color as __Color } from "./color_type";
 
 export type User = {
-  identity: Identity,
-  online: boolean,
-  username: string,
-  colIndex: number,
-  x: number,
-  y: number,
-  dx: number,
-  dy: number,
-  dirVecX: number,
-  dirVecY: number,
-  color: __Color,
-  health: number,
-  size: number,
-  totalMoonSizeOribiting: number,
-  isAi: boolean,
-  speedBoost: number,
-  kills: number,
-  damage: number,
+  identity: Identity;
+  online: boolean;
+  username: string;
+  colIndex: number;
+  x: number;
+  y: number;
+  dx: number;
+  dy: number;
+  dirVecX: number;
+  dirVecY: number;
+  color: __Color;
+  health: number;
+  size: number;
+  totalMoonSizeOribiting: number;
+  isAi: boolean;
+  speedBoost: number;
+  kills: number;
+  damage: number;
 };
 
 /**
@@ -60,9 +60,9 @@ export type User = {
  */
 export namespace User {
   /**
-  * A function which returns this type represented as an AlgebraicType.
-  * This function is derived from the AlgebraicType used to generate this type.
-  */
+   * A function which returns this type represented as an AlgebraicType.
+   * This function is derived from the AlgebraicType used to generate this type.
+   */
   export function getTypeScriptAlgebraicType(): AlgebraicType {
     return AlgebraicType.createProductType([
       new ProductTypeElement("identity", AlgebraicType.createIdentityType()),
@@ -78,7 +78,10 @@ export namespace User {
       new ProductTypeElement("color", __Color.getTypeScriptAlgebraicType()),
       new ProductTypeElement("health", AlgebraicType.createF32Type()),
       new ProductTypeElement("size", AlgebraicType.createF32Type()),
-      new ProductTypeElement("totalMoonSizeOribiting", AlgebraicType.createF32Type()),
+      new ProductTypeElement(
+        "totalMoonSizeOribiting",
+        AlgebraicType.createF32Type(),
+      ),
       new ProductTypeElement("isAi", AlgebraicType.createBoolType()),
       new ProductTypeElement("speedBoost", AlgebraicType.createF32Type()),
       new ProductTypeElement("kills", AlgebraicType.createU32Type()),
@@ -93,7 +96,4 @@ export namespace User {
   export function deserialize(reader: BinaryReader): User {
     return User.getTypeScriptAlgebraicType().deserialize(reader);
   }
-
 }
-
-

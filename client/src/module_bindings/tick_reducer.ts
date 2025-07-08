@@ -36,7 +36,7 @@ import {
 import { TickSchedule as __TickSchedule } from "./tick_schedule_type";
 
 export type Tick = {
-  tickSchedule: __TickSchedule,
+  tickSchedule: __TickSchedule;
 };
 
 /**
@@ -44,12 +44,15 @@ export type Tick = {
  */
 export namespace Tick {
   /**
-  * A function which returns this type represented as an AlgebraicType.
-  * This function is derived from the AlgebraicType used to generate this type.
-  */
+   * A function which returns this type represented as an AlgebraicType.
+   * This function is derived from the AlgebraicType used to generate this type.
+   */
   export function getTypeScriptAlgebraicType(): AlgebraicType {
     return AlgebraicType.createProductType([
-      new ProductTypeElement("tickSchedule", __TickSchedule.getTypeScriptAlgebraicType()),
+      new ProductTypeElement(
+        "tickSchedule",
+        __TickSchedule.getTypeScriptAlgebraicType(),
+      ),
     ]);
   }
 
@@ -60,6 +63,4 @@ export namespace Tick {
   export function deserialize(reader: BinaryReader): Tick {
     return Tick.getTypeScriptAlgebraicType().deserialize(reader);
   }
-
 }
-

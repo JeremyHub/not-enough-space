@@ -33,7 +33,12 @@ import {
   type SubscriptionEventContextInterface,
 } from "@clockworklabs/spacetimedb-sdk";
 import { LeaderboardEntry } from "./leaderboard_entry_type";
-import { type EventContext, type Reducer, RemoteReducers, RemoteTables } from ".";
+import {
+  type EventContext,
+  type Reducer,
+  RemoteReducers,
+  RemoteTables,
+} from ".";
 
 /**
  * Table handle for the table `leaderboard_entry`.
@@ -84,25 +89,38 @@ export class LeaderboardEntryTableHandle {
 
   onInsert = (cb: (ctx: EventContext, row: LeaderboardEntry) => void) => {
     return this.tableCache.onInsert(cb);
-  }
+  };
 
   removeOnInsert = (cb: (ctx: EventContext, row: LeaderboardEntry) => void) => {
     return this.tableCache.removeOnInsert(cb);
-  }
+  };
 
   onDelete = (cb: (ctx: EventContext, row: LeaderboardEntry) => void) => {
     return this.tableCache.onDelete(cb);
-  }
+  };
 
   removeOnDelete = (cb: (ctx: EventContext, row: LeaderboardEntry) => void) => {
     return this.tableCache.removeOnDelete(cb);
-  }
+  };
 
   // Updates are only defined for tables with primary keys.
-  onUpdate = (cb: (ctx: EventContext, oldRow: LeaderboardEntry, newRow: LeaderboardEntry) => void) => {
+  onUpdate = (
+    cb: (
+      ctx: EventContext,
+      oldRow: LeaderboardEntry,
+      newRow: LeaderboardEntry,
+    ) => void,
+  ) => {
     return this.tableCache.onUpdate(cb);
-  }
+  };
 
-  removeOnUpdate = (cb: (ctx: EventContext, onRow: LeaderboardEntry, newRow: LeaderboardEntry) => void) => {
+  removeOnUpdate = (
+    cb: (
+      ctx: EventContext,
+      onRow: LeaderboardEntry,
+      newRow: LeaderboardEntry,
+    ) => void,
+  ) => {
     return this.tableCache.removeOnUpdate(cb);
-  }}
+  };
+}

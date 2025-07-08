@@ -35,7 +35,12 @@ import {
 import { User } from "./user_type";
 import { Color as __Color } from "./color_type";
 
-import { type EventContext, type Reducer, RemoteReducers, RemoteTables } from ".";
+import {
+  type EventContext,
+  type Reducer,
+  RemoteReducers,
+  RemoteTables,
+} from ".";
 
 /**
  * Table handle for the table `user`.
@@ -86,25 +91,28 @@ export class UserTableHandle {
 
   onInsert = (cb: (ctx: EventContext, row: User) => void) => {
     return this.tableCache.onInsert(cb);
-  }
+  };
 
   removeOnInsert = (cb: (ctx: EventContext, row: User) => void) => {
     return this.tableCache.removeOnInsert(cb);
-  }
+  };
 
   onDelete = (cb: (ctx: EventContext, row: User) => void) => {
     return this.tableCache.onDelete(cb);
-  }
+  };
 
   removeOnDelete = (cb: (ctx: EventContext, row: User) => void) => {
     return this.tableCache.removeOnDelete(cb);
-  }
+  };
 
   // Updates are only defined for tables with primary keys.
   onUpdate = (cb: (ctx: EventContext, oldRow: User, newRow: User) => void) => {
     return this.tableCache.onUpdate(cb);
-  }
+  };
 
-  removeOnUpdate = (cb: (ctx: EventContext, onRow: User, newRow: User) => void) => {
+  removeOnUpdate = (
+    cb: (ctx: EventContext, onRow: User, newRow: User) => void,
+  ) => {
     return this.tableCache.removeOnUpdate(cb);
-  }}
+  };
+}

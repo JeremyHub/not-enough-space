@@ -36,7 +36,12 @@ import { Moon } from "./moon_type";
 import { Color as __Color } from "./color_type";
 import { OrbitState as __OrbitState } from "./orbit_state_type";
 
-import { type EventContext, type Reducer, RemoteReducers, RemoteTables } from ".";
+import {
+  type EventContext,
+  type Reducer,
+  RemoteReducers,
+  RemoteTables,
+} from ".";
 
 /**
  * Table handle for the table `moon`.
@@ -87,25 +92,28 @@ export class MoonTableHandle {
 
   onInsert = (cb: (ctx: EventContext, row: Moon) => void) => {
     return this.tableCache.onInsert(cb);
-  }
+  };
 
   removeOnInsert = (cb: (ctx: EventContext, row: Moon) => void) => {
     return this.tableCache.removeOnInsert(cb);
-  }
+  };
 
   onDelete = (cb: (ctx: EventContext, row: Moon) => void) => {
     return this.tableCache.onDelete(cb);
-  }
+  };
 
   removeOnDelete = (cb: (ctx: EventContext, row: Moon) => void) => {
     return this.tableCache.removeOnDelete(cb);
-  }
+  };
 
   // Updates are only defined for tables with primary keys.
   onUpdate = (cb: (ctx: EventContext, oldRow: Moon, newRow: Moon) => void) => {
     return this.tableCache.onUpdate(cb);
-  }
+  };
 
-  removeOnUpdate = (cb: (ctx: EventContext, onRow: Moon, newRow: Moon) => void) => {
+  removeOnUpdate = (
+    cb: (ctx: EventContext, onRow: Moon, newRow: Moon) => void,
+  ) => {
     return this.tableCache.removeOnUpdate(cb);
-  }}
+  };
+}

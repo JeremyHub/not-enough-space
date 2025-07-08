@@ -33,8 +33,10 @@ import {
   type SubscriptionEventContextInterface,
 } from "@clockworklabs/spacetimedb-sdk";
 export type TickSchedule = {
-  id: bigint,
-  scheduledAt: { tag: "Interval", value: TimeDuration } | { tag: "Time", value: Timestamp },
+  id: bigint;
+  scheduledAt:
+    | { tag: "Interval"; value: TimeDuration }
+    | { tag: "Time"; value: Timestamp };
 };
 
 /**
@@ -42,13 +44,16 @@ export type TickSchedule = {
  */
 export namespace TickSchedule {
   /**
-  * A function which returns this type represented as an AlgebraicType.
-  * This function is derived from the AlgebraicType used to generate this type.
-  */
+   * A function which returns this type represented as an AlgebraicType.
+   * This function is derived from the AlgebraicType used to generate this type.
+   */
   export function getTypeScriptAlgebraicType(): AlgebraicType {
     return AlgebraicType.createProductType([
       new ProductTypeElement("id", AlgebraicType.createU64Type()),
-      new ProductTypeElement("scheduledAt", AlgebraicType.createScheduleAtType()),
+      new ProductTypeElement(
+        "scheduledAt",
+        AlgebraicType.createScheduleAtType(),
+      ),
     ]);
   }
 
@@ -59,7 +64,4 @@ export namespace TickSchedule {
   export function deserialize(reader: BinaryReader): TickSchedule {
     return TickSchedule.getTypeScriptAlgebraicType().deserialize(reader);
   }
-
 }
-
-

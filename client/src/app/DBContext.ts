@@ -1,6 +1,13 @@
-import { createContext } from 'react';
-import { Bit, Moon, DbConnection, Metadata, User, LeaderboardEntry } from '.././module_bindings';
-import { Identity } from '@clockworklabs/spacetimedb-sdk';
+import { createContext } from "react";
+import {
+  Bit,
+  Moon,
+  DbConnection,
+  Metadata,
+  User,
+  LeaderboardEntry,
+} from ".././module_bindings";
+import { Identity } from "@clockworklabs/spacetimedb-sdk";
 
 type DBContextType = {
   conn: DbConnection;

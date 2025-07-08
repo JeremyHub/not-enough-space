@@ -4,10 +4,10 @@ echo "Setting up git hooks..."
 
 cd client
 
-echo "Running eslint..."
+echo "Linting..."
 npm run lint
 if [ $? -ne 0 ]; then
-echo "ESLint failed. Commit aborted."
+echo "Linting failed. Commit aborted."
 exit 1
 fi
 

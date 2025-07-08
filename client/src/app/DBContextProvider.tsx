@@ -1,19 +1,33 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
-import { Bit, Moon, DbConnection, ErrorContext, EventContext, Metadata, User, LeaderboardEntry } from '.././module_bindings';
-import { Identity } from '@clockworklabs/spacetimedb-sdk';
-import React from 'react';
-import { DBContext } from './DBContext';
-import { ConnectionFormSchema } from './ConnectionForm';
-import z from 'zod';
-import { SettingsSchema } from './Settings';
+import { useEffect, useRef, useState, useCallback } from "react";
+import {
+  Bit,
+  Moon,
+  DbConnection,
+  ErrorContext,
+  EventContext,
+  Metadata,
+  User,
+  LeaderboardEntry,
+} from ".././module_bindings";
+import { Identity } from "@clockworklabs/spacetimedb-sdk";
+import React from "react";
+import { DBContext } from "./DBContext";
+import { ConnectionFormSchema } from "./ConnectionForm";
+import z from "zod";
+import { SettingsSchema } from "./Settings";
 
 // Helper hook to manage all DB state and provide reset capability
-function useDBState(conn: DbConnection | null, ownIdentity: Identity | null, onDeath: () => void) {
+function useDBState(
+  conn: DbConnection | null,
+  ownIdentity: Identity | null,
+  onDeath: () => void,
+) {
   // --- Metadata ---
   const [metadata, setMetadata] = useState<Metadata | null>(null);
   useEffect(() => {
     if (!conn) return;
-    const onMetadataUpdate = (_ctx: EventContext, newMetadata: Metadata) => setMetadata(newMetadata);
+    const onMetadataUpdate = (_ctx: EventContext, newMetadata: Metadata) =>
+      setMetadata(newMetadata);
     conn.db.metadata.onInsert(onMetadataUpdate);
     conn.db.metadata.onDelete(() => setMetadata(null));
     return () => {
@@ -27,12 +41,12 @@ function useDBState(conn: DbConnection | null, ownIdentity: Identity | null, onD
   useEffect(() => {
     if (!conn) return;
     const onInsert = (_ctx: EventContext, user: User) => {
-      setUsers(prev => new Map(prev.set(user.identity.toHexString(), user)));
+      setUsers((prev) => new Map(prev.set(user.identity.toHexString(), user)));
     };
     conn.db.user.onInsert(onInsert);
 
     const onUpdate = (_ctx: EventContext, oldUser: User, newUser: User) => {
-      setUsers(prev => {
+      setUsers((prev) => {
         prev.delete(oldUser.identity.toHexString());
         return new Map(prev.set(newUser.identity.toHexString(), newUser));
       });
@@ -40,10 +54,13 @@ function useDBState(conn: DbConnection | null, ownIdentity: Identity | null, onD
     conn.db.user.onUpdate(onUpdate);
 
     const onDelete = (_ctx: EventContext, user: User) => {
-      if (ownIdentity && user.identity.toHexString() === ownIdentity.toHexString()) {
+      if (
+        ownIdentity &&
+        user.identity.toHexString() === ownIdentity.toHexString()
+      ) {
         onDeath();
       }
-      setUsers(prev => {
+      setUsers((prev) => {
         prev.delete(user.identity.toHexString());
         return new Map(prev);
       });
@@ -62,12 +79,12 @@ function useDBState(conn: DbConnection | null, ownIdentity: Identity | null, onD
   useEffect(() => {
     if (!conn) return;
     const onInsert = (_ctx: EventContext, moon: Moon) => {
-      setMoons(prev => new Map(prev.set(moon.moonId, moon)));
+      setMoons((prev) => new Map(prev.set(moon.moonId, moon)));
     };
     conn.db.moon.onInsert(onInsert);
 
     const onUpdate = (_ctx: EventContext, oldMoon: Moon, newMoon: Moon) => {
-      setMoons(prev => {
+      setMoons((prev) => {
         prev.delete(oldMoon.moonId);
         return new Map(prev.set(newMoon.moonId, newMoon));
       });
@@ -75,7 +92,7 @@ function useDBState(conn: DbConnection | null, ownIdentity: Identity | null, onD
     conn.db.moon.onUpdate(onUpdate);
 
     const onDelete = (_ctx: EventContext, moon: Moon) => {
-      setMoons(prev => {
+      setMoons((prev) => {
         prev.delete(moon.moonId);
         return new Map(prev);
       });
@@ -94,12 +111,12 @@ function useDBState(conn: DbConnection | null, ownIdentity: Identity | null, onD
   useEffect(() => {
     if (!conn) return;
     const onInsert = (_ctx: EventContext, bit: Bit) => {
-      setBits(prev => new Map(prev.set(bit.bitId, bit)));
+      setBits((prev) => new Map(prev.set(bit.bitId, bit)));
     };
     conn.db.bit.onInsert(onInsert);
 
     const onUpdate = (_ctx: EventContext, oldBit: Bit, newBit: Bit) => {
-      setBits(prev => {
+      setBits((prev) => {
         prev.delete(oldBit.bitId);
         return new Map(prev.set(newBit.bitId, newBit));
       });
@@ -107,7 +124,7 @@ function useDBState(conn: DbConnection | null, ownIdentity: Identity | null, onD
     conn.db.bit.onUpdate(onUpdate);
 
     const onDelete = (_ctx: EventContext, bit: Bit) => {
-      setBits(prev => {
+      setBits((prev) => {
         prev.delete(bit.bitId);
         return new Map(prev);
       });
@@ -122,16 +139,22 @@ function useDBState(conn: DbConnection | null, ownIdentity: Identity | null, onD
   }, [conn]);
 
   // --- Leaderboard Entries ---
-  const [leaderboardEntries, setLeaderboardEntries] = useState<Map<Identity, LeaderboardEntry>>(new Map());
+  const [leaderboardEntries, setLeaderboardEntries] = useState<
+    Map<Identity, LeaderboardEntry>
+  >(new Map());
   useEffect(() => {
     if (!conn) return;
     const onInsert = (_ctx: EventContext, entry: LeaderboardEntry) => {
-      setLeaderboardEntries(prev => new Map(prev.set(entry.identity, entry)));
+      setLeaderboardEntries((prev) => new Map(prev.set(entry.identity, entry)));
     };
     conn.db.leaderboardEntry.onInsert(onInsert);
 
-    const onUpdate = (_ctx: EventContext, oldEntry: LeaderboardEntry, newEntry: LeaderboardEntry) => {
-      setLeaderboardEntries(prev => {
+    const onUpdate = (
+      _ctx: EventContext,
+      oldEntry: LeaderboardEntry,
+      newEntry: LeaderboardEntry,
+    ) => {
+      setLeaderboardEntries((prev) => {
         prev.delete(oldEntry.identity);
         return new Map(prev.set(newEntry.identity, newEntry));
       });
@@ -139,7 +162,7 @@ function useDBState(conn: DbConnection | null, ownIdentity: Identity | null, onD
     conn.db.leaderboardEntry.onUpdate(onUpdate);
 
     const onDelete = (_ctx: EventContext, entry: LeaderboardEntry) => {
-      setLeaderboardEntries(prev => {
+      setLeaderboardEntries((prev) => {
         prev.delete(entry.identity);
         return new Map(prev);
       });
@@ -163,12 +186,17 @@ function useDBState(conn: DbConnection | null, ownIdentity: Identity | null, onD
   }, []);
 
   return {
-    metadata, setMetadata,
-    users, setUsers,
-    moons, setMoons,
-    bits, setBits,
-    leaderboardEntries, setLeaderboardEntries,
-    resetDBState
+    metadata,
+    setMetadata,
+    users,
+    setUsers,
+    moons,
+    setMoons,
+    bits,
+    setBits,
+    leaderboardEntries,
+    setLeaderboardEntries,
+    resetDBState,
   };
 }
 
@@ -194,20 +222,14 @@ export function DBContextProvider({
   const reconnectRef = useRef<() => void>(() => {});
 
   // Use the helper hook for all DB state
-  const {
-    metadata,
-    users,
-    bits,
-    moons,
-    leaderboardEntries,
-    resetDBState
-  } = useDBState(conn, identity, () => {
-    if (settings.auto_reconnect_on_death) {
-      reconnect();
-    } else {
-      window.location.reload();
-    }
-  });
+  const { metadata, users, bits, moons, leaderboardEntries, resetDBState } =
+    useDBState(conn, identity, () => {
+      if (settings.auto_reconnect_on_death) {
+        reconnect();
+      } else {
+        window.location.reload();
+      }
+    });
 
   const self = identity ? users.get(identity.toHexString()) : null;
 
@@ -216,76 +238,82 @@ export function DBContextProvider({
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [subscriptions, setSubscriptions] = useState<any | null>(null);
-  const canvasWidth = self?.size ? Math.min(Math.max((self.size * 100)/5) + 200, 1500) : null;
-  const canvasHeight = self?.size ? Math.min(Math.max((self.size * 100)/5) + 200, 1500) : null;
+  const canvasWidth = self?.size
+    ? Math.min(Math.max((self.size * 100) / 5) + 200, 1500)
+    : null;
+  const canvasHeight = self?.size
+    ? Math.min(Math.max((self.size * 100) / 5) + 200, 1500)
+    : null;
   const renderBuffer = 200;
   const extraUserRenderBuffer = 100;
 
-  const subscribeToQueries = useCallback((conn: DbConnection, queries: string[]) => {
-    conn
-      ?.subscriptionBuilder()
-      .onApplied(() => {
-        console.log('SDK client cache initialized.');
-      })
-      .subscribe(queries);
-  }, []);
+  const subscribeToQueries = useCallback(
+    (conn: DbConnection, queries: string[]) => {
+      conn
+        ?.subscriptionBuilder()
+        .onApplied(() => {
+          console.log("SDK client cache initialized.");
+        })
+        .subscribe(queries);
+    },
+    [],
+  );
 
-  const onConnect = useCallback((
-    conn: DbConnection,
-    identity: Identity,
-    token: string
-  ) => {
-    setIdentity(identity);
-    setConnected(true);
-    localStorage.setItem('auth_token', token);
-    console.log(
-      'Connected to SpacetimeDB with identity:',
-      identity.toHexString()
-    );
+  const onConnect = useCallback(
+    (conn: DbConnection, identity: Identity, token: string) => {
+      setIdentity(identity);
+      setConnected(true);
+      localStorage.setItem("auth_token", token);
+      console.log(
+        "Connected to SpacetimeDB with identity:",
+        identity.toHexString(),
+      );
 
-    conn.reducers.setUserMeta(
-      connectionForm.username,
-      {
+      conn.reducers.setUserMeta(connectionForm.username, {
         r: parseInt(connectionForm.color.slice(1, 3), 16),
         g: parseInt(connectionForm.color.slice(3, 5), 16),
         b: parseInt(connectionForm.color.slice(5, 7), 16),
-      }
-    );
+      });
 
-    subscribeToQueries(conn, [
-      `SELECT * FROM user WHERE identity = '${identity.toHexString()}';`,
-      "SELECT * FROM metadata;",
-      `SELECT * FROM leaderboard_entry;`
-    ]);
-  }, [setIdentity, setConnected, connectionForm, subscribeToQueries]);
+      subscribeToQueries(conn, [
+        `SELECT * FROM user WHERE identity = '${identity.toHexString()}';`,
+        "SELECT * FROM metadata;",
+        `SELECT * FROM leaderboard_entry;`,
+      ]);
+    },
+    [setIdentity, setConnected, connectionForm, subscribeToQueries],
+  );
 
   const onDisconnect = useCallback(() => {
-    console.log('Disconnected from SpacetimeDB');
+    console.log("Disconnected from SpacetimeDB");
     setConnected(false);
     reconnectRef.current();
   }, [setConnected]);
 
-  const onConnectError = useCallback((_ctx: ErrorContext, err: Error) => {
-    console.log('Error connecting to SpacetimeDB:', err);
-    setConnected(false);
-    reconnectRef.current();
-  }, [setConnected]);
+  const onConnectError = useCallback(
+    (_ctx: ErrorContext, err: Error) => {
+      console.log("Error connecting to SpacetimeDB:", err);
+      setConnected(false);
+      reconnectRef.current();
+    },
+    [setConnected],
+  );
 
   const connect = useCallback(() => {
     if (connectingRef.current) return;
-    console.log('Connecting to SpacetimeDB...');
+    console.log("Connecting to SpacetimeDB...");
     connectingRef.current = true;
 
     setConn(
       DbConnection.builder()
         .withUri(connectionForm.uri)
-        .withModuleName('nes')
+        .withModuleName("nes")
         // .withToken(localStorage.getItem('auth_token') || '')
-        .withToken('') // use the above line instead for persisting connection across refreshes
+        .withToken("") // use the above line instead for persisting connection across refreshes
         .onConnect(onConnect)
         .onDisconnect(onDisconnect)
         .onConnectError(onConnectError)
-        .build()
+        .build(),
     );
   }, [connectionForm, onConnect, onDisconnect, onConnectError]);
 
@@ -297,7 +325,7 @@ export function DBContextProvider({
       // TODO make the below a setting
       // setIdentity(null);
       // localStorage.removeItem('auth_token');
-      console.log('Reconnecting...');
+      console.log("Reconnecting...");
       setConnected(false);
       connectRef.current();
     }, 1000); // delay loading
@@ -313,47 +341,106 @@ export function DBContextProvider({
   }, []);
 
   useEffect(() => {
-    function subscribeToNearbyObjs(conn: DbConnection, metadata: Metadata, x: number, y: number) {
-      if (!canvasHeight || !canvasWidth || (queriedX && queriedY && (Math.abs(queriedX-x) < renderBuffer && Math.abs(queriedY-y) < renderBuffer))) {
-        return
+    function subscribeToNearbyObjs(
+      conn: DbConnection,
+      metadata: Metadata,
+      x: number,
+      y: number,
+    ) {
+      if (
+        !canvasHeight ||
+        !canvasWidth ||
+        (queriedX &&
+          queriedY &&
+          Math.abs(queriedX - x) < renderBuffer &&
+          Math.abs(queriedY - y) < renderBuffer)
+      ) {
+        return;
       }
-  
+
       setQueriedX(Math.round(x));
       setQueriedY(Math.round(y));
-    
-      function getBaseQuery (renderBuffer: number): string {
+
+      function getBaseQuery(renderBuffer: number): string {
         if (!canvasHeight || !canvasWidth) {
-          return ""
+          return "";
         }
-        const withinScreenQuery = `x < ${Math.round(x) + renderBuffer + canvasWidth / 2} AND x > ${Math.round(x) - renderBuffer - canvasWidth / 2} AND y < ${Math.round(y) + renderBuffer + canvasHeight / 2} AND y > ${Math.round(y) - renderBuffer - canvasHeight / 2}`
-        const leftEdgeQuery = (x-renderBuffer < canvasWidth/2) ? ` OR (x > ${metadata.worldWidth - ((canvasWidth/2)+renderBuffer-Math.round(x))} AND (y > ${Math.round(y) - ((canvasHeight/2)+renderBuffer)}) AND (y < ${Math.round(y) + ((canvasHeight/2)+renderBuffer)}))` : "";
-        const rightEdgeQuery = (x+renderBuffer > metadata.worldWidth - (canvasWidth/2)) ? ` OR (x < ${((canvasWidth/2)+renderBuffer+Math.round(x)) - metadata.worldWidth} AND (y > ${Math.round(y) - ((canvasHeight/2)+renderBuffer)}) AND (y < ${Math.round(y) + ((canvasHeight/2)+renderBuffer)}))` : "";
-        const topEdgeQuery = (y-renderBuffer < canvasHeight/2) ? ` OR (y > ${metadata.worldHeight - ((canvasHeight/2)+renderBuffer-Math.round(y))} AND (x > ${Math.round(x) - ((canvasWidth/2)+renderBuffer)}) AND (x < ${Math.round(x) + ((canvasWidth/2)+renderBuffer)}))` : "";
-        const bottomEdgeQuery = (y+renderBuffer > metadata.worldHeight - (canvasHeight/2)) ? ` OR (y < ${((canvasHeight/2)+renderBuffer+Math.round(y)) - metadata.worldHeight} AND (x > ${Math.round(x) - ((canvasWidth/2)+renderBuffer)}) AND (x < ${Math.round(x) + ((canvasWidth/2)+renderBuffer)}))` : "";
-        const topLeftCornerQuery = (x-renderBuffer < canvasWidth/2 && y-renderBuffer < canvasHeight/2) ? ` OR (x > ${metadata.worldWidth - ((canvasWidth/2)+renderBuffer-Math.round(x))} AND y > ${metadata.worldHeight - ((canvasHeight/2)+renderBuffer-Math.round(y))})` : "";
-        const topRightCornerQuery = (x+renderBuffer > metadata.worldWidth - (canvasWidth/2) && y-renderBuffer < canvasHeight/2) ? ` OR (x < ${((canvasWidth/2)+renderBuffer+Math.round(x)) - metadata.worldWidth} AND y > ${metadata.worldHeight - ((canvasHeight/2)+renderBuffer-Math.round(y))})` : "";
-        const bottomLeftCornerQuery = (x-renderBuffer < canvasWidth/2 && y+renderBuffer > metadata.worldHeight - (canvasHeight/2)) ? ` OR (x > ${metadata.worldWidth - ((canvasWidth/2)+renderBuffer-Math.round(x))} AND y < ${((canvasHeight/2)+renderBuffer+Math.round(y)) - metadata.worldHeight})` : "";
-        const bottomRightCornerQuery = (x+renderBuffer > metadata.worldWidth - (canvasWidth/2) && y+renderBuffer > metadata.worldHeight - (canvasHeight/2)) ? ` OR (x < ${((canvasWidth/2)+renderBuffer+Math.round(x)) - metadata.worldWidth} AND y < ${((canvasHeight/2)+renderBuffer+Math.round(y)) - metadata.worldHeight})` : "";
-    
+        const withinScreenQuery = `x < ${Math.round(x) + renderBuffer + canvasWidth / 2} AND x > ${Math.round(x) - renderBuffer - canvasWidth / 2} AND y < ${Math.round(y) + renderBuffer + canvasHeight / 2} AND y > ${Math.round(y) - renderBuffer - canvasHeight / 2}`;
+        const leftEdgeQuery =
+          x - renderBuffer < canvasWidth / 2
+            ? ` OR (x > ${metadata.worldWidth - (canvasWidth / 2 + renderBuffer - Math.round(x))} AND (y > ${Math.round(y) - (canvasHeight / 2 + renderBuffer)}) AND (y < ${Math.round(y) + (canvasHeight / 2 + renderBuffer)}))`
+            : "";
+        const rightEdgeQuery =
+          x + renderBuffer > metadata.worldWidth - canvasWidth / 2
+            ? ` OR (x < ${canvasWidth / 2 + renderBuffer + Math.round(x) - metadata.worldWidth} AND (y > ${Math.round(y) - (canvasHeight / 2 + renderBuffer)}) AND (y < ${Math.round(y) + (canvasHeight / 2 + renderBuffer)}))`
+            : "";
+        const topEdgeQuery =
+          y - renderBuffer < canvasHeight / 2
+            ? ` OR (y > ${metadata.worldHeight - (canvasHeight / 2 + renderBuffer - Math.round(y))} AND (x > ${Math.round(x) - (canvasWidth / 2 + renderBuffer)}) AND (x < ${Math.round(x) + (canvasWidth / 2 + renderBuffer)}))`
+            : "";
+        const bottomEdgeQuery =
+          y + renderBuffer > metadata.worldHeight - canvasHeight / 2
+            ? ` OR (y < ${canvasHeight / 2 + renderBuffer + Math.round(y) - metadata.worldHeight} AND (x > ${Math.round(x) - (canvasWidth / 2 + renderBuffer)}) AND (x < ${Math.round(x) + (canvasWidth / 2 + renderBuffer)}))`
+            : "";
+        const topLeftCornerQuery =
+          x - renderBuffer < canvasWidth / 2 &&
+          y - renderBuffer < canvasHeight / 2
+            ? ` OR (x > ${metadata.worldWidth - (canvasWidth / 2 + renderBuffer - Math.round(x))} AND y > ${metadata.worldHeight - (canvasHeight / 2 + renderBuffer - Math.round(y))})`
+            : "";
+        const topRightCornerQuery =
+          x + renderBuffer > metadata.worldWidth - canvasWidth / 2 &&
+          y - renderBuffer < canvasHeight / 2
+            ? ` OR (x < ${canvasWidth / 2 + renderBuffer + Math.round(x) - metadata.worldWidth} AND y > ${metadata.worldHeight - (canvasHeight / 2 + renderBuffer - Math.round(y))})`
+            : "";
+        const bottomLeftCornerQuery =
+          x - renderBuffer < canvasWidth / 2 &&
+          y + renderBuffer > metadata.worldHeight - canvasHeight / 2
+            ? ` OR (x > ${metadata.worldWidth - (canvasWidth / 2 + renderBuffer - Math.round(x))} AND y < ${canvasHeight / 2 + renderBuffer + Math.round(y) - metadata.worldHeight})`
+            : "";
+        const bottomRightCornerQuery =
+          x + renderBuffer > metadata.worldWidth - canvasWidth / 2 &&
+          y + renderBuffer > metadata.worldHeight - canvasHeight / 2
+            ? ` OR (x < ${canvasWidth / 2 + renderBuffer + Math.round(x) - metadata.worldWidth} AND y < ${canvasHeight / 2 + renderBuffer + Math.round(y) - metadata.worldHeight})`
+            : "";
+
         return `WHERE (${withinScreenQuery}${leftEdgeQuery}${rightEdgeQuery}${topEdgeQuery}${bottomEdgeQuery}${topLeftCornerQuery}${topRightCornerQuery}${bottomLeftCornerQuery}${bottomRightCornerQuery})`;
       }
       const bitQuery = "SELECT * FROM bit " + getBaseQuery(renderBuffer);
       const moonQuery = "SELECT * FROM moon " + getBaseQuery(renderBuffer);
-      const userQuery = "SELECT * FROM user " + getBaseQuery(renderBuffer+extraUserRenderBuffer);
-  
+      const userQuery =
+        "SELECT * FROM user " +
+        getBaseQuery(renderBuffer + extraUserRenderBuffer);
+
       const handle = conn
         .subscriptionBuilder()
         .subscribe([bitQuery, moonQuery, userQuery]);
-  
+
       subscriptions?.unsubscribe();
       setSubscriptions(handle);
     }
     if (conn && self && metadata) {
       subscribeToNearbyObjs(conn, metadata, self.x, self.y);
     }
-  }, [canvasHeight, canvasWidth, conn, metadata, queriedX, queriedY, self, subscriptions]);
+  }, [
+    canvasHeight,
+    canvasWidth,
+    conn,
+    metadata,
+    queriedX,
+    queriedY,
+    self,
+    subscriptions,
+  ]);
 
-  if (!conn || !connected || !identity || !metadata || !self || !canvasHeight || !canvasWidth) {
+  if (
+    !conn ||
+    !connected ||
+    !identity ||
+    !metadata ||
+    !self ||
+    !canvasHeight ||
+    !canvasWidth
+  ) {
     return (
       <>
         <h2 className="scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight first:mt-0 mb-4">
@@ -379,7 +466,7 @@ export function DBContextProvider({
         metadata,
         canvasWidth,
         canvasHeight,
-        renderBuffer
+        renderBuffer,
       }}
     >
       {children}

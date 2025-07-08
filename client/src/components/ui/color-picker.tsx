@@ -1,15 +1,15 @@
-import { forwardRef, useMemo, useState } from 'react';
-import { HexColorPicker } from 'react-colorful';
-import { cn } from '@/lib/utils';
-import { Button, buttonVariants } from '@/components/ui/button';
+import { forwardRef, useMemo, useState } from "react";
+import { HexColorPicker } from "react-colorful";
+import { cn } from "@/lib/utils";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/popover';
-import { Input } from '@/components/ui/input';
-import { VariantProps } from 'class-variance-authority';
-import { useForwardedRef } from '@/lib/use-forwarded-ref';
+} from "@/components/ui/popover";
+import { Input } from "@/components/ui/input";
+import { VariantProps } from "class-variance-authority";
+import { useForwardedRef } from "@/lib/use-forwarded-ref";
 
 interface ColorPickerProps {
   value: string;
@@ -19,17 +19,20 @@ interface ColorPickerProps {
 
 const ColorPicker = forwardRef<
   HTMLInputElement,
-  Omit<React.ComponentProps<"button">, 'value' | 'onChange' | 'onBlur'> & ColorPickerProps & React.ComponentProps<"button"> & VariantProps<typeof buttonVariants>
+  Omit<React.ComponentProps<"button">, "value" | "onChange" | "onBlur"> &
+    ColorPickerProps &
+    React.ComponentProps<"button"> &
+    VariantProps<typeof buttonVariants>
 >(
   (
     { disabled, value, onChange, onBlur, name, className, size, ...props },
-    forwardedRef
+    forwardedRef,
   ) => {
     const ref = useForwardedRef(forwardedRef);
     const [open, setOpen] = useState(false);
 
     const parsedValue = useMemo(() => {
-      return value || '#FFFFFF';
+      return value || "#FFFFFF";
     }, [value]);
 
     return (
@@ -37,7 +40,7 @@ const ColorPicker = forwardRef<
         <PopoverTrigger asChild disabled={disabled} onBlur={onBlur}>
           <Button
             {...props}
-            className={cn('block', className)}
+            className={cn("block", className)}
             name={name}
             onClick={() => {
               setOpen(true);
@@ -46,12 +49,12 @@ const ColorPicker = forwardRef<
             style={{
               backgroundColor: parsedValue,
             }}
-            variant='outline'
+            variant="outline"
           >
             <div />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className='w-full'>
+        <PopoverContent className="w-full">
           <HexColorPicker color={parsedValue} onChange={onChange} />
           <Input
             maxLength={7}
@@ -64,8 +67,8 @@ const ColorPicker = forwardRef<
         </PopoverContent>
       </Popover>
     );
-  }
+  },
 );
-ColorPicker.displayName = 'ColorPicker';
+ColorPicker.displayName = "ColorPicker";
 
 export { ColorPicker };

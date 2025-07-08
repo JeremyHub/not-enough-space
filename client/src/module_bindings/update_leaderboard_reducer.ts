@@ -36,7 +36,7 @@ import {
 import { LeaderboardUpdateSchedule as __LeaderboardUpdateSchedule } from "./leaderboard_update_schedule_type";
 
 export type UpdateLeaderboard = {
-  leaderboardUpdateSchedule: __LeaderboardUpdateSchedule,
+  leaderboardUpdateSchedule: __LeaderboardUpdateSchedule;
 };
 
 /**
@@ -44,22 +44,26 @@ export type UpdateLeaderboard = {
  */
 export namespace UpdateLeaderboard {
   /**
-  * A function which returns this type represented as an AlgebraicType.
-  * This function is derived from the AlgebraicType used to generate this type.
-  */
+   * A function which returns this type represented as an AlgebraicType.
+   * This function is derived from the AlgebraicType used to generate this type.
+   */
   export function getTypeScriptAlgebraicType(): AlgebraicType {
     return AlgebraicType.createProductType([
-      new ProductTypeElement("leaderboardUpdateSchedule", __LeaderboardUpdateSchedule.getTypeScriptAlgebraicType()),
+      new ProductTypeElement(
+        "leaderboardUpdateSchedule",
+        __LeaderboardUpdateSchedule.getTypeScriptAlgebraicType(),
+      ),
     ]);
   }
 
-  export function serialize(writer: BinaryWriter, value: UpdateLeaderboard): void {
+  export function serialize(
+    writer: BinaryWriter,
+    value: UpdateLeaderboard,
+  ): void {
     UpdateLeaderboard.getTypeScriptAlgebraicType().serialize(writer, value);
   }
 
   export function deserialize(reader: BinaryReader): UpdateLeaderboard {
     return UpdateLeaderboard.getTypeScriptAlgebraicType().deserialize(reader);
   }
-
 }
-

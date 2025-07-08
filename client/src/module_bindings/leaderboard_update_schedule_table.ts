@@ -33,7 +33,12 @@ import {
   type SubscriptionEventContextInterface,
 } from "@clockworklabs/spacetimedb-sdk";
 import { LeaderboardUpdateSchedule } from "./leaderboard_update_schedule_type";
-import { type EventContext, type Reducer, RemoteReducers, RemoteTables } from ".";
+import {
+  type EventContext,
+  type Reducer,
+  RemoteReducers,
+  RemoteTables,
+} from ".";
 
 /**
  * Table handle for the table `leaderboard_update_schedule`.
@@ -82,27 +87,48 @@ export class LeaderboardUpdateScheduleTableHandle {
     },
   };
 
-  onInsert = (cb: (ctx: EventContext, row: LeaderboardUpdateSchedule) => void) => {
+  onInsert = (
+    cb: (ctx: EventContext, row: LeaderboardUpdateSchedule) => void,
+  ) => {
     return this.tableCache.onInsert(cb);
-  }
+  };
 
-  removeOnInsert = (cb: (ctx: EventContext, row: LeaderboardUpdateSchedule) => void) => {
+  removeOnInsert = (
+    cb: (ctx: EventContext, row: LeaderboardUpdateSchedule) => void,
+  ) => {
     return this.tableCache.removeOnInsert(cb);
-  }
+  };
 
-  onDelete = (cb: (ctx: EventContext, row: LeaderboardUpdateSchedule) => void) => {
+  onDelete = (
+    cb: (ctx: EventContext, row: LeaderboardUpdateSchedule) => void,
+  ) => {
     return this.tableCache.onDelete(cb);
-  }
+  };
 
-  removeOnDelete = (cb: (ctx: EventContext, row: LeaderboardUpdateSchedule) => void) => {
+  removeOnDelete = (
+    cb: (ctx: EventContext, row: LeaderboardUpdateSchedule) => void,
+  ) => {
     return this.tableCache.removeOnDelete(cb);
-  }
+  };
 
   // Updates are only defined for tables with primary keys.
-  onUpdate = (cb: (ctx: EventContext, oldRow: LeaderboardUpdateSchedule, newRow: LeaderboardUpdateSchedule) => void) => {
+  onUpdate = (
+    cb: (
+      ctx: EventContext,
+      oldRow: LeaderboardUpdateSchedule,
+      newRow: LeaderboardUpdateSchedule,
+    ) => void,
+  ) => {
     return this.tableCache.onUpdate(cb);
-  }
+  };
 
-  removeOnUpdate = (cb: (ctx: EventContext, onRow: LeaderboardUpdateSchedule, newRow: LeaderboardUpdateSchedule) => void) => {
+  removeOnUpdate = (
+    cb: (
+      ctx: EventContext,
+      onRow: LeaderboardUpdateSchedule,
+      newRow: LeaderboardUpdateSchedule,
+    ) => void,
+  ) => {
     return this.tableCache.removeOnUpdate(cb);
-  }}
+  };
+}

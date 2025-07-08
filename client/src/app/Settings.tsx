@@ -1,7 +1,7 @@
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import { z } from "zod"
-import { useEffect } from "react"
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { useEffect } from "react";
 
 import {
   Form,
@@ -10,63 +10,70 @@ import {
   FormField,
   FormItem,
   FormLabel,
-} from "@/components/ui/form"
-import { Switch } from "@/components/ui/switch"
-import { Card, CardContent } from "@/components/ui/card"
-import { getDefaultSettings } from "./helpers"
+} from "@/components/ui/form";
+import { Switch } from "@/components/ui/switch";
+import { Card, CardContent } from "@/components/ui/card";
+import { getDefaultSettings } from "./helpers";
 
 export const SettingsSchema = z.object({
-    auto_reconnect_on_death: z.boolean(),
-})
+  auto_reconnect_on_death: z.boolean(),
+});
 
-export function Settings({ setSettings }: {
-  setSettings: (settings: z.infer<typeof SettingsSchema>) => void
+export function Settings({
+  setSettings,
+}: {
+  setSettings: (settings: z.infer<typeof SettingsSchema>) => void;
 }) {
   const form = useForm<z.infer<typeof SettingsSchema>>({
     resolver: zodResolver(SettingsSchema),
     defaultValues: getDefaultSettings(),
-  })
+  });
 
   useEffect(() => {
     const subscription = form.watch((values) => {
-      setSettings(values as z.infer<typeof SettingsSchema>)
-    })
-    return () => subscription.unsubscribe()
-  }, [form, setSettings])
+      setSettings(values as z.infer<typeof SettingsSchema>);
+    });
+    return () => subscription.unsubscribe();
+  }, [form, setSettings]);
 
   return (
     <Card className="border-4 border-zinc-800 bg-zinc-900 shadow-lg w-full h-full flex flex-col p-5 bg-zinc-950">
       <CardContent className="p-0 flex-1 flex flex-col overflow-auto">
         <Form {...form}>
-        <form className="w-full space-y-6">
+          <form className="w-full space-y-6">
             <div>
-            <h3 className="mb-6 text-lg font-medium text-primary-foreground">Settings</h3>
-            <div className="space-y-4">
+              <h3 className="mb-6 text-lg font-medium text-primary-foreground">
+                Settings
+              </h3>
+              <div className="space-y-4">
                 <FormField
-                control={form.control}
-                name="auto_reconnect_on_death"
-                render={({ field }) => (
+                  control={form.control}
+                  name="auto_reconnect_on_death"
+                  render={({ field }) => (
                     <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                    <div className="space-y-0.5">
-                        <FormLabel className="text-primary-foreground">Auto-reconnect On Death</FormLabel>
+                      <div className="space-y-0.5">
+                        <FormLabel className="text-primary-foreground">
+                          Auto-reconnect On Death
+                        </FormLabel>
                         <FormDescription>
-                        Enable automatic reconnection to the server if your character dies.
+                          Enable automatic reconnection to the server if your
+                          character dies.
                         </FormDescription>
-                    </div>
-                    <FormControl>
+                      </div>
+                      <FormControl>
                         <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
                         />
-                    </FormControl>
+                      </FormControl>
                     </FormItem>
-                )}
+                  )}
                 />
+              </div>
             </div>
-            </div>
-        </form>
+          </form>
         </Form>
-        </CardContent>
-      </Card>
-  )
+      </CardContent>
+    </Card>
+  );
 }

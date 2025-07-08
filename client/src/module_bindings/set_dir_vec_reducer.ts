@@ -34,8 +34,8 @@ import {
 } from "@clockworklabs/spacetimedb-sdk";
 
 export type SetDirVec = {
-  dirVecX: number,
-  dirVecY: number,
+  dirVecX: number;
+  dirVecY: number;
 };
 
 /**
@@ -43,9 +43,9 @@ export type SetDirVec = {
  */
 export namespace SetDirVec {
   /**
-  * A function which returns this type represented as an AlgebraicType.
-  * This function is derived from the AlgebraicType used to generate this type.
-  */
+   * A function which returns this type represented as an AlgebraicType.
+   * This function is derived from the AlgebraicType used to generate this type.
+   */
   export function getTypeScriptAlgebraicType(): AlgebraicType {
     return AlgebraicType.createProductType([
       new ProductTypeElement("dirVecX", AlgebraicType.createF32Type()),
@@ -60,6 +60,4 @@ export namespace SetDirVec {
   export function deserialize(reader: BinaryReader): SetDirVec {
     return SetDirVec.getTypeScriptAlgebraicType().deserialize(reader);
   }
-
 }
-

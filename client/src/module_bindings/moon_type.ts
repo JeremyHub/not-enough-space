@@ -36,24 +36,24 @@ import { Color as __Color } from "./color_type";
 import { OrbitState as __OrbitState } from "./orbit_state_type";
 
 export type Moon = {
-  moonId: number,
-  colIndex: number,
-  x: number,
-  y: number,
-  dx: number,
-  dy: number,
-  dirVecX: number,
-  dirVecY: number,
-  color: __Color,
-  health: number,
-  size: number,
-  orbiting: Identity | undefined,
-  orbitAngle: number,
-  orbitState: __OrbitState | undefined,
-  orbitRadius: number,
-  targetColor: __Color | undefined,
-  orbitalVelocity: number | undefined,
-  isOrbiting: boolean,
+  moonId: number;
+  colIndex: number;
+  x: number;
+  y: number;
+  dx: number;
+  dy: number;
+  dirVecX: number;
+  dirVecY: number;
+  color: __Color;
+  health: number;
+  size: number;
+  orbiting: Identity | undefined;
+  orbitAngle: number;
+  orbitState: __OrbitState | undefined;
+  orbitRadius: number;
+  targetColor: __Color | undefined;
+  orbitalVelocity: number | undefined;
+  isOrbiting: boolean;
 };
 
 /**
@@ -61,9 +61,9 @@ export type Moon = {
  */
 export namespace Moon {
   /**
-  * A function which returns this type represented as an AlgebraicType.
-  * This function is derived from the AlgebraicType used to generate this type.
-  */
+   * A function which returns this type represented as an AlgebraicType.
+   * This function is derived from the AlgebraicType used to generate this type.
+   */
   export function getTypeScriptAlgebraicType(): AlgebraicType {
     return AlgebraicType.createProductType([
       new ProductTypeElement("moonId", AlgebraicType.createI32Type()),
@@ -77,12 +77,26 @@ export namespace Moon {
       new ProductTypeElement("color", __Color.getTypeScriptAlgebraicType()),
       new ProductTypeElement("health", AlgebraicType.createF32Type()),
       new ProductTypeElement("size", AlgebraicType.createF32Type()),
-      new ProductTypeElement("orbiting", AlgebraicType.createOptionType(AlgebraicType.createIdentityType())),
+      new ProductTypeElement(
+        "orbiting",
+        AlgebraicType.createOptionType(AlgebraicType.createIdentityType()),
+      ),
       new ProductTypeElement("orbitAngle", AlgebraicType.createF32Type()),
-      new ProductTypeElement("orbitState", AlgebraicType.createOptionType(__OrbitState.getTypeScriptAlgebraicType())),
+      new ProductTypeElement(
+        "orbitState",
+        AlgebraicType.createOptionType(
+          __OrbitState.getTypeScriptAlgebraicType(),
+        ),
+      ),
       new ProductTypeElement("orbitRadius", AlgebraicType.createF32Type()),
-      new ProductTypeElement("targetColor", AlgebraicType.createOptionType(__Color.getTypeScriptAlgebraicType())),
-      new ProductTypeElement("orbitalVelocity", AlgebraicType.createOptionType(AlgebraicType.createF32Type())),
+      new ProductTypeElement(
+        "targetColor",
+        AlgebraicType.createOptionType(__Color.getTypeScriptAlgebraicType()),
+      ),
+      new ProductTypeElement(
+        "orbitalVelocity",
+        AlgebraicType.createOptionType(AlgebraicType.createF32Type()),
+      ),
       new ProductTypeElement("isOrbiting", AlgebraicType.createBoolType()),
     ]);
   }
@@ -94,7 +108,4 @@ export namespace Moon {
   export function deserialize(reader: BinaryReader): Moon {
     return Moon.getTypeScriptAlgebraicType().deserialize(reader);
   }
-
 }
-
-

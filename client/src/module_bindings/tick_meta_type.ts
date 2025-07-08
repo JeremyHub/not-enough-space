@@ -33,8 +33,8 @@ import {
   type SubscriptionEventContextInterface,
 } from "@clockworklabs/spacetimedb-sdk";
 export type TickMeta = {
-  id: bigint,
-  lastTick: Timestamp,
+  id: bigint;
+  lastTick: Timestamp;
 };
 
 /**
@@ -42,9 +42,9 @@ export type TickMeta = {
  */
 export namespace TickMeta {
   /**
-  * A function which returns this type represented as an AlgebraicType.
-  * This function is derived from the AlgebraicType used to generate this type.
-  */
+   * A function which returns this type represented as an AlgebraicType.
+   * This function is derived from the AlgebraicType used to generate this type.
+   */
   export function getTypeScriptAlgebraicType(): AlgebraicType {
     return AlgebraicType.createProductType([
       new ProductTypeElement("id", AlgebraicType.createU64Type()),
@@ -59,7 +59,4 @@ export namespace TickMeta {
   export function deserialize(reader: BinaryReader): TickMeta {
     return TickMeta.getTypeScriptAlgebraicType().deserialize(reader);
   }
-
 }
-
-

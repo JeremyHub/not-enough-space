@@ -57,17 +57,15 @@ export namespace OrbitState {
   }
 
   export function serialize(writer: BinaryWriter, value: OrbitState): void {
-      OrbitState.getTypeScriptAlgebraicType().serialize(writer, value);
+    OrbitState.getTypeScriptAlgebraicType().serialize(writer, value);
   }
 
   export function deserialize(reader: BinaryReader): OrbitState {
-      return OrbitState.getTypeScriptAlgebraicType().deserialize(reader);
+    return OrbitState.getTypeScriptAlgebraicType().deserialize(reader);
   }
-
 }
 
 // The tagged union or sum type for the algebraic type `OrbitState`.
 export type OrbitState = OrbitState.Stationary | OrbitState.Moving;
 
 export default OrbitState;
-

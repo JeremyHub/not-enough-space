@@ -33,7 +33,12 @@ import {
   type SubscriptionEventContextInterface,
 } from "@clockworklabs/spacetimedb-sdk";
 import { Metadata } from "./metadata_type";
-import { type EventContext, type Reducer, RemoteReducers, RemoteTables } from ".";
+import {
+  type EventContext,
+  type Reducer,
+  RemoteReducers,
+  RemoteTables,
+} from ".";
 
 /**
  * Table handle for the table `metadata`.
@@ -62,17 +67,17 @@ export class MetadataTableHandle {
 
   onInsert = (cb: (ctx: EventContext, row: Metadata) => void) => {
     return this.tableCache.onInsert(cb);
-  }
+  };
 
   removeOnInsert = (cb: (ctx: EventContext, row: Metadata) => void) => {
     return this.tableCache.removeOnInsert(cb);
-  }
+  };
 
   onDelete = (cb: (ctx: EventContext, row: Metadata) => void) => {
     return this.tableCache.onDelete(cb);
-  }
+  };
 
   removeOnDelete = (cb: (ctx: EventContext, row: Metadata) => void) => {
     return this.tableCache.removeOnDelete(cb);
-  }
+  };
 }
