@@ -5,11 +5,11 @@ import tailwindcss from "@tailwindcss/vite";
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: "/not-enough-space/",
-  plugins: [react(), tailwindcss()],
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
-    },
-  },
+	base: "/not-enough-space/",
+	plugins: [react(), tailwindcss()],
+	resolve: {
+		alias: {
+			"@": path.resolve(__dirname, "./src"),
+		},
+	},
 });
