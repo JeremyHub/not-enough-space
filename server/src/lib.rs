@@ -14,7 +14,7 @@ pub mod leaderboard;
 // world
 pub const WORLD_WIDTH: i32 = 10000;
 pub const WORLD_HEIGHT: i32 = 10000;
-pub const TICK_TIME: i64 = 20000;
+pub const TICK_TIME: i64 = 80000;
 pub const GLOBAL_VELOCITY_MULTIPLIER: f32 = TICK_TIME as f32 / 20000.0;
 pub const FRICTION: f32 = 0.9;
 

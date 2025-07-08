@@ -20,6 +20,11 @@ type DrawProps = {
 	>;
 };
 
+// Utility lerp function
+function lerp(a: number, b: number, t: number) {
+	return a + (b - a) * t;
+}
+
 function renderTextInCircle(
 	ctx: CanvasRenderingContext2D,
 	text: string,
@@ -96,7 +101,29 @@ function renderWithWrap(
 	renderFn(new_x, new_y);
 }
 
-const draw = (ctx: CanvasRenderingContext2D | null, props: DrawProps) => {
+// --- Types for lerped positions ---
+type Position = { x: number; y: number };
+type LerpedPositions = {
+	users: Map<string, Position>;
+	bits: Map<number, Position>;
+	moons: Map<number, Position>;
+};
+
+// --- Helper to get positions from objects ---
+function getPositionsFromObjects<K, T extends { x: number; y: number }>(
+	map: Map<K, T>
+): Map<K, Position> {
+	const result = new Map<K, Position>();
+	map.forEach((obj, key) => {
+		result.set(key, { x: obj.x, y: obj.y });
+	});
+	return result;
+}
+
+const draw = (
+	ctx: CanvasRenderingContext2D | null,
+	props: DrawProps & { lerpedPositions?: LerpedPositions; lerpedCamera?: { x: number; y: number } }
+) => {
 	const {
 		metadata,
 		canvasWidth,
@@ -108,8 +135,14 @@ const draw = (ctx: CanvasRenderingContext2D | null, props: DrawProps) => {
 		moons,
 		identity,
 		moonTrails,
+		lerpedPositions,
+		lerpedCamera,
 	} = props;
 	if (!ctx) return;
+
+	// Use lerpedCamera for camera position
+	const cameraX = lerpedCamera?.x ?? self.x;
+	const cameraY = lerpedCamera?.y ?? self.y;
 
 	ctx.fillStyle = "rgb(23, 23, 23)";
 	ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
@@ -119,8 +152,8 @@ const draw = (ctx: CanvasRenderingContext2D | null, props: DrawProps) => {
 	ctx.strokeStyle = "rgba(200,200,200,0.3)";
 	ctx.lineWidth = 0.08;
 
-	const worldLeft = self.x - canvasWidth / 2;
-	const worldTop = self.y - canvasHeight / 2;
+	const worldLeft = cameraX - canvasWidth / 2;
+	const worldTop = cameraY - canvasHeight / 2;
 
 	const firstGridX = Math.floor(worldLeft / GRID_SIZE) * GRID_SIZE;
 	for (let x = firstGridX; x < worldLeft + canvasWidth; x += GRID_SIZE) {
@@ -174,32 +207,35 @@ const draw = (ctx: CanvasRenderingContext2D | null, props: DrawProps) => {
 	ctx.restore();
 
 	const toScreen = (obj: { x: number; y: number }) => ({
-		x: obj.x - self.x + canvasWidth / 2,
-		y: obj.y - self.y + canvasHeight / 2,
+		x: obj.x - cameraX + canvasWidth / 2,
+		y: obj.y - cameraY + canvasHeight / 2,
 	});
 
-	bits.forEach((bit) => {
-		const { x, y } = toScreen(bit);
+	// --- Draw bits with lerped positions ---
+	bits.forEach((bit, key) => {
+		const pos = lerpedPositions?.bits.get(key) || bit;
+		const { x, y } = toScreen(pos);
 		renderWithWrap(
-			(px, py) => renderCircle(ctx, bit.size, px, py, bit.color, false), // not filled for bits
+			(px, py) => renderCircle(ctx, bit.size, px, py, bit.color, false),
 			metadata,
 			canvasWidth,
 			canvasHeight,
 			renderBuffer,
-			self,
+			// Use a fake self with camera position for wrapping logic
+			{ ...self, x: cameraX, y: cameraY },
 			x,
 			y,
 		);
 	});
 
-	users.forEach((user) => {
-		// Draw user circle
+	// --- Draw users with lerped positions ---
+	users.forEach((user, key) => {
 		if (user.identity.data !== identity.data) {
-			const { x, y } = toScreen(user);
+			const pos = lerpedPositions?.users.get(key) || user;
+			const { x, y } = toScreen(pos);
 			renderWithWrap(
 				(px, py) => {
 					renderCircle(ctx, user.size, px, py, user.color);
-					// Draw username inside the user's circle if present
 					if (user.username) {
 						ctx.save();
 						renderTextInCircle(
@@ -216,16 +252,15 @@ const draw = (ctx: CanvasRenderingContext2D | null, props: DrawProps) => {
 				canvasWidth,
 				canvasHeight,
 				renderBuffer,
-				self,
+				{ ...self, x: cameraX, y: cameraY },
 				x,
 				y,
 			);
 		}
 	});
 
-	// Draw self circle
+	// --- Draw self at center ---
 	renderCircle(ctx, self.size, canvasWidth / 2, canvasHeight / 2, self.color);
-	// Draw self username inside self circle
 	if (self.username) {
 		ctx.save();
 		renderTextInCircle(
@@ -238,22 +273,19 @@ const draw = (ctx: CanvasRenderingContext2D | null, props: DrawProps) => {
 		ctx.restore();
 	}
 
-	// Draw moon trails before drawing moons
+	// --- Draw moon trails (no lerp needed, as they're historical positions) ---
 	if (moonTrails) {
 		moons.forEach((moon) => {
 			const trail = moonTrails.get(moon.moonId) || [];
 			trail.forEach((trailPoint, idx) => {
-				// Find the parent user for this trail point
-				const parent = users.get(trailPoint.parentId);
+				const parent = lerpedPositions?.users.get(trailPoint.parentId);
 				if (!parent) return;
-				// Convert relative to absolute
 				const absX = parent.x + trailPoint.relX;
 				const absY = parent.y + trailPoint.relY;
 				const { x, y } = toScreen({ x: absX, y: absY });
 				renderWithWrap(
 					(px, py) => {
 						ctx.save();
-						// Fade older trail segments more
 						const alpha = (0.2 * (idx + 1)) / trail.length;
 						ctx.globalAlpha = alpha;
 						renderCircle(ctx, moon.size, px, py, moon.color);
@@ -264,7 +296,7 @@ const draw = (ctx: CanvasRenderingContext2D | null, props: DrawProps) => {
 					canvasWidth,
 					canvasHeight,
 					renderBuffer,
-					self,
+					{ ...self, x: cameraX, y: cameraY },
 					x,
 					y,
 				);
@@ -272,15 +304,17 @@ const draw = (ctx: CanvasRenderingContext2D | null, props: DrawProps) => {
 		});
 	}
 
-	moons.forEach((moon) => {
-		const { x, y } = toScreen(moon);
+	// --- Draw moons with lerped positions ---
+	moons.forEach((moon, key) => {
+		const pos = lerpedPositions?.moons.get(key) || moon;
+		const { x, y } = toScreen(pos);
 		renderWithWrap(
 			(px, py) => renderCircle(ctx, moon.size, px, py, moon.color),
 			metadata,
 			canvasWidth,
 			canvasHeight,
 			renderBuffer,
-			self,
+			{ ...self, x: cameraX, y: cameraY },
 			x,
 			y,
 		);
@@ -304,36 +338,39 @@ export function Canvas() {
 		renderBuffer,
 	} = context;
 
-	// Add moonTrails state: Map<moonId, Array<{ relX: number; relY: number; parentId: string }>>
+	// --- LERPED POSITIONS STATE ---
+	const [lerpedPositions, setLerpedPositions] = useState<LerpedPositions>(() => ({
+		users: getPositionsFromObjects<string, User>(users),
+		bits: getPositionsFromObjects<number, Bit>(bits),
+		moons: getPositionsFromObjects<number, Moon>(moons),
+	}));
+
+	// --- LERPED CAMERA STATE ---
+	const [lerpedCamera, setLerpedCamera] = useState<{ x: number; y: number }>({
+		x: self.x,
+		y: self.y,
+	});
+
+	// --- MOON TRAILS BASED ON LERPED POSITIONS ---
 	const [moonTrails, setMoonTrails] = useState<
 		Map<number, Array<{ relX: number; relY: number; parentId: string }>>
 	>(new Map());
 
-	// Update moonTrails when moons move (relative to their parent user)
 	useEffect(() => {
 		setMoonTrails((prev) => {
 			const newTrails = new Map(prev);
-			moons.forEach((moon) => {
-				// Use moon.orbiting (Identity | undefined) as the parent user
+			moons.forEach((moon, moonId) => {
+				const lerpedMoon = lerpedPositions.moons.get(moonId) || moon;
 				const parentId = moon.orbiting?.toHexString?.() || null;
-				if (!parentId || !users.has(parentId)) return;
-				const parent = users.get(parentId);
+				if (!parentId || !lerpedPositions.users.has(parentId)) return;
+				const parent = lerpedPositions.users.get(parentId);
 				if (!parent) return;
-				const relX = moon.x - parent.x;
-				const relY = moon.y - parent.y;
+				const relX = lerpedMoon.x - parent.x;
+				const relY = lerpedMoon.y - parent.y;
 				const prevTrail = newTrails.get(moon.moonId) || [];
-				// Only add to trail if position changed
-				if (
-					prevTrail.length === 0 ||
-					prevTrail[prevTrail.length - 1].relX !== relX ||
-					prevTrail[prevTrail.length - 1].relY !== relY
-				) {
-					// Limit trail length to, e.g., 20
-					const updatedTrail = [...prevTrail, { relX, relY, parentId }].slice(
-						-20,
-					);
-					newTrails.set(moon.moonId, updatedTrail);
-				}
+				// Always add the current lerped position to the trail
+				const updatedTrail = [...prevTrail, { relX, relY, parentId }].slice(-20);
+				newTrails.set(moon.moonId, updatedTrail);
 			});
 			// Remove trails for moons that no longer exist
 			Array.from(newTrails.keys()).forEach((moonId) => {
@@ -341,7 +378,8 @@ export function Canvas() {
 			});
 			return newTrails;
 		});
-	}, [moons, users]);
+	// Depend on lerpedPositions, moons, users
+	}, [moons, users, lerpedPositions]);
 
 	const [animatedWidth, setAnimatedWidth] = useState<number | null>(null);
 	const [animatedHeight, setAnimatedHeight] = useState<number | null>(null);
@@ -382,6 +420,108 @@ export function Canvas() {
 
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
+	// --- UPDATE TARGET POSITIONS WHEN OBJECTS CHANGE ---
+	useEffect(() => {
+		setLerpedPositions((prev) => {
+			const next: LerpedPositions = {
+				users: new Map(prev.users),
+				bits: new Map(prev.bits),
+				moons: new Map(prev.moons),
+			};
+			// Users
+			users.forEach((user, key) => {
+				const prevPos = prev.users.get(key) || { x: user.x, y: user.y };
+				next.users.set(key, prevPos);
+			});
+			// Remove users that no longer exist
+			Array.from(next.users.keys()).forEach((key) => {
+				if (!users.has(key)) next.users.delete(key);
+			});
+			// Bits
+			bits.forEach((bit, key) => {
+				const prevPos = prev.bits.get(key) || { x: bit.x, y: bit.y };
+				next.bits.set(key, prevPos);
+			});
+			Array.from(next.bits.keys()).forEach((key) => {
+				if (!bits.has(key)) next.bits.delete(key);
+			});
+			// Moons
+			moons.forEach((moon, key) => {
+				const prevPos = prev.moons.get(key) || { x: moon.x, y: moon.y };
+				next.moons.set(key, prevPos);
+			});
+			Array.from(next.moons.keys()).forEach((key) => {
+				if (!moons.has(key)) next.moons.delete(key);
+			});
+			return next;
+		});
+	}, [users, bits, moons]);
+
+	// --- LERP ANIMATION LOOP ---
+	useEffect(() => {
+		let raf: number;
+    // TODO make the below a setting
+		const lerpSpeed = 0.2; // 0..1, higher is snappier
+
+		function animateLerp() {
+			setLerpedPositions((prev) => {
+				const next: LerpedPositions = {
+					users: new Map(),
+					bits: new Map(),
+					moons: new Map(),
+				};
+				// Users
+				users.forEach((user, key) => {
+					const prevPos = prev.users.get(key) || { x: user.x, y: user.y };
+					const newX = lerp(prevPos.x, user.x, lerpSpeed);
+					const newY = lerp(prevPos.y, user.y, lerpSpeed);
+					next.users.set(key, { x: newX, y: newY });
+				});
+				// Bits
+				bits.forEach((bit, key) => {
+					const prevPos = prev.bits.get(key) || { x: bit.x, y: bit.y };
+					const newX = lerp(prevPos.x, bit.x, lerpSpeed);
+					const newY = lerp(prevPos.y, bit.y, lerpSpeed);
+					next.bits.set(key, { x: newX, y: newY });
+				});
+				// Moons
+				moons.forEach((moon, key) => {
+					const prevPos = prev.moons.get(key) || { x: moon.x, y: moon.y };
+					const newX = lerp(prevPos.x, moon.x, lerpSpeed);
+					const newY = lerp(prevPos.y, moon.y, lerpSpeed);
+					next.moons.set(key, { x: newX, y: newY });
+				});
+				return next;
+			});
+			raf = requestAnimationFrame(animateLerp);
+		}
+		raf = requestAnimationFrame(animateLerp);
+		return () => cancelAnimationFrame(raf);
+	}, [users, bits, moons]);
+
+	// Update lerpedCamera target when self moves
+	useEffect(() => {
+		setLerpedCamera((prev) => ({
+			x: prev.x,
+			y: prev.y,
+		}));
+	}, [self.x, self.y]);
+
+	// Lerp camera position
+	useEffect(() => {
+		let raf: number;
+		const lerpSpeed = 0.18;
+		function animateCamera() {
+			setLerpedCamera((prev) => ({
+				x: lerp(prev.x, self.x, lerpSpeed),
+				y: lerp(prev.y, self.y, lerpSpeed),
+			}));
+			raf = requestAnimationFrame(animateCamera);
+		}
+		raf = requestAnimationFrame(animateCamera);
+		return () => cancelAnimationFrame(raf);
+	}, [self.x, self.y]);
+
 	const drawProps = useMemo(
 		() => ({
 			metadata,
@@ -394,6 +534,8 @@ export function Canvas() {
 			moons,
 			identity,
 			moonTrails,
+			lerpedPositions,
+			lerpedCamera,
 		}),
 		[
 			metadata,
@@ -408,6 +550,8 @@ export function Canvas() {
 			moons,
 			identity,
 			moonTrails,
+			lerpedPositions,
+			lerpedCamera,
 		],
 	);
 
