@@ -8,10 +8,10 @@ import {
 } from "@/components/ui/table";
 import { Card, CardContent } from "@/components/ui/card";
 import { useContext } from "react";
-import { DBContext } from "./DBContext";
+import { Context } from "./Context";
 
 export function Leaderboard() {
-	const context = useContext(DBContext);
+	const context = useContext(Context);
 	if (!context) {
 		throw new Error("DBContext is not available");
 	}

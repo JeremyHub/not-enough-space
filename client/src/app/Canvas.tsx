@@ -1,7 +1,7 @@
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Bit, Moon, Color, Metadata, User } from ".././module_bindings";
 import { Identity } from "@clockworklabs/spacetimedb-sdk";
-import { DBContext } from "./DBContext";
+import { Context } from "./Context";
 import { Card, CardContent } from "@/components/ui/card";
 
 type DrawProps = {
@@ -325,7 +325,7 @@ const draw = (
 };
 
 export function Canvas() {
-	const context = useContext(DBContext);
+	const context = useContext(Context);
 	if (!context) {
 		throw new Error("DBContext is not available");
 	}
@@ -339,6 +339,7 @@ export function Canvas() {
 		canvasWidth,
 		canvasHeight,
 		renderBuffer,
+    settings,
 	} = context;
 
 	// --- LERPED POSITIONS STATE ---
@@ -468,7 +469,7 @@ export function Canvas() {
 	useEffect(() => {
 		let raf: number;
 		// TODO make the below a setting
-		const lerpSpeed = 0.2; // 0..1, higher is snappier
+		const lerpSpeed = settings.lerp_strength; // 0..1, higher is snappier
 
 		function animateLerp() {
 			setLerpedPositions((prev) => {

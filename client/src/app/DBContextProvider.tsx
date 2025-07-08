@@ -11,7 +11,7 @@ import {
 } from ".././module_bindings";
 import { Identity } from "@clockworklabs/spacetimedb-sdk";
 import React from "react";
-import { DBContext } from "./DBContext";
+import { Context } from "./Context";
 import { ConnectionFormSchema } from "./ConnectionForm";
 import z from "zod";
 import { SettingsSchema } from "./Settings";
@@ -454,7 +454,7 @@ export function DBContextProvider({
 	}
 
 	return (
-		<DBContext.Provider
+		<Context.Provider
 			value={{
 				conn,
 				identity,
@@ -467,9 +467,10 @@ export function DBContextProvider({
 				canvasWidth,
 				canvasHeight,
 				renderBuffer,
+        settings,
 			}}
 		>
 			{children}
-		</DBContext.Provider>
+		</Context.Provider>
 	);
 }

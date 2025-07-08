@@ -14,9 +14,13 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent } from "@/components/ui/card";
 import { getDefaultSettings } from "./helpers";
+import { Slider } from "@/components/ui/slider";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 export const SettingsSchema = z.object({
 	auto_reconnect_on_death: z.boolean(),
+    lerp_strength: z.number().min(0).max(1),
 });
 
 export function Settings({
@@ -50,8 +54,8 @@ export function Settings({
 									control={form.control}
 									name="auto_reconnect_on_death"
 									render={({ field }) => (
-										<FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-											<div className="space-y-0.5">
+										<FormItem className="bg-zinc-900 flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+											<div className="space-y-1">
 												<FormLabel className="text-primary-foreground">
 													Auto-reconnect On Death
 												</FormLabel>
@@ -69,6 +73,50 @@ export function Settings({
 										</FormItem>
 									)}
 								/>
+                                <FormField
+                                    control={form.control}
+                                    name="lerp_strength"
+                                    render={({ field }) => (
+                                        <FormItem className="bg-zinc-900 flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                                            <div className="space-y-1">
+                                                <FormLabel className="text-primary-foreground">
+                                                    Lerp Strength
+                                                </FormLabel>
+                                                <FormDescription>
+                                                    Adjust the strength of the interpolation, higher for smoother
+                                                    movement.
+                                                </FormDescription>
+                                            </div>
+                                            <FormControl>
+                                                <div className="flex flex-col items-end space-y-3">
+                                                    <Slider
+                                                        defaultValue={[field.value]}
+                                                        min={0.01}
+                                                        max={1}
+                                                        step={0.01}
+                                                        value={[field.value]}
+                                                        onValueChange={(value) => {
+                                                            field.onChange(value[0]);
+                                                        }}
+                                                        className={cn(
+                                                            "w-full",
+                                                        )}
+                                                    />
+                                                    <Button
+                                                        variant="outline"
+                                                        className="mt-2"
+                                                        onClick={(e) => {
+                                                            e.preventDefault();
+                                                            field.onChange(0.2);
+                                                        }}
+                                                    >
+                                                        Reset to Default
+                                                    </Button>
+                                                </div>
+                                            </FormControl>
+                                        </FormItem>
+                                    )}
+                                />
 							</div>
 						</div>
 					</form>

@@ -2,7 +2,7 @@ import { DBContextProvider } from "./app/DBContextProvider";
 import { Canvas } from "./app/Canvas";
 import { useInputHandler } from "./app/InputHandler";
 import { useContext, useState } from "react";
-import { DBContext } from "./app/DBContext";
+import { Context } from "./app/Context";
 import { ConnectionForm, ConnectionFormSchema } from "./app/ConnectionForm";
 import z from "zod";
 import { Leaderboard } from "./app/Leaderboard";
@@ -86,7 +86,7 @@ function App() {
 }
 
 function CanvasWithInputHandler() {
-	const context = useContext(DBContext);
+	const context = useContext(Context);
 	const conn = context?.conn;
 	useInputHandler(conn);
 	return <Canvas />;
