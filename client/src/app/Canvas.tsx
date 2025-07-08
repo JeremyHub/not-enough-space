@@ -339,7 +339,7 @@ export function Canvas() {
 		canvasWidth,
 		canvasHeight,
 		renderBuffer,
-    settings,
+		settings,
 	} = context;
 
 	// --- LERPED POSITIONS STATE ---

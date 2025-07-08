@@ -467,7 +467,7 @@ export function DBContextProvider({
 				canvasWidth,
 				canvasHeight,
 				renderBuffer,
-        settings,
+				settings,
 			}}
 		>
 			{children}
