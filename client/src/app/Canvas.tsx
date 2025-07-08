@@ -111,7 +111,7 @@ type LerpedPositions = {
 
 // --- Helper to get positions from objects ---
 function getPositionsFromObjects<K, T extends { x: number; y: number }>(
-	map: Map<K, T>
+	map: Map<K, T>,
 ): Map<K, Position> {
 	const result = new Map<K, Position>();
 	map.forEach((obj, key) => {
@@ -122,7 +122,10 @@ function getPositionsFromObjects<K, T extends { x: number; y: number }>(
 
 const draw = (
 	ctx: CanvasRenderingContext2D | null,
-	props: DrawProps & { lerpedPositions?: LerpedPositions; lerpedCamera?: { x: number; y: number } }
+	props: DrawProps & {
+		lerpedPositions?: LerpedPositions;
+		lerpedCamera?: { x: number; y: number };
+	},
 ) => {
 	const {
 		metadata,
@@ -339,11 +342,13 @@ export function Canvas() {
 	} = context;
 
 	// --- LERPED POSITIONS STATE ---
-	const [lerpedPositions, setLerpedPositions] = useState<LerpedPositions>(() => ({
-		users: getPositionsFromObjects<string, User>(users),
-		bits: getPositionsFromObjects<number, Bit>(bits),
-		moons: getPositionsFromObjects<number, Moon>(moons),
-	}));
+	const [lerpedPositions, setLerpedPositions] = useState<LerpedPositions>(
+		() => ({
+			users: getPositionsFromObjects<string, User>(users),
+			bits: getPositionsFromObjects<number, Bit>(bits),
+			moons: getPositionsFromObjects<number, Moon>(moons),
+		}),
+	);
 
 	// --- LERPED CAMERA STATE ---
 	const [lerpedCamera, setLerpedCamera] = useState<{ x: number; y: number }>({
@@ -369,7 +374,9 @@ export function Canvas() {
 				const relY = lerpedMoon.y - parent.y;
 				const prevTrail = newTrails.get(moon.moonId) || [];
 				// Always add the current lerped position to the trail
-				const updatedTrail = [...prevTrail, { relX, relY, parentId }].slice(-20);
+				const updatedTrail = [...prevTrail, { relX, relY, parentId }].slice(
+					-20,
+				);
 				newTrails.set(moon.moonId, updatedTrail);
 			});
 			// Remove trails for moons that no longer exist
@@ -378,7 +385,7 @@ export function Canvas() {
 			});
 			return newTrails;
 		});
-	// Depend on lerpedPositions, moons, users
+		// Depend on lerpedPositions, moons, users
 	}, [moons, users, lerpedPositions]);
 
 	const [animatedWidth, setAnimatedWidth] = useState<number | null>(null);
@@ -460,7 +467,7 @@ export function Canvas() {
 	// --- LERP ANIMATION LOOP ---
 	useEffect(() => {
 		let raf: number;
-    // TODO make the below a setting
+		// TODO make the below a setting
 		const lerpSpeed = 0.2; // 0..1, higher is snappier
 
 		function animateLerp() {
