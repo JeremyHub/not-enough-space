@@ -78,7 +78,7 @@ export function ConnectionForm(
                 <Input placeholder="shadcn" {...field} />
               </FormControl>
               <FormDescription>
-                This is your public display name.
+                Your public display name.
               </FormDescription>
               <FormMessage />
             </FormItem>

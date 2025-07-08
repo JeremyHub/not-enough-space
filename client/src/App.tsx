@@ -7,7 +7,8 @@ import { ConnectionForm, ConnectionFormSchema } from './app/ConnectionForm';
 import z from 'zod';
 import { Leaderboard } from './app/Leaderboard';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from './components/ui/resizable';
-import { getDefaultSettings, Settings, SettingsSchema } from './app/Settings';
+import { Settings, SettingsSchema } from './app/Settings';
+import { getDefaultSettings } from './app/helpers';
 
 function App() {
 

@@ -13,16 +13,11 @@ import {
 } from "@/components/ui/form"
 import { Switch } from "@/components/ui/switch"
 import { Card, CardContent } from "@/components/ui/card"
+import { getDefaultSettings } from "./helpers"
 
 export const SettingsSchema = z.object({
     auto_reconnect_on_death: z.boolean(),
 })
-
-export function getDefaultSettings(): z.infer<typeof SettingsSchema> {
-  return {
-    auto_reconnect_on_death: true,
-  }
-}
 
 export function Settings({ setSettings }: {
   setSettings: (settings: z.infer<typeof SettingsSchema>) => void
