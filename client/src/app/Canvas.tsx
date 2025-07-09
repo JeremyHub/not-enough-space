@@ -504,7 +504,7 @@ export function Canvas() {
 		}
 		raf = requestAnimationFrame(animateLerp);
 		return () => cancelAnimationFrame(raf);
-	}, [users, bits, moons]);
+	}, [users, bits, moons, settings.lerp_strength]);
 
 	// Update lerpedCamera target when self moves
 	useEffect(() => {
