@@ -74,17 +74,17 @@ pub fn wrapped_ranges(center: i32, radius: i32, world_max: i32) -> Vec<core::ops
     let range_top = wrapped_center + radius;
     if range_bottom < 0 {
         vec![
-            0..range_top,
-            (world_max + range_bottom)..world_max
+            0..range_top+1,
+            (world_max + range_bottom)..world_max+1
         ]
     } else if range_top > world_max {
         vec![
-            range_bottom..world_max,
-            0..(range_top - world_max)
+            range_bottom..world_max+1,
+            0..(range_top - world_max)+1
         ]
     } else {
         #[allow(clippy::single_range_in_vec_init)] {
-            vec![range_bottom..range_top]
+            vec![range_bottom..range_top+1]
         }
     }
 }
