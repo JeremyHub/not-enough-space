@@ -465,6 +465,31 @@ export function Canvas() {
 		});
 	}, [users, bits, moons]);
 
+	// --- Helper for wrapped lerp ---
+	function lerpWrapped(
+		prev: number,
+		next: number,
+		t: number,
+		worldSize: number,
+	) {
+		let delta = next - prev;
+		if (Math.abs(delta) > worldSize / 2) {
+			// Wrap around
+			if (delta > 0) {
+				prev += worldSize;
+			} else {
+				prev -= worldSize;
+			}
+			// Recompute delta
+			delta = next - prev;
+		}
+		let lerped = lerp(prev, next, t);
+		// Clamp to world bounds
+		if (lerped < 0) lerped += worldSize;
+		if (lerped >= worldSize) lerped -= worldSize;
+		return lerped;
+	}
+
 	// --- LERP ANIMATION LOOP ---
 	useEffect(() => {
 		let raf: number;
@@ -480,22 +505,52 @@ export function Canvas() {
 				// Users
 				users.forEach((user, key) => {
 					const prevPos = prev.users.get(key) || { x: user.x, y: user.y };
-					const newX = lerp(prevPos.x, user.x, lerpSpeed);
-					const newY = lerp(prevPos.y, user.y, lerpSpeed);
+					const newX = lerpWrapped(
+						prevPos.x,
+						user.x,
+						lerpSpeed,
+						metadata.worldWidth,
+					);
+					const newY = lerpWrapped(
+						prevPos.y,
+						user.y,
+						lerpSpeed,
+						metadata.worldHeight,
+					);
 					next.users.set(key, { x: newX, y: newY });
 				});
 				// Bits
 				bits.forEach((bit, key) => {
 					const prevPos = prev.bits.get(key) || { x: bit.x, y: bit.y };
-					const newX = lerp(prevPos.x, bit.x, lerpSpeed);
-					const newY = lerp(prevPos.y, bit.y, lerpSpeed);
+					const newX = lerpWrapped(
+						prevPos.x,
+						bit.x,
+						lerpSpeed,
+						metadata.worldWidth,
+					);
+					const newY = lerpWrapped(
+						prevPos.y,
+						bit.y,
+						lerpSpeed,
+						metadata.worldHeight,
+					);
 					next.bits.set(key, { x: newX, y: newY });
 				});
 				// Moons
 				moons.forEach((moon, key) => {
 					const prevPos = prev.moons.get(key) || { x: moon.x, y: moon.y };
-					const newX = lerp(prevPos.x, moon.x, lerpSpeed);
-					const newY = lerp(prevPos.y, moon.y, lerpSpeed);
+					const newX = lerpWrapped(
+						prevPos.x,
+						moon.x,
+						lerpSpeed,
+						metadata.worldWidth,
+					);
+					const newY = lerpWrapped(
+						prevPos.y,
+						moon.y,
+						lerpSpeed,
+						metadata.worldHeight,
+					);
 					next.moons.set(key, { x: newX, y: newY });
 				});
 				return next;
@@ -504,7 +559,14 @@ export function Canvas() {
 		}
 		raf = requestAnimationFrame(animateLerp);
 		return () => cancelAnimationFrame(raf);
-	}, [users, bits, moons, settings.lerp_strength]);
+	}, [
+		users,
+		bits,
+		moons,
+		settings.lerp_strength,
+		metadata.worldWidth,
+		metadata.worldHeight,
+	]);
 
 	// Update lerpedCamera target when self moves
 	useEffect(() => {
@@ -520,14 +582,14 @@ export function Canvas() {
 		const lerpSpeed = 0.18;
 		function animateCamera() {
 			setLerpedCamera((prev) => ({
-				x: lerp(prev.x, self.x, lerpSpeed),
-				y: lerp(prev.y, self.y, lerpSpeed),
+				x: lerpWrapped(prev.x, self.x, lerpSpeed, metadata.worldWidth),
+				y: lerpWrapped(prev.y, self.y, lerpSpeed, metadata.worldHeight),
 			}));
 			raf = requestAnimationFrame(animateCamera);
 		}
 		raf = requestAnimationFrame(animateCamera);
 		return () => cancelAnimationFrame(raf);
-	}, [self.x, self.y]);
+	}, [self.x, self.y, metadata.worldWidth, metadata.worldHeight]);
 
 	const drawProps = useMemo(
 		() => ({
