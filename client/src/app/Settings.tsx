@@ -83,8 +83,8 @@ export function Settings({
 													Lerp Strength
 												</FormLabel>
 												<FormDescription>
-													Adjust the strength of the interpolation, higher for
-													smoother movement.
+													Adjust the strength of the lag compensation. Lower
+													values result in smoother movement.
 												</FormDescription>
 											</div>
 											<FormControl>

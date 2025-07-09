@@ -468,7 +468,6 @@ export function Canvas() {
 	// --- LERP ANIMATION LOOP ---
 	useEffect(() => {
 		let raf: number;
-		// TODO make the below a setting
 		const lerpSpeed = settings.lerp_strength; // 0..1, higher is snappier
 
 		function animateLerp() {

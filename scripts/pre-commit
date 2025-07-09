@@ -10,6 +10,12 @@ if [ $? -ne 0 ]; then
 echo "Linting failed. Commit aborted."
 exit 1
 fi
+echo "Checking for Prettier formatting..."
+PRETTIER_CHANGED=$(npx prettier --write . 2>&1 | grep -E 'File changed')
+if [ -n "$PRETTIER_CHANGED" ]; then
+  echo "Prettier found unformatted files. Commit aborted."
+  exit 1
+fi
 
 cd ..
 
