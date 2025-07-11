@@ -13,14 +13,29 @@ import {
 } from "@/components/ui/form";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent } from "@/components/ui/card";
-import { getDefaultSettings } from "./helpers";
 import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import {
+	Collapsible,
+	CollapsibleTrigger,
+	CollapsibleContent,
+} from "@/components/ui/collapsible";
+import { ChevronsUpDown } from "lucide-react";
+
+// eslint-disable-next-line react-refresh/only-export-components
+export function getDefaultSettings(): z.infer<typeof SettingsSchema> {
+	return {
+		auto_reconnect_on_death: true,
+		lerp_strength: 0.2,
+		show_world_boundaries: false,
+	};
+}
 
 export const SettingsSchema = z.object({
 	auto_reconnect_on_death: z.boolean(),
 	lerp_strength: z.number().min(0).max(1),
+	show_world_boundaries: z.boolean(),
 });
 
 export function Settings({
@@ -60,8 +75,8 @@ export function Settings({
 													Auto-reconnect On Death
 												</FormLabel>
 												<FormDescription>
-													Enable automatic reconnection to the server if your
-													character dies.
+													Enable automatic reconnection to the server with the
+													same name & color if your character dies.
 												</FormDescription>
 											</div>
 											<FormControl>
@@ -115,6 +130,49 @@ export function Settings({
 										</FormItem>
 									)}
 								/>
+								<FormItem className="bg-zinc-900 flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+									<Collapsible className="w-full">
+										<div className="flex items-center justify-between gap-4 px-4">
+											<h4 className="text-sm font-semibold text-primary-foreground">
+												Show Advanced Settings
+											</h4>
+											<CollapsibleTrigger asChild>
+												<Button
+													variant="ghost"
+													size="icon"
+													className="size-8 ml-auto hover:bg-zinc-800"
+												>
+													<ChevronsUpDown className="text-white" />
+													<span className="sr-only">Toggle</span>
+												</Button>
+											</CollapsibleTrigger>
+										</div>
+										<CollapsibleContent>
+											<FormField
+												control={form.control}
+												name="show_world_boundaries"
+												render={({ field }) => (
+													<FormItem className="bg-zinc-900 flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm mt-2">
+														<div className="space-y-1">
+															<FormLabel className="text-primary-foreground">
+																Show World Boundaries
+															</FormLabel>
+															<FormDescription>
+																Display the world boundaries overlay in-game.
+															</FormDescription>
+														</div>
+														<FormControl>
+															<Switch
+																checked={field.value}
+																onCheckedChange={field.onChange}
+															/>
+														</FormControl>
+													</FormItem>
+												)}
+											/>
+										</CollapsibleContent>
+									</Collapsible>
+								</FormItem>
 							</div>
 						</div>
 					</form>

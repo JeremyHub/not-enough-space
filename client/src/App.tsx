@@ -11,8 +11,7 @@ import {
 	ResizablePanel,
 	ResizablePanelGroup,
 } from "./components/ui/resizable";
-import { Settings, SettingsSchema } from "./app/Settings";
-import { getDefaultSettings } from "./app/helpers";
+import { getDefaultSettings, Settings, SettingsSchema } from "./app/Settings";
 
 function App() {
 	const [connected, setConnected] = useState<boolean>(false);
@@ -47,6 +46,7 @@ function App() {
 					setConnected={setConnected}
 					connectionForm={connectionForm}
 					settings={settings}
+					setCanvasOpen={setCanvasOpen}
 				>
 					{connected && (
 						<ResizablePanelGroup

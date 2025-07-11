@@ -205,6 +205,7 @@ export function DBContextProvider({
 	setConnected,
 	connectionForm,
 	settings,
+	setCanvasOpen,
 	children,
 }: {
 	connected: boolean;
@@ -212,6 +213,7 @@ export function DBContextProvider({
 	connectionForm: z.infer<typeof ConnectionFormSchema>;
 	settings: z.infer<typeof SettingsSchema>;
 	children: React.ReactNode;
+	setCanvasOpen: (open: boolean) => void;
 }) {
 	const [identity, setIdentity] = useState<Identity | null>(null);
 	const [conn, setConn] = useState<DbConnection | null>(null);
@@ -227,7 +229,8 @@ export function DBContextProvider({
 			if (settings.auto_reconnect_on_death) {
 				reconnect();
 			} else {
-				window.location.reload();
+				setCanvasOpen(false);
+				setConnected(false);
 			}
 		});
 

@@ -3,6 +3,8 @@ import { Bit, Moon, Color, Metadata, User } from ".././module_bindings";
 import { Identity } from "@clockworklabs/spacetimedb-sdk";
 import { Context } from "./Context";
 import { Card, CardContent } from "@/components/ui/card";
+import { SettingsSchema } from "./Settings";
+import z from "zod";
 
 type DrawProps = {
 	metadata: Metadata;
@@ -18,6 +20,7 @@ type DrawProps = {
 		number,
 		Array<{ relX: number; relY: number; parentId: string }>
 	>;
+	settings: z.infer<typeof SettingsSchema>;
 };
 
 // Utility lerp function
@@ -140,6 +143,7 @@ const draw = (
 		moonTrails,
 		lerpedPositions,
 		lerpedCamera,
+		settings,
 	} = props;
 	if (!ctx) return;
 
@@ -176,38 +180,40 @@ const draw = (
 		ctx.stroke();
 	}
 
-	ctx.save();
-	ctx.strokeStyle = "rgba(255,0,0,0.7)";
-	ctx.lineWidth = 2;
+	if (settings.show_world_boundaries) {
+		ctx.save();
+		ctx.strokeStyle = "rgba(255,0,0,0.7)";
+		ctx.lineWidth = 2;
 
-	const leftBorderX = metadata.worldWidth > 0 ? 0 - worldLeft : 0;
-	const rightBorderX =
-		metadata.worldWidth > 0 ? metadata.worldWidth - worldLeft : canvasWidth;
-	const topBorderY = metadata.worldHeight > 0 ? 0 - worldTop : 0;
-	const bottomBorderY =
-		metadata.worldHeight > 0 ? metadata.worldHeight - worldTop : canvasHeight;
+		const leftBorderX = metadata.worldWidth > 0 ? 0 - worldLeft : 0;
+		const rightBorderX =
+			metadata.worldWidth > 0 ? metadata.worldWidth - worldLeft : canvasWidth;
+		const topBorderY = metadata.worldHeight > 0 ? 0 - worldTop : 0;
+		const bottomBorderY =
+			metadata.worldHeight > 0 ? metadata.worldHeight - worldTop : canvasHeight;
 
-	ctx.beginPath();
-	ctx.moveTo(leftBorderX, 0);
-	ctx.lineTo(leftBorderX, canvasHeight);
-	ctx.stroke();
+		ctx.beginPath();
+		ctx.moveTo(leftBorderX, 0);
+		ctx.lineTo(leftBorderX, canvasHeight);
+		ctx.stroke();
 
-	ctx.beginPath();
-	ctx.moveTo(rightBorderX, 0);
-	ctx.lineTo(rightBorderX, canvasHeight);
-	ctx.stroke();
+		ctx.beginPath();
+		ctx.moveTo(rightBorderX, 0);
+		ctx.lineTo(rightBorderX, canvasHeight);
+		ctx.stroke();
 
-	ctx.beginPath();
-	ctx.moveTo(0, topBorderY);
-	ctx.lineTo(canvasWidth, topBorderY);
-	ctx.stroke();
+		ctx.beginPath();
+		ctx.moveTo(0, topBorderY);
+		ctx.lineTo(canvasWidth, topBorderY);
+		ctx.stroke();
 
-	ctx.beginPath();
-	ctx.moveTo(0, bottomBorderY);
-	ctx.lineTo(canvasWidth, bottomBorderY);
-	ctx.stroke();
+		ctx.beginPath();
+		ctx.moveTo(0, bottomBorderY);
+		ctx.lineTo(canvasWidth, bottomBorderY);
+		ctx.stroke();
 
-	ctx.restore();
+		ctx.restore();
+	}
 
 	const toScreen = (obj: { x: number; y: number }) => ({
 		x: obj.x - cameraX + canvasWidth / 2,
@@ -611,6 +617,7 @@ export function Canvas() {
 			moonTrails,
 			lerpedPositions,
 			lerpedCamera,
+			settings,
 		}),
 		[
 			metadata,
@@ -627,6 +634,7 @@ export function Canvas() {
 			moonTrails,
 			lerpedPositions,
 			lerpedCamera,
+			settings,
 		],
 	);
 
