@@ -117,7 +117,7 @@ export function Settings({
 													/>
 													<Button
 														variant="outline"
-														className="mt-2"
+														className="mt-2 text-muted-foreground hover:bg-zinc-800 border-muted-foreground bg-transparent"
 														onClick={(e) => {
 															e.preventDefault();
 															field.onChange(0.2);
