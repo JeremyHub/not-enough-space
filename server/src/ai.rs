@@ -18,8 +18,8 @@ pub fn update_ai_directions(ctx: &ReducerContext) {
 
     for ai in ai_users.into_iter().take(num_to_update) {
         ctx.db.user().identity().update(user::User {
-            dir_vec_x: (ctx.rng().gen_range(0..=100) as f32 / 100.0) - 1.0,
-            dir_vec_y: (ctx.rng().gen_range(0..=100) as f32 / 100.0) - 1.0,
+            dir_vec_x: (ctx.rng().gen_range(0..=100) as f32 / 100.0) - super::AI_DRIFT,
+            dir_vec_y: (ctx.rng().gen_range(0..=100) as f32 / 100.0) - super::AI_DRIFT,
             username: ai.username.clone(),
             ..ai
         });
