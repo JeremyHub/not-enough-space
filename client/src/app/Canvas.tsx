@@ -579,7 +579,7 @@ export function Canvas() {
 	// Lerp camera position
 	useEffect(() => {
 		let raf: number;
-		const lerpSpeed = 0.18;
+		const lerpSpeed = settings.lerp_strength;
 		function animateCamera() {
 			setLerpedCamera((prev) => ({
 				x: lerpWrapped(prev.x, self.x, lerpSpeed, metadata.worldWidth),
@@ -589,7 +589,13 @@ export function Canvas() {
 		}
 		raf = requestAnimationFrame(animateCamera);
 		return () => cancelAnimationFrame(raf);
-	}, [self.x, self.y, metadata.worldWidth, metadata.worldHeight]);
+	}, [
+		self.x,
+		self.y,
+		metadata.worldWidth,
+		metadata.worldHeight,
+		settings.lerp_strength,
+	]);
 
 	const drawProps = useMemo(
 		() => ({

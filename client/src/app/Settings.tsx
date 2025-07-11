@@ -80,23 +80,23 @@ export function Settings({
 										<FormItem className="bg-zinc-900 flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
 											<div className="space-y-1">
 												<FormLabel className="text-primary-foreground">
-													Lerp Strength
+													Lag Compensation Strength
 												</FormLabel>
 												<FormDescription>
-													Adjust the strength of the lag compensation. Lower
-													values result in smoother movement.
+													High values make for smoother movement but may
+													introduce more input lag.
 												</FormDescription>
 											</div>
 											<FormControl>
 												<div className="flex flex-col items-end space-y-3">
 													<Slider
-														defaultValue={[field.value]}
-														min={0.01}
-														max={1}
+														defaultValue={[1 - field.value]}
+														min={0}
+														max={0.99}
 														step={0.01}
-														value={[field.value]}
+														value={[1 - field.value]}
 														onValueChange={(value) => {
-															field.onChange(value[0]);
+															field.onChange(1 - value[0]);
 														}}
 														className={cn("w-full")}
 													/>
