@@ -144,7 +144,7 @@ fn update_oribiting_moons(ctx: &ReducerContext) {
                     orbit_radius = (super::ORBIT_RADIUS_USER_SIZE_FACTOR_CLOSE * user.size) + super::ORBIT_RADIUS_ADD_CLOSE + (super::ADDITIONAL_ORBIT_RADIUS_MOON_SIZE_FACTOR_CLOSE * (1.0/moon.size) * user.size);
                     orbit_angular_vel = super::ORBIT_ANGULAR_VEL_RADIUS_FACTOR_CLOSE * moon.size;
                 };
-                orbit_radius = orbit_radius.max(user.size + moon.size);
+                orbit_radius = orbit_radius.max(user.size + moon.size + (super::MIN_ORBIT_RADIUS_BY_USER_SIZE * user.size));
 
                 // Advance orbit angle
                 let mut orbit_angle = moon.orbit_angle;
