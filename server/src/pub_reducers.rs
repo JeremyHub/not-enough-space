@@ -144,8 +144,8 @@ pub fn client_connected(ctx: &ReducerContext) {
                 g: 0,
                 b: 0,
             },
-            health: super::USER_STARTING_HEALTH,
-            size: user::get_user_size(super::USER_STARTING_HEALTH),
+            health: 100.0,
+            size: 50.0, // Initial size based on starting health
             total_moon_size_oribiting: 0.0,
             is_ai: false,
             speed_boost: 0.0,

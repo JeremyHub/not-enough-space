@@ -255,14 +255,135 @@ function drawGravityWell(
 	ctx.restore();
 }
 
+// Simple seeded random number generator (mulberry32)
+function seededRandom(seed: number) {
+	let t = seed + 0x6d2b79f5;
+	return function () {
+		t += 0x6d2b79f5;
+		let r = Math.imul(t ^ (t >>> 15), 1 | t);
+		r ^= r + Math.imul(r ^ (r >>> 7), 61 | r);
+		return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
+	};
+}
+
+// Helper to slightly vary a color
+function varyColor(color: Color, rand: () => number, amount = 30): Color {
+	return {
+		r: Math.max(
+			0,
+			Math.min(255, color.r + Math.floor((rand() - 0.5) * amount)),
+		),
+		g: Math.max(
+			0,
+			Math.min(255, color.g + Math.floor((rand() - 0.5) * amount)),
+		),
+		b: Math.max(
+			0,
+			Math.min(255, color.b + Math.floor((rand() - 0.5) * amount)),
+		),
+	};
+}
+
+// Draw a patchwork of random shapes inside a circle
+function drawPatchwork(
+	ctx: CanvasRenderingContext2D,
+	x: number,
+	y: number,
+	radius: number,
+	baseColor: Color,
+	seed: number,
+) {
+	const rand = seededRandom(seed);
+	const numPatches = 50 + Math.floor(rand() * 5);
+
+	ctx.save();
+	// Clip to the main circle
+	ctx.beginPath();
+	ctx.arc(x, y, radius, 0, Math.PI * 2);
+	ctx.clip();
+
+	for (let i = 0; i < numPatches; i++) {
+		// Random center within the circle
+		const patchAngle = rand() * Math.PI * 2;
+		const patchDist = rand() * (radius - 2); // keep inside edge
+		const cx = Math.cos(patchAngle) * patchDist;
+		const cy = Math.sin(patchAngle) * patchDist;
+
+		const angle = rand() * Math.PI * 2;
+		const patchRadius = radius * (0.4 + rand() * 0.5);
+		const patchType = Math.floor(rand() * 3); // 0: arc, 1: polygon, 2: blob
+		const patchColor = varyColor(baseColor, rand, 40);
+
+		ctx.save();
+		ctx.beginPath();
+		ctx.translate(x + cx, y + cy);
+
+		if (patchType === 0) {
+			// Arc
+			const start = rand() * Math.PI * 2;
+			const end = start + rand() * Math.PI * 1.2;
+			ctx.arc(0, 0, patchRadius, start, end);
+			ctx.lineTo(0, 0);
+		} else if (patchType === 1) {
+			// Polygon
+			const sides = 3 + Math.floor(rand() * 4);
+			for (let j = 0; j < sides; j++) {
+				const a = angle + (j / sides) * Math.PI * 2;
+				const r = patchRadius * (0.8 + rand() * 0.4);
+				const px = Math.cos(a) * r;
+				const py = Math.sin(a) * r;
+				if (j === 0) ctx.moveTo(px, py);
+				else ctx.lineTo(px, py);
+			}
+			ctx.closePath();
+		} else {
+			// Blob (random points)
+			const points = 6 + Math.floor(rand() * 4);
+			for (let j = 0; j < points; j++) {
+				const a = angle + (j / points) * Math.PI * 2;
+				const r = patchRadius * (0.7 + rand() * 0.6);
+				const px = Math.cos(a) * r;
+				const py = Math.sin(a) * r;
+				if (j === 0) ctx.moveTo(px, py);
+				else ctx.lineTo(px, py);
+			}
+			ctx.closePath();
+		}
+
+		ctx.fillStyle = `rgba(${patchColor.r},${patchColor.g},${patchColor.b},0.85)`;
+		ctx.globalAlpha = 0.8;
+		ctx.fill();
+		ctx.restore();
+	}
+	ctx.restore();
+}
+
 function drawUser(
 	ctx: CanvasRenderingContext2D,
 	user: User,
 	px: number,
 	py: number,
 ) {
-	drawGravityWell(ctx, px, py, user.size, user.size / 10, user.size / 15);
+	// Seed based on identity (convert to number)
+	let seed = 0;
+	if (typeof user.identity.data === "string") {
+		for (let i = 0; i < user.identity.toHexString().length; i++) {
+			seed = (seed * 31 + user.identity.toHexString().charCodeAt(i)) >>> 0;
+		}
+	} else if (typeof user.identity.data === "number") {
+		seed = user.identity.data;
+	}
+
+	// Draw outer circle
 	renderCircle(ctx, user.size, px, py, user.color);
+
+	// Draw patchwork inside circle
+	drawPatchwork(ctx, px, py, user.size, user.color, seed);
+
+	// Draw gravity well effect
+	drawGravityWell(ctx, px, py, user.size, user.size / 10, user.size / 15);
+
+	// Draw username
 	if (user.username) {
 		ctx.save();
 		renderTextInCircle(
