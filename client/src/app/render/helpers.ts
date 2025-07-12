@@ -3,6 +3,11 @@ import { Identity } from "@clockworklabs/spacetimedb-sdk";
 import { SettingsSchema } from "../Settings";
 import z from "zod";
 
+export type MoonTrails = Map<
+	number,
+	Array<{ x: number; y: number; parentId: string | null }>
+>;
+
 type DrawProps = {
 	metadata: Metadata;
 	canvasWidth: number;
@@ -13,10 +18,7 @@ type DrawProps = {
 	bits: Map<number, Bit>;
 	moons: Map<number, Moon>;
 	identity: Identity;
-	moonTrails?: Map<
-		number,
-		Array<{ relX: number; relY: number; parentId: string }>
-	>;
+	moonTrails?: MoonTrails;
 	settings: z.infer<typeof SettingsSchema>;
 };
 
@@ -213,7 +215,7 @@ function drawBits(
 		const pos = lerpedPositions?.bits.get(key) || bit;
 		const { x, y } = toScreen(pos);
 		renderWithWrap(
-			(px, py) => renderCircle(ctx, bit.size, px, py, bit.color, false),
+			(px, py) => renderCircle(ctx, bit.size, px, py, bit.color, true),
 			metadata,
 			canvasWidth,
 			canvasHeight,
@@ -443,9 +445,7 @@ function drawSelf(
 function drawMoonTrails(
 	ctx: CanvasRenderingContext2D,
 	moons: Map<number, Moon>,
-	moonTrails:
-		| Map<number, Array<{ relX: number; relY: number; parentId: string }>>
-		| undefined,
+	moonTrails: MoonTrails | undefined,
 	lerpedPositions: LerpedPositions | undefined,
 	toScreen: (obj: { x: number; y: number }) => { x: number; y: number },
 	metadata: Metadata,
@@ -460,11 +460,17 @@ function drawMoonTrails(
 	moons.forEach((moon) => {
 		const trail = moonTrails.get(moon.moonId) || [];
 		trail.forEach((trailPoint, idx) => {
-			const parent = lerpedPositions?.users.get(trailPoint.parentId);
-			if (!parent) return;
-			const absX = parent.x + trailPoint.relX;
-			const absY = parent.y + trailPoint.relY;
-			const { x, y } = toScreen({ x: absX, y: absY });
+			let posX: number, posY: number;
+			if (trailPoint.parentId) {
+				const parent = lerpedPositions?.users.get(trailPoint.parentId);
+				if (!parent) return;
+				posX = parent.x + trailPoint.x;
+				posY = parent.y + trailPoint.y;
+			} else {
+				posX = trailPoint.x;
+				posY = trailPoint.y;
+			}
+			const { x, y } = toScreen({ x: posX, y: posY });
 			renderWithWrap(
 				(px, py) => {
 					ctx.save();

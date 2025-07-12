@@ -7,6 +7,7 @@ import {
 	getPositionsFromObjects,
 	lerp,
 	LerpedPositions,
+	MoonTrails,
 } from "./render/helpers";
 
 export function Canvas() {
@@ -43,9 +44,7 @@ export function Canvas() {
 	});
 
 	// --- MOON TRAILS BASED ON LERPED POSITIONS ---
-	const [moonTrails, setMoonTrails] = useState<
-		Map<number, Array<{ relX: number; relY: number; parentId: string }>>
-	>(new Map());
+	const [moonTrails, setMoonTrails] = useState<MoonTrails>(new Map());
 
 	useEffect(() => {
 		setMoonTrails((prev) => {
@@ -53,16 +52,19 @@ export function Canvas() {
 			moons.forEach((moon, moonId) => {
 				const lerpedMoon = lerpedPositions.moons.get(moonId) || moon;
 				const parentId = moon.orbiting?.toHexString?.() || null;
-				if (!parentId || !lerpedPositions.users.has(parentId)) return;
-				const parent = lerpedPositions.users.get(parentId);
-				if (!parent) return;
-				const relX = lerpedMoon.x - parent.x;
-				const relY = lerpedMoon.y - parent.y;
+				let x;
+				let y;
+				if (!parentId) {
+					x = lerpedMoon.x;
+					y = lerpedMoon.y;
+				} else {
+					const parent = lerpedPositions.users.get(parentId);
+					if (!parent) return;
+					x = lerpedMoon.x - parent.x;
+					y = lerpedMoon.y - parent.y;
+				}
 				const prevTrail = newTrails.get(moon.moonId) || [];
-				// Always add the current lerped position to the trail
-				const updatedTrail = [...prevTrail, { relX, relY, parentId }].slice(
-					-20,
-				);
+				const updatedTrail = [...prevTrail, { x, y, parentId }].slice(-20);
 				newTrails.set(moon.moonId, updatedTrail);
 			});
 			// Remove trails for moons that no longer exist
