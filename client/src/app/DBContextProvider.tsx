@@ -223,24 +223,38 @@ export function DBContextProvider({
 	const connectRef = useRef<() => void>(() => {});
 	const reconnectRef = useRef<() => void>(() => {});
 
+	const onDeath = useCallback(() => {
+		if (settings.auto_reconnect_on_death) {
+			reconnectRef.current();
+		} else {
+			setCanvasOpen(false);
+			setConnected(false);
+		}
+	}, [
+		reconnectRef,
+		settings.auto_reconnect_on_death,
+		setCanvasOpen,
+		setConnected,
+	]);
+
 	// Use the helper hook for all DB state
 	const { metadata, users, bits, moons, leaderboardEntries, resetDBState } =
-		useDBState(conn, identity, () => {
-			if (settings.auto_reconnect_on_death) {
-				reconnect();
-			} else {
-				setCanvasOpen(false);
-				setConnected(false);
-			}
-		});
+		useDBState(conn, identity, onDeath);
 
 	const self = identity ? users.get(identity.toHexString()) : null;
 
 	const [queriedX, setQueriedX] = useState<number | null>(null);
 	const [queriedY, setQueriedY] = useState<number | null>(null);
 
+	const [changingSubscriptions, setChangingSubscriptions] = useState<
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		any | null
+	>(null);
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const [subscriptions, setSubscriptions] = useState<any | null>(null);
+	const [basicSubscriptions, setBasicSubscriptions] = useState<any | null>(
+		null,
+	);
+
 	const canvasWidth = self?.size
 		? Math.min(Math.max((self.size * 100) / 5) + 200, 1500)
 		: null;
@@ -248,16 +262,17 @@ export function DBContextProvider({
 		? Math.min(Math.max((self.size * 100) / 5) + 200, 1500)
 		: null;
 	const renderBuffer = 200;
-	const extraUserRenderBuffer = 100;
+	const extraUserRenderBuffer = 150;
 
 	const subscribeToQueries = useCallback(
 		(conn: DbConnection, queries: string[]) => {
-			conn
+			const subscriptions = conn
 				?.subscriptionBuilder()
 				.onApplied(() => {
 					console.log("SDK client cache initialized.");
 				})
 				.subscribe(queries);
+			setBasicSubscriptions(subscriptions);
 		},
 		[],
 	);
@@ -334,13 +349,21 @@ export function DBContextProvider({
 		}, 1000); // delay loading
 	}, [resetDBState, setConnected]);
 
-	// Assign the latest connect/reconnect to refs so they can call each other
-	connectRef.current = connect;
-	reconnectRef.current = reconnect;
+	useEffect(() => {
+		connectRef.current = connect;
+		reconnectRef.current = reconnect;
+	}, [reconnect, connect]);
 
 	// Call connect on first render
 	useEffect(() => {
 		connectRef.current();
+		return () => {
+			// Cleanup: unsubscribe from all subscriptions
+			changingSubscriptions?.unsubscribe();
+			basicSubscriptions?.unsubscribe();
+			setChangingSubscriptions(null);
+		};
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
 	useEffect(() => {
@@ -418,22 +441,18 @@ export function DBContextProvider({
 				.subscriptionBuilder()
 				.subscribe([bitQuery, moonQuery, userQuery]);
 
-			subscriptions?.unsubscribe();
-			setSubscriptions(handle);
+			changingSubscriptions?.unsubscribe();
+			setChangingSubscriptions(handle);
 		}
 		if (conn && self && metadata) {
 			subscribeToNearbyObjs(conn, metadata, self.x, self.y);
 		}
-	}, [
-		canvasHeight,
-		canvasWidth,
-		conn,
-		metadata,
-		queriedX,
-		queriedY,
-		self,
-		subscriptions,
-	]);
+
+		return () => {
+			// subscriptions?.unsubscribe();
+		};
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [canvasHeight, canvasWidth, metadata, self]);
 
 	if (
 		!conn ||

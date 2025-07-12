@@ -27,7 +27,7 @@ import { ChevronsUpDown } from "lucide-react";
 export function getDefaultSettings(): z.infer<typeof SettingsSchema> {
 	return {
 		auto_reconnect_on_death: true,
-		lerp_strength: 0.2,
+		lerp_strength: 0.15,
 		show_world_boundaries: false,
 	};
 }
