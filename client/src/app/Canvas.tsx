@@ -398,29 +398,20 @@ export function Canvas() {
 	const [animatedWidth, setAnimatedWidth] = useState<number | null>(null);
 	const [animatedHeight, setAnimatedHeight] = useState<number | null>(null);
 
-	// Use refs to always have the latest target values
-	const targetWidthRef = useRef(canvasWidth);
-	const targetHeightRef = useRef(canvasHeight);
-
-	useEffect(() => {
-		targetWidthRef.current = canvasWidth;
-		targetHeightRef.current = canvasHeight;
-	}, [canvasWidth, canvasHeight]);
-
 	useEffect(() => {
 		let raf: number;
 		const growSpeed = 0.5;
 
 		function animate() {
 			setAnimatedWidth((prev) => {
-				const target = targetWidthRef.current;
+				const target = canvasWidth;
 				if (prev === null) return target;
 				if (prev < target) return Math.min(prev + growSpeed, target);
 				if (prev > target) return Math.max(prev - growSpeed, target);
 				return prev;
 			});
 			setAnimatedHeight((prev) => {
-				const target = targetHeightRef.current;
+				const target = canvasHeight;
 				if (prev === null) return target;
 				if (prev < target) return Math.min(prev + growSpeed, target);
 				if (prev > target) return Math.max(prev - growSpeed, target);
@@ -430,7 +421,7 @@ export function Canvas() {
 		}
 		raf = requestAnimationFrame(animate);
 		return () => cancelAnimationFrame(raf);
-	}, []); // Only run once
+	}, [canvasHeight, canvasWidth]);
 
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -573,14 +564,6 @@ export function Canvas() {
 		metadata.worldWidth,
 		metadata.worldHeight,
 	]);
-
-	// Update lerpedCamera target when self moves
-	useEffect(() => {
-		setLerpedCamera((prev) => ({
-			x: prev.x,
-			y: prev.y,
-		}));
-	}, [self.x, self.y]);
 
 	// Lerp camera position
 	useEffect(() => {
