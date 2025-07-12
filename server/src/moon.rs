@@ -13,6 +13,7 @@ pub enum OrbitState {
 }
 
 #[table(name = moon, public)]
+#[derive(Clone)]
 pub struct Moon {
     #[primary_key]
     #[auto_inc]

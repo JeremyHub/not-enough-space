@@ -5,6 +5,7 @@ use crate::moon::moon as _;
 use super::helpers;
 
 #[table(name = user, public)]
+#[derive(Clone)]
 pub struct User {
     #[primary_key]
     pub identity: Identity,

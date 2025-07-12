@@ -101,14 +101,19 @@ pub fn handle_user_free_moon_collision(ctx: &ReducerContext, user: &user::User, 
 
 pub fn check_moon_user_collisions(ctx: &ReducerContext) {
 
-    // user : non-oribiting-moon collisions
     for user in ctx.db.user().iter() {
         if user.online || super::UPDATE_OFFLINE_PLAYERS {
             let mut new_user_moon_size = user.total_moon_size_oribiting;
-            for range in helpers::wrapped_ranges(user.x.round() as i32, (user.size + super::MAX_FREE_MOON_SIZE) as i32, super::WORLD_WIDTH) {
+            for range in helpers::wrapped_ranges(user.x.round() as i32, (user.size + super::MAX_POSSIBLE_MOON_SIZE) as i32, super::WORLD_WIDTH) {
                 for moon in ctx.db.moon().col_index().filter(range) {
                     if moon.orbiting.is_none() && can_get_moon_into_orbit(&user, moon.size) && helpers::toroidal_distance(user.x, user.y, moon.x, moon.y) <= (user.size + moon.size) {
-                        new_user_moon_size += handle_user_free_moon_collision(ctx, &user, moon);
+                        new_user_moon_size += handle_user_free_moon_collision(ctx, &user, moon.clone());
+                    }
+                    if !moon.is_orbiting || moon.orbiting == Some(user.identity) {
+                    continue;
+                    }
+                    if helpers::toroidal_distance(moon.x, moon.y, user.x, user.y) <= (moon.size + user.size) {
+                        handle_user_and_oribiting_moon_collision(ctx, &user, moon);
                     }
                 }
             }
@@ -116,22 +121,8 @@ pub fn check_moon_user_collisions(ctx: &ReducerContext) {
                 // After handling all moons for this user, update their total_moon_size_oribiting if needed
                 ctx.db.user().identity().update(user::User {
                     total_moon_size_oribiting: new_user_moon_size,
-                    ..user
+                    ..user.clone()
                 });
-            }
-        }
-    }
-
-    // user : oribiting-moon collision
-    for user in ctx.db.user().iter() {
-        for range in helpers::wrapped_ranges(user.x.round() as i32, (user.size + super::MAX_FREE_MOON_SIZE) as i32, super::WORLD_WIDTH) {
-            for moon in ctx.db.moon().col_index().filter(range) {
-                if !moon.is_orbiting || moon.orbiting == Some(user.identity) {
-                    continue;
-                }
-                if helpers::toroidal_distance(moon.x, moon.y, user.x, user.y) <= (moon.size + user.size) {
-                    handle_user_and_oribiting_moon_collision(ctx, &user, moon);
-                }
             }
         }
         if user.health <= 0.0 {
@@ -141,7 +132,6 @@ pub fn check_moon_user_collisions(ctx: &ReducerContext) {
 }
 
 pub fn can_get_moon_into_orbit(user: &user::User, moon_size: f32) -> bool {
-    // TODO consider moving back to size not health if its too laggy
     if user.size < user.total_moon_size_oribiting + moon_size {
         return false;
     }
