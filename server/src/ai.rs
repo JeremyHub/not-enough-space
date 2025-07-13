@@ -2,6 +2,7 @@ use spacetimedb::{rand, Identity, ReducerContext, Table};
 use spacetimedb::rand::Rng;
 
 use crate::user::user as _;
+use crate::game_loop::ai_metadata as _;
 
 use super::user;
 use super::pub_reducers;
@@ -33,6 +34,7 @@ pub fn spawn_ai(ctx: &ReducerContext) {
     let current_num_ais = ctx.db.user().is_ai().filter(true).count();
     if current_num_ais < super::NUM_AIS {
         let ais_to_spawn = super::NUM_AIS - current_num_ais;
+        let mut metadata = ctx.db.ai_metadata().id().find(0).unwrap();
         for i in 0..ais_to_spawn {
             let color = helpers::Color {
                 r: ctx.rng().gen_range(0..=255),
@@ -43,7 +45,7 @@ pub fn spawn_ai(ctx: &ReducerContext) {
             ctx.db.user().insert(user::User {
                 identity: Identity::from_be_byte_array(ctx.rng().gen()),
                 online: true,
-                username: format!("AI_{}", current_num_ais + i),
+                username: format!("AI_{}", metadata.num_ais + i as u32),
                 x,
                 col_index: x.round() as i32,
                 y: ctx.rng().gen_range(0..=super::WORLD_HEIGHT) as f32,
@@ -62,5 +64,7 @@ pub fn spawn_ai(ctx: &ReducerContext) {
                 seed: ctx.rng().gen(),
             });
         }
+        metadata.num_ais += ais_to_spawn as u32;
+        ctx.db.ai_metadata().id().update(metadata);
     }
 }

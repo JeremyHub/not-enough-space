@@ -27,9 +27,16 @@ pub struct TickMeta {
 
 
 #[table(name = metadata, public)]
-pub struct Metadata {
+struct Metadata {
     world_height: i32,
     world_width: i32,
+}
+
+#[table(name = ai_metadata, public)]
+pub struct AIMetadata {
+    #[primary_key]
+    pub id: u64,
+    pub num_ais: u32,
 }
 
 
@@ -86,6 +93,10 @@ pub fn init(ctx: &ReducerContext) -> Result<(), String> {
     ctx.db.metadata().insert(Metadata {
         world_height: super::WORLD_HEIGHT,
         world_width: super::WORLD_WIDTH,
+    });
+    ctx.db.ai_metadata().insert(AIMetadata {
+        id: 0,
+        num_ais: 0,
     });
     ctx.db.tick_schedule().insert(TickSchedule {
         id: 0,
