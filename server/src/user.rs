@@ -28,6 +28,7 @@ pub struct User {
     pub speed_boost: f32,
     pub kills: u32,
     pub damage: f32,
+    pub seed: u64,
 }
 
 pub fn get_user_size(health: f32) -> f32 {

@@ -318,8 +318,8 @@ export class RemoteReducers {
 		this.connection.offReducer("set_dir_vec", callback);
 	}
 
-	setUserMeta(username: string, color: Color) {
-		const __args = { username, color };
+	setUserMeta(username: string, color: Color, seed: bigint) {
+		const __args = { username, color, seed };
 		let __writer = new BinaryWriter(1024);
 		SetUserMeta.getTypeScriptAlgebraicType().serialize(__writer, __args);
 		let __argsBuffer = __writer.getBuffer();
@@ -335,6 +335,7 @@ export class RemoteReducers {
 			ctx: ReducerEventContext,
 			username: string,
 			color: Color,
+			seed: bigint,
 		) => void,
 	) {
 		this.connection.onReducer("set_user_meta", callback);
@@ -345,6 +346,7 @@ export class RemoteReducers {
 			ctx: ReducerEventContext,
 			username: string,
 			color: Color,
+			seed: bigint,
 		) => void,
 	) {
 		this.connection.offReducer("set_user_meta", callback);

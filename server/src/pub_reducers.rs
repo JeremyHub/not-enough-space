@@ -93,7 +93,7 @@ pub fn set_dir_vec(ctx: &ReducerContext, dir_vec_x: f32, dir_vec_y: f32) -> Resu
 }
 
 #[reducer]
-pub fn set_user_meta(ctx: &ReducerContext, username: String, color: helpers::Color) -> Result<(), String> {
+pub fn set_user_meta(ctx: &ReducerContext, username: String, color: helpers::Color, seed: u64) -> Result<(), String> {
     if username.len() < super::MIN_USERNAME_LENGTH {
         log::warn!("User {} tried to connect with a too short username: {}", ctx.sender, username);
         return Err("Username is too short".to_string());
@@ -113,6 +113,7 @@ pub fn set_user_meta(ctx: &ReducerContext, username: String, color: helpers::Col
         ctx.db.user().identity().update(user::User { 
             username,
             color,
+            seed,
             ..user
         });
         Ok(())
@@ -151,6 +152,7 @@ pub fn client_connected(ctx: &ReducerContext) {
             speed_boost: 0.0,
             kills: 0,
             damage: 0.0,
+            seed: rng.gen(),
         });
     }
 }

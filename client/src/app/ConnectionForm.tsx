@@ -1,6 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import { randBetween } from "big-integer";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -58,6 +59,14 @@ export const ConnectionFormSchema = z.object({
 	uri: z.string().url({
 		message: "Invalid URI format.",
 	}),
+	seed: z
+		.bigint()
+		.min(BigInt(0), {
+			message: "Seed must be a non-negative integer.",
+		})
+		.max(BigInt("18446744073709551615"), {
+			message: "Seed must be at most 18446744073709551615.",
+		}),
 });
 
 export function ConnectionForm({
@@ -71,6 +80,7 @@ export function ConnectionForm({
 			username: "test",
 			color: getRandomColor(),
 			uri: "ws://localhost:3000",
+			seed: BigInt(Number(randBetween(0, 18446744073709551615n))),
 		},
 	});
 
@@ -109,6 +119,50 @@ export function ConnectionForm({
 							</FormControl>
 							<FormDescription>
 								The color of your character. Click to change it.
+							</FormDescription>
+							<FormMessage />
+						</FormItem>
+					)}
+				/>
+				<FormField
+					control={form.control}
+					name="seed"
+					render={({ field }) => (
+						<FormItem>
+							<FormLabel>Seed</FormLabel>
+							<FormControl>
+								<div className="flex flex-row space-x-2 items-center">
+									<Input
+										className="flex-1"
+										value={field.value.toString()}
+										onChange={(e) => {
+											const val = e.target.value;
+											if (!/^\d*$/.test(val)) {
+												return;
+											}
+											field.onChange(val === "" ? BigInt(0) : BigInt(val));
+										}}
+										onBlur={field.onBlur}
+										name={field.name}
+										ref={field.ref}
+									/>
+									<Button
+										type="button"
+										variant="outline"
+										className="flex-1 text-xs text-white border-white bg-transparent"
+										onClick={() => {
+											const newSeed = BigInt(
+												Number(randBetween(0, 18446744073709551615n)),
+											);
+											field.onChange(newSeed);
+										}}
+									>
+										Randomize Seed
+									</Button>
+								</div>
+							</FormControl>
+							<FormDescription>
+								The seed that controls how your character looks.
 							</FormDescription>
 							<FormMessage />
 						</FormItem>

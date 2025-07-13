@@ -366,21 +366,11 @@ function drawUser(
 	px: number,
 	py: number,
 ) {
-	// Seed based on identity (convert to number)
-	let seed = 0;
-	if (typeof user.identity.data === "string") {
-		for (let i = 0; i < user.identity.toHexString().length; i++) {
-			seed = (seed * 31 + user.identity.toHexString().charCodeAt(i)) >>> 0;
-		}
-	} else if (typeof user.identity.data === "number") {
-		seed = user.identity.data;
-	}
-
 	// Draw outer circle
 	renderCircle(ctx, user.size, px, py, user.color);
 
 	// Draw patchwork inside circle
-	drawPatchwork(ctx, px, py, user.size, user.color, seed);
+	drawPatchwork(ctx, px, py, user.size, user.color, Number(user.seed));
 
 	// Draw gravity well effect
 	drawGravityWell(ctx, px, py, user.size, user.size / 10, user.size / 15);

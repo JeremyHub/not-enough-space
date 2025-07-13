@@ -38,6 +38,7 @@ import { Color as __Color } from "./color_type";
 export type SetUserMeta = {
 	username: string;
 	color: __Color;
+	seed: bigint;
 };
 
 /**
@@ -52,6 +53,7 @@ export namespace SetUserMeta {
 		return AlgebraicType.createProductType([
 			new ProductTypeElement("username", AlgebraicType.createStringType()),
 			new ProductTypeElement("color", __Color.getTypeScriptAlgebraicType()),
+			new ProductTypeElement("seed", AlgebraicType.createU64Type()),
 		]);
 	}
 

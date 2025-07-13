@@ -287,11 +287,15 @@ export function DBContextProvider({
 				identity.toHexString(),
 			);
 
-			conn.reducers.setUserMeta(connectionForm.username, {
-				r: parseInt(connectionForm.color.slice(1, 3), 16),
-				g: parseInt(connectionForm.color.slice(3, 5), 16),
-				b: parseInt(connectionForm.color.slice(5, 7), 16),
-			});
+			conn.reducers.setUserMeta(
+				connectionForm.username,
+				{
+					r: parseInt(connectionForm.color.slice(1, 3), 16),
+					g: parseInt(connectionForm.color.slice(3, 5), 16),
+					b: parseInt(connectionForm.color.slice(5, 7), 16),
+				},
+				connectionForm.seed,
+			);
 
 			subscribeToQueries(conn, [
 				`SELECT * FROM user WHERE identity = '${identity.toHexString()}';`,

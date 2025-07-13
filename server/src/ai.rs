@@ -59,6 +59,7 @@ pub fn spawn_ai(ctx: &ReducerContext) {
                 speed_boost: 0.0,
                 kills: 0,
                 damage: 0.0,
+                seed: ctx.rng().gen(),
             });
         }
     }

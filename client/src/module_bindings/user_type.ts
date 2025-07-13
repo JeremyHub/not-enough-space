@@ -53,6 +53,7 @@ export type User = {
 	speedBoost: number;
 	kills: number;
 	damage: number;
+	seed: bigint;
 };
 
 /**
@@ -86,6 +87,7 @@ export namespace User {
 			new ProductTypeElement("speedBoost", AlgebraicType.createF32Type()),
 			new ProductTypeElement("kills", AlgebraicType.createU32Type()),
 			new ProductTypeElement("damage", AlgebraicType.createF32Type()),
+			new ProductTypeElement("seed", AlgebraicType.createU64Type()),
 		]);
 	}
 
