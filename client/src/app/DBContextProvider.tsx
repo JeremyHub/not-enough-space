@@ -256,10 +256,10 @@ export function DBContextProvider({
 	);
 
 	const canvasWidth = self?.size
-		? Math.min(Math.max((self.size * 100) / 5) + 200, 1500)
+		? Math.round(Math.min(Math.max((self.size * 100) / 5) + 200, 1500))
 		: null;
 	const canvasHeight = self?.size
-		? Math.min(Math.max((self.size * 100) / 5) + 200, 1500)
+		? Math.round(Math.min(Math.max((self.size * 100) / 5) + 200, 1500))
 		: null;
 	const renderBuffer = 200;
 	const extraUserRenderBuffer = 150;
