@@ -22,8 +22,8 @@ export function Canvas() {
 		bits,
 		moons,
 		metadata,
-		canvasWidth,
-		canvasHeight,
+		viewportWorldWidth,
+		viewportWorldHeight,
 		renderBuffer,
 		settings,
 	} = context;
@@ -85,14 +85,14 @@ export function Canvas() {
 
 		function animate() {
 			setAnimatedWidth((prev) => {
-				const target = canvasWidth;
+				const target = viewportWorldWidth;
 				if (prev === null) return target;
 				if (prev < target) return Math.min(prev + growSpeed, target);
 				if (prev > target) return Math.max(prev - growSpeed, target);
 				return prev;
 			});
 			setAnimatedHeight((prev) => {
-				const target = canvasHeight;
+				const target = viewportWorldHeight;
 				if (prev === null) return target;
 				if (prev < target) return Math.min(prev + growSpeed, target);
 				if (prev > target) return Math.max(prev - growSpeed, target);
@@ -102,7 +102,7 @@ export function Canvas() {
 		}
 		raf = requestAnimationFrame(animate);
 		return () => cancelAnimationFrame(raf);
-	}, [canvasHeight, canvasWidth]);
+	}, [viewportWorldHeight, viewportWorldWidth]);
 
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -270,8 +270,8 @@ export function Canvas() {
 	const drawProps = useMemo(
 		() => ({
 			metadata,
-			canvasWidth: animatedWidth ?? canvasWidth,
-			canvasHeight: animatedHeight ?? canvasHeight,
+			canvasWidth: animatedWidth ?? viewportWorldWidth,
+			canvasHeight: animatedHeight ?? viewportWorldHeight,
 			renderBuffer,
 			users,
 			self,
@@ -286,9 +286,9 @@ export function Canvas() {
 		[
 			metadata,
 			animatedWidth,
-			canvasWidth,
+			viewportWorldWidth,
 			animatedHeight,
-			canvasHeight,
+			viewportWorldHeight,
 			renderBuffer,
 			users,
 			self,
@@ -324,8 +324,8 @@ export function Canvas() {
 			<CardContent className="flex items-center justify-center p-0 w-full h-full max-w-[100vh]">
 				<canvas
 					ref={canvasRef}
-					width={animatedWidth || canvasWidth}
-					height={animatedHeight || canvasHeight}
+					width={animatedWidth || viewportWorldWidth}
+					height={animatedHeight || viewportWorldHeight}
 					className="w-full h-full block"
 				/>
 			</CardContent>

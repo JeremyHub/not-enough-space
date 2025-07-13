@@ -255,10 +255,10 @@ export function DBContextProvider({
 		null,
 	);
 
-	const canvasWidth = self?.size
+	const viewportWorldWidth = self?.size
 		? Math.round(Math.min(Math.max((self.size * 100) / 5) + 200, 1500))
 		: null;
-	const canvasHeight = self?.size
+	const viewportWorldHeight = self?.size
 		? Math.round(Math.min(Math.max((self.size * 100) / 5) + 200, 1500))
 		: null;
 	const renderBuffer = 200;
@@ -378,8 +378,8 @@ export function DBContextProvider({
 			y: number,
 		) {
 			if (
-				!canvasHeight ||
-				!canvasWidth ||
+				!viewportWorldHeight ||
+				!viewportWorldWidth ||
 				(queriedX &&
 					queriedY &&
 					Math.abs(queriedX - x) < renderBuffer &&
@@ -392,45 +392,45 @@ export function DBContextProvider({
 			setQueriedY(Math.round(y));
 
 			function getBaseQuery(renderBuffer: number): string {
-				if (!canvasHeight || !canvasWidth) {
+				if (!viewportWorldHeight || !viewportWorldWidth) {
 					return "";
 				}
-				const withinScreenQuery = `x < ${Math.round(x) + renderBuffer + canvasWidth / 2} AND x > ${Math.round(x) - renderBuffer - canvasWidth / 2} AND y < ${Math.round(y) + renderBuffer + canvasHeight / 2} AND y > ${Math.round(y) - renderBuffer - canvasHeight / 2}`;
+				const withinScreenQuery = `x < ${Math.round(x) + renderBuffer + viewportWorldWidth / 2} AND x > ${Math.round(x) - renderBuffer - viewportWorldWidth / 2} AND y < ${Math.round(y) + renderBuffer + viewportWorldHeight / 2} AND y > ${Math.round(y) - renderBuffer - viewportWorldHeight / 2}`;
 				const leftEdgeQuery =
-					x - renderBuffer < canvasWidth / 2
-						? ` OR (x > ${metadata.worldWidth - (canvasWidth / 2 + renderBuffer - Math.round(x))} AND (y > ${Math.round(y) - (canvasHeight / 2 + renderBuffer)}) AND (y < ${Math.round(y) + (canvasHeight / 2 + renderBuffer)}))`
+					x - renderBuffer < viewportWorldWidth / 2
+						? ` OR (x > ${metadata.worldWidth - (viewportWorldWidth / 2 + renderBuffer - Math.round(x))} AND (y > ${Math.round(y) - (viewportWorldHeight / 2 + renderBuffer)}) AND (y < ${Math.round(y) + (viewportWorldHeight / 2 + renderBuffer)}))`
 						: "";
 				const rightEdgeQuery =
-					x + renderBuffer > metadata.worldWidth - canvasWidth / 2
-						? ` OR (x < ${canvasWidth / 2 + renderBuffer + Math.round(x) - metadata.worldWidth} AND (y > ${Math.round(y) - (canvasHeight / 2 + renderBuffer)}) AND (y < ${Math.round(y) + (canvasHeight / 2 + renderBuffer)}))`
+					x + renderBuffer > metadata.worldWidth - viewportWorldWidth / 2
+						? ` OR (x < ${viewportWorldWidth / 2 + renderBuffer + Math.round(x) - metadata.worldWidth} AND (y > ${Math.round(y) - (viewportWorldHeight / 2 + renderBuffer)}) AND (y < ${Math.round(y) + (viewportWorldHeight / 2 + renderBuffer)}))`
 						: "";
 				const topEdgeQuery =
-					y - renderBuffer < canvasHeight / 2
-						? ` OR (y > ${metadata.worldHeight - (canvasHeight / 2 + renderBuffer - Math.round(y))} AND (x > ${Math.round(x) - (canvasWidth / 2 + renderBuffer)}) AND (x < ${Math.round(x) + (canvasWidth / 2 + renderBuffer)}))`
+					y - renderBuffer < viewportWorldHeight / 2
+						? ` OR (y > ${metadata.worldHeight - (viewportWorldHeight / 2 + renderBuffer - Math.round(y))} AND (x > ${Math.round(x) - (viewportWorldWidth / 2 + renderBuffer)}) AND (x < ${Math.round(x) + (viewportWorldWidth / 2 + renderBuffer)}))`
 						: "";
 				const bottomEdgeQuery =
-					y + renderBuffer > metadata.worldHeight - canvasHeight / 2
-						? ` OR (y < ${canvasHeight / 2 + renderBuffer + Math.round(y) - metadata.worldHeight} AND (x > ${Math.round(x) - (canvasWidth / 2 + renderBuffer)}) AND (x < ${Math.round(x) + (canvasWidth / 2 + renderBuffer)}))`
+					y + renderBuffer > metadata.worldHeight - viewportWorldHeight / 2
+						? ` OR (y < ${viewportWorldHeight / 2 + renderBuffer + Math.round(y) - metadata.worldHeight} AND (x > ${Math.round(x) - (viewportWorldWidth / 2 + renderBuffer)}) AND (x < ${Math.round(x) + (viewportWorldWidth / 2 + renderBuffer)}))`
 						: "";
 				const topLeftCornerQuery =
-					x - renderBuffer < canvasWidth / 2 &&
-					y - renderBuffer < canvasHeight / 2
-						? ` OR (x > ${metadata.worldWidth - (canvasWidth / 2 + renderBuffer - Math.round(x))} AND y > ${metadata.worldHeight - (canvasHeight / 2 + renderBuffer - Math.round(y))})`
+					x - renderBuffer < viewportWorldWidth / 2 &&
+					y - renderBuffer < viewportWorldHeight / 2
+						? ` OR (x > ${metadata.worldWidth - (viewportWorldWidth / 2 + renderBuffer - Math.round(x))} AND y > ${metadata.worldHeight - (viewportWorldHeight / 2 + renderBuffer - Math.round(y))})`
 						: "";
 				const topRightCornerQuery =
-					x + renderBuffer > metadata.worldWidth - canvasWidth / 2 &&
-					y - renderBuffer < canvasHeight / 2
-						? ` OR (x < ${canvasWidth / 2 + renderBuffer + Math.round(x) - metadata.worldWidth} AND y > ${metadata.worldHeight - (canvasHeight / 2 + renderBuffer - Math.round(y))})`
+					x + renderBuffer > metadata.worldWidth - viewportWorldWidth / 2 &&
+					y - renderBuffer < viewportWorldHeight / 2
+						? ` OR (x < ${viewportWorldWidth / 2 + renderBuffer + Math.round(x) - metadata.worldWidth} AND y > ${metadata.worldHeight - (viewportWorldHeight / 2 + renderBuffer - Math.round(y))})`
 						: "";
 				const bottomLeftCornerQuery =
-					x - renderBuffer < canvasWidth / 2 &&
-					y + renderBuffer > metadata.worldHeight - canvasHeight / 2
-						? ` OR (x > ${metadata.worldWidth - (canvasWidth / 2 + renderBuffer - Math.round(x))} AND y < ${canvasHeight / 2 + renderBuffer + Math.round(y) - metadata.worldHeight})`
+					x - renderBuffer < viewportWorldWidth / 2 &&
+					y + renderBuffer > metadata.worldHeight - viewportWorldHeight / 2
+						? ` OR (x > ${metadata.worldWidth - (viewportWorldWidth / 2 + renderBuffer - Math.round(x))} AND y < ${viewportWorldHeight / 2 + renderBuffer + Math.round(y) - metadata.worldHeight})`
 						: "";
 				const bottomRightCornerQuery =
-					x + renderBuffer > metadata.worldWidth - canvasWidth / 2 &&
-					y + renderBuffer > metadata.worldHeight - canvasHeight / 2
-						? ` OR (x < ${canvasWidth / 2 + renderBuffer + Math.round(x) - metadata.worldWidth} AND y < ${canvasHeight / 2 + renderBuffer + Math.round(y) - metadata.worldHeight})`
+					x + renderBuffer > metadata.worldWidth - viewportWorldWidth / 2 &&
+					y + renderBuffer > metadata.worldHeight - viewportWorldHeight / 2
+						? ` OR (x < ${viewportWorldWidth / 2 + renderBuffer + Math.round(x) - metadata.worldWidth} AND y < ${viewportWorldHeight / 2 + renderBuffer + Math.round(y) - metadata.worldHeight})`
 						: "";
 
 				return `WHERE (${withinScreenQuery}${leftEdgeQuery}${rightEdgeQuery}${topEdgeQuery}${bottomEdgeQuery}${topLeftCornerQuery}${topRightCornerQuery}${bottomLeftCornerQuery}${bottomRightCornerQuery})`;
@@ -456,7 +456,7 @@ export function DBContextProvider({
 			// subscriptions?.unsubscribe();
 		};
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [canvasHeight, canvasWidth, metadata, self]);
+	}, [viewportWorldHeight, viewportWorldWidth, metadata, self]);
 
 	if (
 		!conn ||
@@ -464,8 +464,8 @@ export function DBContextProvider({
 		!identity ||
 		!metadata ||
 		!self ||
-		!canvasHeight ||
-		!canvasWidth
+		!viewportWorldHeight ||
+		!viewportWorldWidth
 	) {
 		return (
 			<>
@@ -490,8 +490,8 @@ export function DBContextProvider({
 				moons,
 				leaderboardEntries,
 				metadata,
-				canvasWidth,
-				canvasHeight,
+				viewportWorldWidth,
+				viewportWorldHeight,
 				renderBuffer,
 				settings,
 			}}

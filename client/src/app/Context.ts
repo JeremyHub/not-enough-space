@@ -20,8 +20,8 @@ type ContextType = {
 	moons: Map<number, Moon>;
 	leaderboardEntries: Map<Identity, LeaderboardEntry>;
 	metadata: Metadata;
-	canvasWidth: number;
-	canvasHeight: number;
+	viewportWorldWidth: number;
+	viewportWorldHeight: number;
 	renderBuffer: number;
 	settings: z.infer<typeof SettingsSchema>;
 };
