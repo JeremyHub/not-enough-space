@@ -1,5 +1,10 @@
 import { useEffect, useRef } from "react";
-import { drawGrid, drawUser } from "./render/helpers";
+import {
+	drawGrid,
+	drawUser,
+	renderCircle,
+	seededRandom,
+} from "./render/helpers";
 import { ConnectionFormSchema } from "./ConnectionForm";
 import z from "zod";
 
@@ -29,6 +34,18 @@ export function BackgroundCanvas({
 			ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
 			drawGrid(ctx, 0, 0, canvasWidth, canvasHeight, 1);
+			const rand = seededRandom(5966338933801430016);
+			for (let i = 0; i < 50; i++) {
+				const x = rand() * canvasWidth;
+				const y = rand() * canvasHeight;
+				const size = Math.floor(rand() * 1) + 5;
+				const color = {
+					r: Math.floor(rand() * 255),
+					g: Math.floor(rand() * 255),
+					b: Math.floor(rand() * 255),
+				};
+				renderCircle(ctx, size, x, y, color);
+			}
 			angleRef.current += 0.003;
 			ctx.save();
 			ctx.translate(canvasWidth / 2, canvasHeight / 2);

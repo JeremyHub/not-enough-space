@@ -38,15 +38,15 @@ function App() {
 
 	return (
 		<div className="flex min-h-svh flex-col items-center justify-center bg-zinc-950 text-primary-foreground">
+			{!connected && connectionForm && (
+				<BackgroundCanvas
+					connectionForm={connectionForm}
+					canvasWidth={windowSize.width}
+					canvasHeight={windowSize.height}
+				/>
+			)}
 			{!canvasOpen && (
 				<>
-					{connectionForm && (
-						<BackgroundCanvas
-							connectionForm={connectionForm}
-							canvasWidth={windowSize.width}
-							canvasHeight={windowSize.height}
-						/>
-					)}
 					<h2 className="z-1 scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight first:mt-0 mb-4">
 						Not Enough Space
 					</h2>

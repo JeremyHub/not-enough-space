@@ -45,7 +45,7 @@ function renderTextInCircle(
 	ctx.fillText(text, x, y);
 }
 
-function renderCircle(
+export function renderCircle(
 	ctx: CanvasRenderingContext2D,
 	size: number,
 	x: number,
@@ -235,6 +235,7 @@ function drawGravityWell(
 	radius: number,
 	layers: number,
 	noiseStrength: number,
+	seed: number,
 ) {
 	ctx.save();
 	const maxR = radius + layers;
@@ -242,11 +243,13 @@ function drawGravityWell(
 	gradient.addColorStop(1, "rgba(0,0,0,1)");
 	gradient.addColorStop(0, "rgba(0,0,0,0)");
 
+	const rand = seededRandom(seed);
+
 	for (let i = layers; i > 0; i--) {
 		const r = radius + i;
 		ctx.beginPath();
 		for (let a = 0; a <= Math.PI * 2; a += Math.PI / 32) {
-			const noise = (Math.random() - 0.5) * noiseStrength * (i / layers);
+			const noise = (rand() - 0.5) * noiseStrength * (i / layers);
 			const nx = x + Math.cos(a) * (r + noise);
 			const ny = y + Math.sin(a) * (r + noise);
 			ctx.lineTo(nx, ny);
@@ -259,7 +262,7 @@ function drawGravityWell(
 }
 
 // Simple seeded random number generator (mulberry32)
-function seededRandom(seed: number) {
+export function seededRandom(seed: number) {
 	let t = seed + 0x6d2b79f5;
 	return function () {
 		t += 0x6d2b79f5;
@@ -373,7 +376,15 @@ export function drawUser(
 	drawPatchwork(ctx, px, py, user.size, user.color, Number(user.seed));
 
 	// Draw gravity well effect
-	drawGravityWell(ctx, px, py, user.size, user.size / 10, user.size / 15);
+	drawGravityWell(
+		ctx,
+		px,
+		py,
+		user.size,
+		user.size / 20,
+		user.size / 10,
+		Number(user.seed),
+	);
 
 	// Draw username
 	if (user.username) {
