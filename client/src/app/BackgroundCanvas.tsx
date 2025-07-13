@@ -34,7 +34,7 @@ export function BackgroundCanvas({
 			ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
 			drawGrid(ctx, 0, 0, canvasWidth, canvasHeight, 1);
-			const rand = seededRandom(5966338933801430016);
+			const rand = seededRandom(new Date().getDate());
 			for (let i = 0; i < 50; i++) {
 				const x = rand() * canvasWidth;
 				const y = rand() * canvasHeight;
