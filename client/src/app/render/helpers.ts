@@ -128,7 +128,7 @@ export function drawGrid(
 	canvasHeight: number,
 	alpha: number = 0.3,
 ) {
-	const GRID_SIZE = 60;
+	const GRID_SIZE = 50;
 	ctx.strokeStyle = `rgba(200,200,200,${alpha})`;
 	ctx.lineWidth = 0.08;
 
