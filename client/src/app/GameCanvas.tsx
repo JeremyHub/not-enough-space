@@ -1,5 +1,5 @@
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
-import { Bit, Moon, User } from ".././module_bindings";
+import { Bit, Moon, User } from "../module_bindings";
 import { Context } from "./Context";
 import { Card, CardContent } from "@/components/ui/card";
 import {

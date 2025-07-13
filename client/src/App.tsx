@@ -1,7 +1,7 @@
 import { DBContextProvider } from "./app/DBContextProvider";
-import { Canvas } from "./app/Canvas";
+import { Canvas } from "./app/GameCanvas";
 import { useInputHandler } from "./app/InputHandler";
-import { useContext, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { Context } from "./app/Context";
 import { ConnectionForm, ConnectionFormSchema } from "./app/ConnectionForm";
 import z from "zod";
@@ -12,6 +12,7 @@ import {
 	ResizablePanelGroup,
 } from "./components/ui/resizable";
 import { getDefaultSettings, Settings, SettingsSchema } from "./app/Settings";
+import { BackgroundCanvas } from "./app/BackgroundCanvas";
 
 function App() {
 	const [connected, setConnected] = useState<boolean>(false);
@@ -22,14 +23,34 @@ function App() {
 	const [settings, setSettings] =
 		useState<z.infer<typeof SettingsSchema>>(getDefaultSettings());
 
+	const [windowSize, setWindowSize] = useState({
+		width: window.innerWidth,
+		height: window.innerHeight,
+	});
+
+	useEffect(() => {
+		function handleResize() {
+			setWindowSize({ width: window.innerWidth, height: window.innerHeight });
+		}
+		window.addEventListener("resize", handleResize);
+		return () => window.removeEventListener("resize", handleResize);
+	}, []);
+
 	return (
 		<div className="flex min-h-svh flex-col items-center justify-center bg-zinc-950 text-primary-foreground">
 			{!canvasOpen && (
 				<>
-					<h2 className="scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight first:mt-0 mb-4">
+					{connectionForm && (
+						<BackgroundCanvas
+							connectionForm={connectionForm}
+							canvasWidth={windowSize.width}
+							canvasHeight={windowSize.height}
+						/>
+					)}
+					<h2 className="z-1 scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight first:mt-0 mb-4">
 						Not Enough Space
 					</h2>
-					<p className="text-lg text-muted-foreground mb-16">
+					<p className="z-1 text-lg text-muted-foreground mb-16">
 						A multiplayer web game built on SpacetimeDB
 					</p>
 					<ConnectionForm
@@ -37,6 +58,7 @@ function App() {
 							setConnectionForm(data);
 							setCanvasOpen(true);
 						}}
+						setConnectionForm={setConnectionForm}
 					/>
 				</>
 			)}

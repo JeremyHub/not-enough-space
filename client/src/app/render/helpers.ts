@@ -120,15 +120,16 @@ export function getPositionsFromObjects<K, T extends { x: number; y: number }>(
 	return result;
 }
 
-function drawGrid(
+export function drawGrid(
 	ctx: CanvasRenderingContext2D,
 	cameraX: number,
 	cameraY: number,
 	canvasWidth: number,
 	canvasHeight: number,
+	alpha: number = 0.3,
 ) {
 	const GRID_SIZE = 60;
-	ctx.strokeStyle = "rgba(200,200,200,0.3)";
+	ctx.strokeStyle = `rgba(200,200,200,${alpha})`;
 	ctx.lineWidth = 0.08;
 
 	const worldLeft = cameraX - canvasWidth / 2;
@@ -198,7 +199,7 @@ function drawWorldBoundaries(
 	ctx.restore();
 }
 
-function drawBits(
+export function drawBits(
 	ctx: CanvasRenderingContext2D,
 	bits: Map<number, Bit>,
 	lerpedPositions: LerpedPositions | undefined,
@@ -352,17 +353,16 @@ function drawPatchwork(
 			ctx.closePath();
 		}
 
-		ctx.fillStyle = `rgba(${patchColor.r},${patchColor.g},${patchColor.b},0.85)`;
-		ctx.globalAlpha = 0.8;
+		ctx.fillStyle = `rgba(${patchColor.r},${patchColor.g},${patchColor.b},1)`;
 		ctx.fill();
 		ctx.restore();
 	}
 	ctx.restore();
 }
 
-function drawUser(
+export function drawUser(
 	ctx: CanvasRenderingContext2D,
-	user: User,
+	user: { size: number; color: Color; seed: bigint; username?: string },
 	px: number,
 	py: number,
 ) {

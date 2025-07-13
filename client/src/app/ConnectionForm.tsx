@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { ColorPicker } from "@/components/ui/color-picker";
+import { useEffect } from "react";
 
 function isColorTooWhiteOrBlack(hex: string) {
 	const clean = hex.replace("#", "");
@@ -71,8 +72,10 @@ export const ConnectionFormSchema = z.object({
 
 export function ConnectionForm({
 	onSubmit,
+	setConnectionForm,
 }: {
 	onSubmit: (data: z.infer<typeof ConnectionFormSchema>) => void;
+	setConnectionForm: (data: z.infer<typeof ConnectionFormSchema>) => void;
 }) {
 	const form = useForm<z.infer<typeof ConnectionFormSchema>>({
 		resolver: zodResolver(ConnectionFormSchema),
@@ -84,9 +87,24 @@ export function ConnectionForm({
 		},
 	});
 
+	useEffect(() => {
+		setConnectionForm(form.getValues());
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, []);
+
+	useEffect(() => {
+		const subscription = form.watch((values) => {
+			setConnectionForm(values as z.infer<typeof ConnectionFormSchema>);
+		});
+		return () => subscription.unsubscribe();
+	}, [form, setConnectionForm]);
+
 	return (
 		<Form {...form}>
-			<form onSubmit={form.handleSubmit(onSubmit)} className="w-2/3 space-y-6">
+			<form
+				onSubmit={form.handleSubmit(onSubmit)}
+				className="w-2/3 space-y-6 z-1"
+			>
 				<FormField
 					control={form.control}
 					name="username"
