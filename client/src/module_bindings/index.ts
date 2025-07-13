@@ -50,6 +50,8 @@ import { UpdateLeaderboard } from "./update_leaderboard_reducer.ts";
 export { UpdateLeaderboard };
 
 // Import and reexport all table handle types
+import { AiMetadataTableHandle } from "./ai_metadata_table.ts";
+export { AiMetadataTableHandle };
 import { BitTableHandle } from "./bit_table.ts";
 export { BitTableHandle };
 import { LeaderboardEntryTableHandle } from "./leaderboard_entry_table.ts";
@@ -68,6 +70,8 @@ import { UserTableHandle } from "./user_table.ts";
 export { UserTableHandle };
 
 // Import and reexport all types
+import { AiMetadata } from "./ai_metadata_type.ts";
+export { AiMetadata };
 import { Bit } from "./bit_type.ts";
 export { Bit };
 import { Color } from "./color_type.ts";
@@ -91,6 +95,17 @@ export { User };
 
 const REMOTE_MODULE = {
 	tables: {
+		ai_metadata: {
+			tableName: "ai_metadata",
+			rowType: AiMetadata.getTypeScriptAlgebraicType(),
+			primaryKey: "id",
+			primaryKeyInfo: {
+				colName: "id",
+				colType:
+					AiMetadata.getTypeScriptAlgebraicType().product.elements[0]
+						.algebraicType,
+			},
+		},
 		bit: {
 			tableName: "bit",
 			rowType: Bit.getTypeScriptAlgebraicType(),
@@ -436,6 +451,14 @@ export class SetReducerFlags {
 
 export class RemoteTables {
 	constructor(private connection: DbConnectionImpl) {}
+
+	get aiMetadata(): AiMetadataTableHandle {
+		return new AiMetadataTableHandle(
+			this.connection.clientCache.getOrCreateTable<AiMetadata>(
+				REMOTE_MODULE.tables.ai_metadata,
+			),
+		);
+	}
 
 	get bit(): BitTableHandle {
 		return new BitTableHandle(

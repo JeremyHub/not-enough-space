@@ -22,7 +22,7 @@ pub struct User {
     pub color: helpers::Color,
     pub health: f32,
     pub size: f32,
-    pub total_moon_size_oribiting: f32,
+    pub total_moon_size_orbiting: f32,
     #[index(btree)]
     pub is_ai: bool,
     pub speed_boost: f32,

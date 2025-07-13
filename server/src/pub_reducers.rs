@@ -40,14 +40,14 @@ pub fn sacrifice_health_for_moon(ctx: &ReducerContext, user: user::User) -> Resu
 
     let (moon_color, orbital_velocity) = moon::new_moon_params(ctx, &user.color);
 
-    // Subtract health and update user, and add to total_moon_size_oribiting
+    // Subtract health and update user, and add to total_moon_size_orbiting
     let new_health = user.health - size_to_sacrifice;
     let new_size = user::get_user_size(new_health);
-    let new_total_moon_size_oribiting = user.total_moon_size_oribiting + moon_size;
+    let new_total_moon_size_orbiting = user.total_moon_size_orbiting + moon_size;
     ctx.db.user().identity().update(user::User {
         health: new_health,
         size: new_size,
-        total_moon_size_oribiting: new_total_moon_size_oribiting,
+        total_moon_size_orbiting: new_total_moon_size_orbiting,
         speed_boost: user.speed_boost + super::SACRIFICE_SPEED_BOOST,
         ..user
     });
@@ -147,7 +147,7 @@ pub fn client_connected(ctx: &ReducerContext) {
             },
             health: super::USER_STARTING_HEALTH,
             size: user::get_user_size(super::USER_STARTING_HEALTH),
-            total_moon_size_oribiting: 0.0,
+            total_moon_size_orbiting: 0.0,
             is_ai: false,
             speed_boost: 0.0,
             kills: 0,

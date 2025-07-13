@@ -226,9 +226,9 @@ pub fn delete_moon(ctx: &ReducerContext, moon: Moon) {
     // Subtract from user's moon total if orbiting
     if let Some(user_id) = moon.orbiting {
         if let Some(user) = ctx.db.user().identity().find(user_id) {
-            let new_total = (user.total_moon_size_oribiting - moon.size).max(0.0);
+            let new_total = (user.total_moon_size_orbiting - moon.size).max(0.0);
             ctx.db.user().identity().update(user::User {
-                total_moon_size_oribiting: new_total,
+                total_moon_size_orbiting: new_total,
                 ..user
             });
         }

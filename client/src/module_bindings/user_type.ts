@@ -48,7 +48,7 @@ export type User = {
 	color: __Color;
 	health: number;
 	size: number;
-	totalMoonSizeOribiting: number;
+	totalMoonSizeOrbiting: number;
 	isAi: boolean;
 	speedBoost: number;
 	kills: number;
@@ -80,7 +80,7 @@ export namespace User {
 			new ProductTypeElement("health", AlgebraicType.createF32Type()),
 			new ProductTypeElement("size", AlgebraicType.createF32Type()),
 			new ProductTypeElement(
-				"totalMoonSizeOribiting",
+				"totalMoonSizeOrbiting",
 				AlgebraicType.createF32Type(),
 			),
 			new ProductTypeElement("isAi", AlgebraicType.createBoolType()),

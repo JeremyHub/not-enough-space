@@ -103,7 +103,7 @@ pub fn check_moon_user_collisions(ctx: &ReducerContext) {
 
     for user in ctx.db.user().iter() {
         if user.online || super::UPDATE_OFFLINE_PLAYERS {
-            let mut new_user_moon_size = user.total_moon_size_oribiting;
+            let mut new_user_moon_size = user.total_moon_size_orbiting;
             for range in helpers::wrapped_ranges(user.x.round() as i32, (user.size + super::MAX_POSSIBLE_MOON_SIZE) as i32, super::WORLD_WIDTH) {
                 for moon in ctx.db.moon().col_index().filter(range) {
                     if moon.orbiting.is_none() && can_get_moon_into_orbit(&user, moon.size) && helpers::toroidal_distance(user.x, user.y, moon.x, moon.y) <= (user.size + moon.size) {
@@ -117,10 +117,10 @@ pub fn check_moon_user_collisions(ctx: &ReducerContext) {
                     }
                 }
             }
-            if user.total_moon_size_oribiting != new_user_moon_size {
-                // After handling all moons for this user, update their total_moon_size_oribiting if needed
+            if user.total_moon_size_orbiting != new_user_moon_size {
+                // After handling all moons for this user, update their total_moon_size_orbiting if needed
                 ctx.db.user().identity().update(user::User {
-                    total_moon_size_oribiting: new_user_moon_size,
+                    total_moon_size_orbiting: new_user_moon_size,
                     ..user.clone()
                 });
             }
@@ -132,7 +132,7 @@ pub fn check_moon_user_collisions(ctx: &ReducerContext) {
 }
 
 pub fn can_get_moon_into_orbit(user: &user::User, moon_size: f32) -> bool {
-    if user.size < user.total_moon_size_oribiting + moon_size {
+    if user.size < user.total_moon_size_orbiting + moon_size {
         return false;
     }
     true

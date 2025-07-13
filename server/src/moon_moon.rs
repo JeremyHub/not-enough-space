@@ -23,22 +23,21 @@ fn handle_moon_moon_collision(ctx: &ReducerContext, to_destroy: &mut Vec<i32>, e
                 health: new_health,
                 ..moon_obj
             });
-        }
-        // update both player's total moon sizes
-        if let Some(owner) = moon.orbiting {
-            if let Some(owner_obj) = ctx.db.user().identity().find(owner) {
-                ctx.db.user().identity().update(user::User {
-                    total_moon_size_oribiting: owner_obj.total_moon_size_oribiting - other.size,
-                    ..owner_obj
-                });
+            if let Some(owner) = moon.orbiting {
+                if let Some(owner_obj) = ctx.db.user().identity().find(owner) {
+                    ctx.db.user().identity().update(user::User {
+                        total_moon_size_orbiting: owner_obj.total_moon_size_orbiting - other.size,
+                        ..owner_obj
+                    });
+                }
             }
-        }
-        if let Some(other_owner) = other.orbiting {
-            if let Some(other_owner_obj) = ctx.db.user().identity().find(other_owner) {
-                ctx.db.user().identity().update(user::User {
-                    total_moon_size_oribiting: other_owner_obj.total_moon_size_oribiting - moon.size,
-                    ..other_owner_obj
-                });
+            if let Some(other_owner) = other.orbiting {
+                if let Some(other_owner_obj) = ctx.db.user().identity().find(other_owner) {
+                    ctx.db.user().identity().update(user::User {
+                        total_moon_size_orbiting: other_owner_obj.total_moon_size_orbiting - moon.size,
+                        ..other_owner_obj
+                    });
+                }
             }
         }
     } else if other.size > moon.size {
@@ -59,7 +58,7 @@ fn handle_moon_moon_collision(ctx: &ReducerContext, to_destroy: &mut Vec<i32>, e
         if let Some(owner) = moon.orbiting {
             if let Some(owner_obj) = ctx.db.user().identity().find(owner) {
                 ctx.db.user().identity().update(user::User {
-                    total_moon_size_oribiting: owner_obj.total_moon_size_oribiting - moon.size,
+                    total_moon_size_orbiting: owner_obj.total_moon_size_orbiting - moon.size,
                     ..owner_obj
                 });
             }
@@ -67,7 +66,7 @@ fn handle_moon_moon_collision(ctx: &ReducerContext, to_destroy: &mut Vec<i32>, e
         if let Some(other_owner) = other.orbiting {
             if let Some(other_owner_obj) = ctx.db.user().identity().find(other_owner) {
                 ctx.db.user().identity().update(user::User {
-                    total_moon_size_oribiting: other_owner_obj.total_moon_size_oribiting - other.size,
+                    total_moon_size_orbiting: other_owner_obj.total_moon_size_orbiting - other.size,
                     ..other_owner_obj
                 });
             }
@@ -82,7 +81,7 @@ fn handle_moon_moon_collision(ctx: &ReducerContext, to_destroy: &mut Vec<i32>, e
         if let Some(owner) = moon.orbiting {
             if let Some(owner_obj) = ctx.db.user().identity().find(owner) {
                 ctx.db.user().identity().update(user::User {
-                    total_moon_size_oribiting: owner_obj.total_moon_size_oribiting - moon.size,
+                    total_moon_size_orbiting: owner_obj.total_moon_size_orbiting - moon.size,
                     ..owner_obj
                 });
             }
@@ -90,7 +89,7 @@ fn handle_moon_moon_collision(ctx: &ReducerContext, to_destroy: &mut Vec<i32>, e
         if let Some(other_owner) = other.orbiting {
             if let Some(other_owner_obj) = ctx.db.user().identity().find(other_owner) {
                 ctx.db.user().identity().update(user::User {
-                    total_moon_size_oribiting: other_owner_obj.total_moon_size_oribiting - other.size,
+                    total_moon_size_orbiting: other_owner_obj.total_moon_size_orbiting - other.size,
                     ..other_owner_obj
                 });
             }
