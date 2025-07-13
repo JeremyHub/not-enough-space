@@ -28,8 +28,6 @@ export function Canvas() {
 		settings,
 	} = context;
 
-	console.log(self.totalMoonSizeOrbiting);
-
 	// --- LERPED POSITIONS STATE ---
 	const [lerpedPositions, setLerpedPositions] = useState<LerpedPositions>(
 		() => ({
