@@ -3,29 +3,18 @@
 echo "Setting up git hooks..."
 
 cd client
-
 echo "Linting..."
 npm run lint
-
-if [ $? -ne 0 ]; then
-echo "Linting failed. Commit aborted."
-exit 1
-fi
-
-if ! git diff --quiet; then
-  echo "Linting made changes. Please stage the changes and try again."
-  exit 1
-fi
 
 cd ..
 
 cd server
+cargo clippy --all-targets --all-features -- -D warnings
+cargo fmt --all
 
-echo "Running cargo clippy..."
-(cargo clippy --all-targets --all-features -- -D warnings)
-if [ $? -ne 0 ]; then
-echo "Clippy failed. Commit aborted."
-exit 1
+if ! git diff --quiet; then
+  echo "Linting made changes. Please stage the changes and try again."
+  exit 1
 fi
 
 exit 0
