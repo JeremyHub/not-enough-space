@@ -79,6 +79,7 @@ export function Canvas() {
 	const [animatedWidth, setAnimatedWidth] = useState<number | null>(null);
 	const [animatedHeight, setAnimatedHeight] = useState<number | null>(null);
 
+	// --- ANIMATE CANVAS SIZE when user grows / shrinks in size---
 	useEffect(() => {
 		let raf: number;
 		const growSpeed = 0.5;
@@ -105,6 +106,8 @@ export function Canvas() {
 	}, [viewportWorldHeight, viewportWorldWidth]);
 
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+	const dpr = window.devicePixelRatio || 1;
 
 	// --- UPDATE TARGET POSITIONS WHEN OBJECTS CHANGE ---
 	useEffect(() => {
@@ -307,8 +310,10 @@ export function Canvas() {
 		const canvas = canvasRef.current as HTMLCanvasElement | null;
 		if (!canvas) return;
 		const context = canvas.getContext("2d");
+		if (!context) return;
 
 		const render = () => {
+			context.setTransform(dpr, 0, 0, dpr, 0, 0);
 			draw(context, drawProps);
 			animationFrameId = window.requestAnimationFrame(render);
 		};
@@ -317,16 +322,16 @@ export function Canvas() {
 		return () => {
 			window.cancelAnimationFrame(animationFrameId);
 		};
-	}, [drawProps]);
+	}, [drawProps, dpr, animatedHeight, animatedWidth]);
 
 	return (
 		<Card className="border-4 border-zinc-800 bg-zinc-900 shadow-lg flex items-center justify-center w-full h-full max-h-[100vh] min-w-[100vh] min-h-[100vh] p-0">
-			<CardContent className="flex items-center justify-center p-0 w-full h-full max-w-[100vh]">
+			<CardContent className="flex items-center justify-center p-0 min-w-[100vh] min-h-[100vh] max-w-[100vh]">
 				<canvas
 					ref={canvasRef}
-					width={animatedWidth || viewportWorldWidth}
-					height={animatedHeight || viewportWorldHeight}
-					className="w-full h-full block"
+					width={(animatedWidth || viewportWorldWidth) * dpr}
+					height={(animatedHeight || viewportWorldHeight) * dpr}
+					className="min-w-[100vh] min-h-[100vh] block"
 				/>
 			</CardContent>
 		</Card>
