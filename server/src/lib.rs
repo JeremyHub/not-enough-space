@@ -22,7 +22,7 @@ pub const FRICTION: f32 = 0.85;
 pub const UPDATE_OFFLINE_PLAYERS: bool = true;
 
 // users
-pub const USER_ACCELERATION: f32 = 0.2 * GLOBAL_VELOCITY_MULTIPLIER;
+pub const USER_ACCELERATION: f32 = 0.1 * GLOBAL_VELOCITY_MULTIPLIER;
 pub const USER_STARTING_HEALTH: f32 = 1.0;
 pub const SPEED_BOOST_DECAY: f32 = 0.95;
 pub const MAX_USER_SIZE: f32 = 200.0;

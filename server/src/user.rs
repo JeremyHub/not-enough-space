@@ -49,6 +49,13 @@ pub fn update_users(ctx: &ReducerContext) {
     // move users
     for user in ctx.db.user().iter() {
         if user.online || super::UPDATE_OFFLINE_PLAYERS {
+            let mut acceleration = if user.is_ai {
+                super::AI_ACCELERATION
+            } else {
+                super::USER_ACCELERATION
+            } + user.speed_boost;
+            let percent_moon_size_left = 1.0 - (user.total_moon_size_orbiting / user.size);
+            acceleration += percent_moon_size_left * acceleration;
             let upd = helpers::move_character(
                 user.x,
                 user.y,
@@ -56,7 +63,7 @@ pub fn update_users(ctx: &ReducerContext) {
                 user.dy,
                 user.dir_vec_x,
                 user.dir_vec_y,
-                if user.is_ai {super::AI_ACCELERATION} else {super::USER_ACCELERATION} + user.speed_boost,
+                acceleration,
             );
             ctx.db.user().identity().update(User {
                 col_index: upd.x.round() as i32,
