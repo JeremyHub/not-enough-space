@@ -131,12 +131,7 @@ export function Settings({
 									)}
 								/>
 								<FormItem className="bg-zinc-900 flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-									<Accordion
-										type="single"
-										collapsible
-										className="w-full"
-										defaultValue="advanced-settings"
-									>
+									<Accordion type="single" collapsible className="w-full">
 										<AccordionItem value="advanced-settings">
 											<AccordionTrigger className="text-primary-foreground p-1">
 												Advanced Settings
