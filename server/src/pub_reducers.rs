@@ -40,7 +40,7 @@ pub fn sacrifice_health_for_moon(ctx: &ReducerContext, user: user::User) -> Resu
         health: new_health,
         size: new_size,
         total_moon_size_orbiting: new_total_moon_size_orbiting,
-        speed_boost: user.speed_boost.min(super::SACRIFICE_SPEED_BOOST),
+        speed_boost: user.speed_boost.max(super::SACRIFICE_SPEED_BOOST),
         ..user
     });
 
