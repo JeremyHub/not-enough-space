@@ -14,7 +14,6 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
 	Accordion,
@@ -29,7 +28,7 @@ export function getDefaultSettings(): z.infer<typeof SettingsSchema> {
 		auto_reconnect_on_death: true,
 		lerp_strength: 0.15,
 		show_world_boundaries: false,
-		upscaling_quality: 3,
+		upscaling_quality: 2,
 	};
 }
 
@@ -115,7 +114,7 @@ export function Settings({
 														onValueChange={(value) => {
 															field.onChange(1 - value[0]);
 														}}
-														className={cn("w-full")}
+														className={"w-full mt-1"}
 													/>
 													<Button
 														variant="outline"
@@ -168,7 +167,7 @@ export function Settings({
 														<FormItem className="bg-zinc-900 flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
 															<div className="space-y-1">
 																<FormLabel className="text-primary-foreground">
-																	Upscaling Quality
+																	Dynamic Upscaling Quality
 																</FormLabel>
 																<FormDescription>
 																	High values result in more detail but might
@@ -180,20 +179,20 @@ export function Settings({
 																	<Slider
 																		defaultValue={[field.value]}
 																		min={1}
-																		max={10}
+																		max={3}
 																		step={0.1}
 																		value={[field.value]}
 																		onValueChange={(value) => {
 																			field.onChange(value[0]);
 																		}}
-																		className={cn("w-full")}
+																		className={"w-full mt-1"}
 																	/>
 																	<Button
 																		variant="outline"
 																		className="mt-2 text-muted-foreground hover:bg-zinc-800 border-muted-foreground bg-transparent"
 																		onClick={(e) => {
 																			e.preventDefault();
-																			field.onChange(3);
+																			field.onChange(2);
 																		}}
 																	>
 																		Reset to Default

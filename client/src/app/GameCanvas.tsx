@@ -9,6 +9,11 @@ import {
 	LerpedPositions,
 	MoonTrails,
 } from "./render/helpers";
+import {
+	MAX_VIEWPORT_WIDTH,
+	MIN_VIEWPORT_HEIGHT,
+	MIN_VIEWPORT_WIDTH,
+} from "./DBContextProvider";
 
 export function Canvas() {
 	const context = useContext(Context);
@@ -107,7 +112,26 @@ export function Canvas() {
 
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
-	const upscaling_quality = settings.upscaling_quality;
+	let upscaling_quality;
+
+	// when zoomed in (ratio of (viewport-minviewport)/(maxviewport-minviewport) is small) then it should be the value of settings, otherwise gets closer to 1 as the ratio gets larger
+	if (viewportWorldWidth > viewportWorldHeight) {
+		upscaling_quality =
+			(1 -
+				(viewportWorldWidth - MIN_VIEWPORT_WIDTH) /
+					(MAX_VIEWPORT_WIDTH - MIN_VIEWPORT_WIDTH)) *
+				settings.upscaling_quality +
+			1;
+	} else {
+		upscaling_quality =
+			(1 -
+				(viewportWorldHeight - MIN_VIEWPORT_HEIGHT) /
+					(MAX_VIEWPORT_WIDTH - MIN_VIEWPORT_HEIGHT)) *
+				settings.upscaling_quality +
+			1;
+	}
+
+	console.log(upscaling_quality);
 
 	// --- UPDATE TARGET POSITIONS WHEN OBJECTS CHANGE ---
 	useEffect(() => {

@@ -226,6 +226,11 @@ function useDBState(
 	};
 }
 
+export const MAX_VIEWPORT_WIDTH = 1500;
+export const MAX_VIEWPORT_HEIGHT = 1500;
+export const MIN_VIEWPORT_WIDTH = 200;
+export const MIN_VIEWPORT_HEIGHT = 200;
+
 export function DBContextProvider({
 	connected,
 	setConnected,
@@ -289,10 +294,20 @@ export function DBContextProvider({
 	);
 
 	const viewportWorldWidth = self?.size
-		? Math.round(Math.min(Math.max((self.size * 100) / 5) + 200, 1500))
+		? Math.round(
+				Math.min(
+					Math.max((self.size * 100) / 5) + MIN_VIEWPORT_WIDTH,
+					MAX_VIEWPORT_WIDTH,
+				),
+			)
 		: null;
 	const viewportWorldHeight = self?.size
-		? Math.round(Math.min(Math.max((self.size * 100) / 5) + 200, 1500))
+		? Math.round(
+				Math.min(
+					Math.max((self.size * 100) / 5) + MIN_VIEWPORT_HEIGHT,
+					MAX_VIEWPORT_HEIGHT,
+				),
+			)
 		: null;
 	const renderBuffer = 200;
 	const extraUserRenderBuffer = 150;
