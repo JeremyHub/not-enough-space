@@ -138,7 +138,7 @@ export function Settings({
 											<AccordionTrigger className="text-primary-foreground p-1">
 												Advanced Settings
 											</AccordionTrigger>
-											<AccordionContent className="p-0">
+											<AccordionContent className="p-0 space-y-3">
 												<FormField
 													control={form.control}
 													name="show_world_boundaries"
