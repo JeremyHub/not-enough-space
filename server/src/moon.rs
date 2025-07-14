@@ -133,18 +133,18 @@ fn update_oribiting_moons(ctx: &ReducerContext) {
                 let user_speed = (user.dx.powi(2) + user.dy.powi(2)).sqrt();
                 let moving = user_speed > super::USER_SPEED_ORBIT_THRESHOLD;
                 let orbit_state: OrbitState;
-                let mut orbit_radius: f32;
+                let mut orbit_radius: f32 = user.size + moon.size;
                 let orbit_angular_vel: f32;
+                let orbit_radius_moon_size_factor = 1.0 - (moon.size - super::MIN_POSSIBLE_MOON_SIZE) / (super::MAX_POSSIBLE_MOON_SIZE - super::MIN_POSSIBLE_MOON_SIZE);
                 if moving {
                     orbit_state = OrbitState::Moving;
-                    orbit_radius = (super::ORBIT_RADIUS_USER_SIZE_FACTOR_FAR * user.size) + super::ORBIT_RADIUS_ADD_FAR + (super::ADDITIONAL_ORBIT_RADIUS_MOON_SIZE_FACTOR_FAR * (1.0/moon.size) * user.size);
+                    orbit_radius += super::ADDL_ORBIT_RADIUS_FAR_PER_USER_SIZE * orbit_radius_moon_size_factor * user.size;
                     orbit_angular_vel = super::ORBIT_ANGULAR_VEL_RADIUS_FACTOR_FAR * moon.size;
                 } else {
                     orbit_state = OrbitState::Stationary;
-                    orbit_radius = (super::ORBIT_RADIUS_USER_SIZE_FACTOR_CLOSE * user.size) + super::ORBIT_RADIUS_ADD_CLOSE + (super::ADDITIONAL_ORBIT_RADIUS_MOON_SIZE_FACTOR_CLOSE * (1.0/moon.size) * user.size);
+                    orbit_radius += super::ADDL_ORBIT_RADIUS_CLOSE_PER_USER_SIZE * orbit_radius_moon_size_factor * user.size;
                     orbit_angular_vel = super::ORBIT_ANGULAR_VEL_RADIUS_FACTOR_CLOSE * moon.size;
                 };
-                orbit_radius = orbit_radius.max(user.size + moon.size + (super::MIN_ORBIT_RADIUS_BY_USER_SIZE * user.size));
 
                 // Advance orbit angle
                 let mut orbit_angle = moon.orbit_angle;
