@@ -32,31 +32,31 @@ import {
 	type ReducerEventContextInterface,
 	type SubscriptionEventContextInterface,
 } from "@clockworklabs/spacetimedb-sdk";
-export type AiMetadata = {
-	id: bigint;
-	numAis: number;
+export type StaticMetadata = {
+	worldHeight: number;
+	worldWidth: number;
 };
 
 /**
  * A namespace for generated helper functions.
  */
-export namespace AiMetadata {
+export namespace StaticMetadata {
 	/**
 	 * A function which returns this type represented as an AlgebraicType.
 	 * This function is derived from the AlgebraicType used to generate this type.
 	 */
 	export function getTypeScriptAlgebraicType(): AlgebraicType {
 		return AlgebraicType.createProductType([
-			new ProductTypeElement("id", AlgebraicType.createU64Type()),
-			new ProductTypeElement("numAis", AlgebraicType.createU32Type()),
+			new ProductTypeElement("worldHeight", AlgebraicType.createI32Type()),
+			new ProductTypeElement("worldWidth", AlgebraicType.createI32Type()),
 		]);
 	}
 
-	export function serialize(writer: BinaryWriter, value: AiMetadata): void {
-		AiMetadata.getTypeScriptAlgebraicType().serialize(writer, value);
+	export function serialize(writer: BinaryWriter, value: StaticMetadata): void {
+		StaticMetadata.getTypeScriptAlgebraicType().serialize(writer, value);
 	}
 
-	export function deserialize(reader: BinaryReader): AiMetadata {
-		return AiMetadata.getTypeScriptAlgebraicType().deserialize(reader);
+	export function deserialize(reader: BinaryReader): StaticMetadata {
+		return StaticMetadata.getTypeScriptAlgebraicType().deserialize(reader);
 	}
 }

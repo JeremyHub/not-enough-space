@@ -1,4 +1,4 @@
-import { Bit, Moon, Color, Metadata, User } from "../../module_bindings";
+import { Bit, Moon, Color, StaticMetadata, User } from "../../module_bindings";
 import { Identity } from "@clockworklabs/spacetimedb-sdk";
 import { SettingsSchema } from "../Settings";
 import z from "zod";
@@ -9,7 +9,7 @@ export type MoonTrails = Map<
 >;
 
 type DrawProps = {
-	metadata: Metadata;
+	staticMetadata: StaticMetadata;
 	canvasWidth: number;
 	canvasHeight: number;
 	renderBuffer: number;
@@ -68,7 +68,7 @@ export function renderCircle(
 
 function renderWithWrap(
 	renderFn: (x: number, y: number) => void,
-	metadata: Metadata,
+	staticMetadata: StaticMetadata,
 	canvasWidth: number,
 	canvasHeight: number,
 	renderBuffer: number,
@@ -80,22 +80,22 @@ function renderWithWrap(
 	let new_y: number = y;
 	if (self.x < canvasWidth / 2) {
 		if (x > canvasWidth + renderBuffer) {
-			new_x = x - metadata.worldWidth;
+			new_x = x - staticMetadata.worldWidth;
 		}
 	}
-	if (self.x > metadata.worldWidth - canvasWidth / 2) {
+	if (self.x > staticMetadata.worldWidth - canvasWidth / 2) {
 		if (x < -renderBuffer) {
-			new_x = x + metadata.worldWidth;
+			new_x = x + staticMetadata.worldWidth;
 		}
 	}
 	if (self.y < canvasHeight / 2) {
 		if (y > canvasHeight + renderBuffer) {
-			new_y = y - metadata.worldHeight;
+			new_y = y - staticMetadata.worldHeight;
 		}
 	}
-	if (self.y > metadata.worldHeight - canvasHeight / 2) {
+	if (self.y > staticMetadata.worldHeight - canvasHeight / 2) {
 		if (y < -renderBuffer) {
-			new_y = y + metadata.worldHeight;
+			new_y = y + staticMetadata.worldHeight;
 		}
 	}
 
@@ -156,7 +156,7 @@ export function drawGrid(
 
 function drawWorldBoundaries(
 	ctx: CanvasRenderingContext2D,
-	metadata: Metadata,
+	staticMetadata: StaticMetadata,
 	cameraX: number,
 	cameraY: number,
 	canvasWidth: number,
@@ -169,12 +169,16 @@ function drawWorldBoundaries(
 	const worldLeft = cameraX - canvasWidth / 2;
 	const worldTop = cameraY - canvasHeight / 2;
 
-	const leftBorderX = metadata.worldWidth > 0 ? 0 - worldLeft : 0;
+	const leftBorderX = staticMetadata.worldWidth > 0 ? 0 - worldLeft : 0;
 	const rightBorderX =
-		metadata.worldWidth > 0 ? metadata.worldWidth - worldLeft : canvasWidth;
-	const topBorderY = metadata.worldHeight > 0 ? 0 - worldTop : 0;
+		staticMetadata.worldWidth > 0
+			? staticMetadata.worldWidth - worldLeft
+			: canvasWidth;
+	const topBorderY = staticMetadata.worldHeight > 0 ? 0 - worldTop : 0;
 	const bottomBorderY =
-		metadata.worldHeight > 0 ? metadata.worldHeight - worldTop : canvasHeight;
+		staticMetadata.worldHeight > 0
+			? staticMetadata.worldHeight - worldTop
+			: canvasHeight;
 
 	ctx.beginPath();
 	ctx.moveTo(leftBorderX, 0);
@@ -204,7 +208,7 @@ export function drawBits(
 	bits: Map<number, Bit>,
 	lerpedPositions: LerpedPositions | undefined,
 	toScreen: (obj: { x: number; y: number }) => { x: number; y: number },
-	metadata: Metadata,
+	staticMetadata: StaticMetadata,
 	canvasWidth: number,
 	canvasHeight: number,
 	renderBuffer: number,
@@ -217,7 +221,7 @@ export function drawBits(
 		const { x, y } = toScreen(pos);
 		renderWithWrap(
 			(px, py) => renderCircle(ctx, bit.size, px, py, bit.color, true),
-			metadata,
+			staticMetadata,
 			canvasWidth,
 			canvasHeight,
 			renderBuffer,
@@ -406,7 +410,7 @@ function drawUsers(
 	identity: Identity,
 	lerpedPositions: LerpedPositions | undefined,
 	toScreen: (obj: { x: number; y: number }) => { x: number; y: number },
-	metadata: Metadata,
+	staticMetadata: StaticMetadata,
 	canvasWidth: number,
 	canvasHeight: number,
 	renderBuffer: number,
@@ -422,7 +426,7 @@ function drawUsers(
 				(px, py) => {
 					drawUser(ctx, user, px, py);
 				},
-				metadata,
+				staticMetadata,
 				canvasWidth,
 				canvasHeight,
 				renderBuffer,
@@ -449,7 +453,7 @@ function drawMoonTrails(
 	moonTrails: MoonTrails | undefined,
 	lerpedPositions: LerpedPositions | undefined,
 	toScreen: (obj: { x: number; y: number }) => { x: number; y: number },
-	metadata: Metadata,
+	staticMetadata: StaticMetadata,
 	canvasWidth: number,
 	canvasHeight: number,
 	renderBuffer: number,
@@ -481,7 +485,7 @@ function drawMoonTrails(
 					ctx.globalAlpha = 1.0;
 					ctx.restore();
 				},
-				metadata,
+				staticMetadata,
 				canvasWidth,
 				canvasHeight,
 				renderBuffer,
@@ -498,7 +502,7 @@ function drawMoons(
 	moons: Map<number, Moon>,
 	lerpedPositions: LerpedPositions | undefined,
 	toScreen: (obj: { x: number; y: number }) => { x: number; y: number },
-	metadata: Metadata,
+	staticMetadata: StaticMetadata,
 	canvasWidth: number,
 	canvasHeight: number,
 	renderBuffer: number,
@@ -511,7 +515,7 @@ function drawMoons(
 		const { x, y } = toScreen(pos);
 		renderWithWrap(
 			(px, py) => renderCircle(ctx, moon.size, px, py, moon.color),
-			metadata,
+			staticMetadata,
 			canvasWidth,
 			canvasHeight,
 			renderBuffer,
@@ -530,7 +534,7 @@ export const draw = (
 	},
 ) => {
 	const {
-		metadata,
+		staticMetadata: metadata,
 		canvasWidth,
 		canvasHeight,
 		renderBuffer,

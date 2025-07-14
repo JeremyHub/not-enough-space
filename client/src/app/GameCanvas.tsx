@@ -21,7 +21,7 @@ export function Canvas() {
 		users,
 		bits,
 		moons,
-		metadata,
+		staticMetadata,
 		viewportWorldWidth,
 		viewportWorldHeight,
 		renderBuffer,
@@ -187,13 +187,13 @@ export function Canvas() {
 						prevPos.x,
 						user.x,
 						lerpSpeed,
-						metadata.worldWidth,
+						staticMetadata.worldWidth,
 					);
 					const newY = lerpWrapped(
 						prevPos.y,
 						user.y,
 						lerpSpeed,
-						metadata.worldHeight,
+						staticMetadata.worldHeight,
 					);
 					next.users.set(key, { x: newX, y: newY });
 				});
@@ -204,13 +204,13 @@ export function Canvas() {
 						prevPos.x,
 						bit.x,
 						lerpSpeed,
-						metadata.worldWidth,
+						staticMetadata.worldWidth,
 					);
 					const newY = lerpWrapped(
 						prevPos.y,
 						bit.y,
 						lerpSpeed,
-						metadata.worldHeight,
+						staticMetadata.worldHeight,
 					);
 					next.bits.set(key, { x: newX, y: newY });
 				});
@@ -221,13 +221,13 @@ export function Canvas() {
 						prevPos.x,
 						moon.x,
 						lerpSpeed,
-						metadata.worldWidth,
+						staticMetadata.worldWidth,
 					);
 					const newY = lerpWrapped(
 						prevPos.y,
 						moon.y,
 						lerpSpeed,
-						metadata.worldHeight,
+						staticMetadata.worldHeight,
 					);
 					next.moons.set(key, { x: newX, y: newY });
 				});
@@ -242,8 +242,8 @@ export function Canvas() {
 		bits,
 		moons,
 		settings.lerp_strength,
-		metadata.worldWidth,
-		metadata.worldHeight,
+		staticMetadata.worldWidth,
+		staticMetadata.worldHeight,
 	]);
 
 	// Lerp camera position
@@ -252,8 +252,8 @@ export function Canvas() {
 		const lerpSpeed = settings.lerp_strength;
 		function animateCamera() {
 			setLerpedCamera((prev) => ({
-				x: lerpWrapped(prev.x, self.x, lerpSpeed, metadata.worldWidth),
-				y: lerpWrapped(prev.y, self.y, lerpSpeed, metadata.worldHeight),
+				x: lerpWrapped(prev.x, self.x, lerpSpeed, staticMetadata.worldWidth),
+				y: lerpWrapped(prev.y, self.y, lerpSpeed, staticMetadata.worldHeight),
 			}));
 			raf = requestAnimationFrame(animateCamera);
 		}
@@ -262,14 +262,14 @@ export function Canvas() {
 	}, [
 		self.x,
 		self.y,
-		metadata.worldWidth,
-		metadata.worldHeight,
+		staticMetadata.worldWidth,
+		staticMetadata.worldHeight,
 		settings.lerp_strength,
 	]);
 
 	const drawProps = useMemo(
 		() => ({
-			metadata,
+			staticMetadata,
 			canvasWidth: animatedWidth ?? viewportWorldWidth,
 			canvasHeight: animatedHeight ?? viewportWorldHeight,
 			renderBuffer,
@@ -284,7 +284,7 @@ export function Canvas() {
 			settings,
 		}),
 		[
-			metadata,
+			staticMetadata,
 			animatedWidth,
 			viewportWorldWidth,
 			animatedHeight,

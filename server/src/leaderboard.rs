@@ -2,6 +2,9 @@
 use spacetimedb::{table, reducer, Table, ReducerContext, ScheduleAt, TimeDuration, Identity};
 
 use crate::user::user as _;
+use crate::game_loop::dynamic_metadata as _;
+
+use super::game_loop;
 
 #[table(name = leaderboard_update_schedule, scheduled(update_leaderboard))]
 pub struct LeaderboardUpdateSchedule {
@@ -45,22 +48,39 @@ pub fn update_leaderboard(ctx: &ReducerContext, _leaderboard_update_schedule: Le
     // Sort by size descending
     users.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
 
-    // Clear the leaderboard table
-    for entry in ctx.db.leaderboard_entry().iter() {
-        ctx.db.leaderboard_entry().delete(entry);
+    // go through all users and update their leaderboard entry
+    for (rank, (identity, size, username, kills, damage)) in users.iter().enumerate() {
+        let rank = rank as u32 + 1; // ranks start at 1
+        if ctx.db.leaderboard_entry().identity().find(*identity).is_some() {
+            // Update existing entry
+            ctx.db.leaderboard_entry().identity().update(LeaderboardEntry {
+                rank,
+                identity: *identity,
+                size: *size as u32,
+                username: username.clone(),
+                kills: *kills,
+                damage: *damage as u32,
+            });
+        } else {
+            // Insert new entry
+            ctx.db.leaderboard_entry().insert(LeaderboardEntry {
+                rank,
+                identity: *identity,
+                size: *size as u32,
+                username: username.clone(),
+                kills: *kills,
+                damage: *damage as u32,
+            });
+        }
     }
 
-    // Insert sorted users into leaderboard with rank, size, and username
-    for (i, (identity, size, username, kills, damage)) in users.iter().enumerate() {
-        ctx.db.leaderboard_entry().insert(LeaderboardEntry {
-            rank: (i + 1) as u32,
-            identity: *identity,
-            size: size.round() as u32,
-            username: username.clone(),
-            kills: *kills,
-            damage: damage.round() as u32,
-        });
-    }
+    let metadata = ctx.db.dynamic_metadata().id().find(0).unwrap();
+    // Update the total users in dynamic metadata
+    ctx.db.dynamic_metadata().id().update(game_loop::DynamicMetadata {
+        id: 0,
+        num_ais: metadata.num_ais,
+        total_users: users.len() as u32,
+    });
 
     let interval = TimeDuration::from_micros(super::LEADERBOARD_UPDATE_INTERVAL_MICROS);
     ctx.db.leaderboard_update_schedule().insert(LeaderboardUpdateSchedule {

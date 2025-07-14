@@ -1,6 +1,6 @@
 use spacetimedb::{table, Identity, ReducerContext, Table};
 
-use crate::moon::moon as _;
+use crate::{leaderboard::leaderboard_entry, moon::moon as _};
 
 use super::helpers;
 
@@ -41,6 +41,9 @@ pub fn handle_user_death(ctx: &ReducerContext, user: User) {
         if moon.orbiting == Some(user.identity) {
             ctx.db.moon().delete(moon);
         }
+    }
+    if let Some(entry) = ctx.db.leaderboard_entry().identity().find(user.identity) {
+        ctx.db.leaderboard_entry().delete(entry);
     }
     ctx.db.user().delete(user);
 }

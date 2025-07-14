@@ -32,31 +32,36 @@ import {
 	type ReducerEventContextInterface,
 	type SubscriptionEventContextInterface,
 } from "@clockworklabs/spacetimedb-sdk";
-export type Metadata = {
-	worldHeight: number;
-	worldWidth: number;
+export type DynamicMetadata = {
+	id: bigint;
+	numAis: number;
+	totalUsers: number;
 };
 
 /**
  * A namespace for generated helper functions.
  */
-export namespace Metadata {
+export namespace DynamicMetadata {
 	/**
 	 * A function which returns this type represented as an AlgebraicType.
 	 * This function is derived from the AlgebraicType used to generate this type.
 	 */
 	export function getTypeScriptAlgebraicType(): AlgebraicType {
 		return AlgebraicType.createProductType([
-			new ProductTypeElement("worldHeight", AlgebraicType.createI32Type()),
-			new ProductTypeElement("worldWidth", AlgebraicType.createI32Type()),
+			new ProductTypeElement("id", AlgebraicType.createU64Type()),
+			new ProductTypeElement("numAis", AlgebraicType.createU32Type()),
+			new ProductTypeElement("totalUsers", AlgebraicType.createU32Type()),
 		]);
 	}
 
-	export function serialize(writer: BinaryWriter, value: Metadata): void {
-		Metadata.getTypeScriptAlgebraicType().serialize(writer, value);
+	export function serialize(
+		writer: BinaryWriter,
+		value: DynamicMetadata,
+	): void {
+		DynamicMetadata.getTypeScriptAlgebraicType().serialize(writer, value);
 	}
 
-	export function deserialize(reader: BinaryReader): Metadata {
-		return Metadata.getTypeScriptAlgebraicType().deserialize(reader);
+	export function deserialize(reader: BinaryReader): DynamicMetadata {
+		return DynamicMetadata.getTypeScriptAlgebraicType().deserialize(reader);
 	}
 }

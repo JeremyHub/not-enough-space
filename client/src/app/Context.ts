@@ -3,9 +3,10 @@ import {
 	Bit,
 	Moon,
 	DbConnection,
-	Metadata,
 	User,
 	LeaderboardEntry,
+	StaticMetadata,
+	DynamicMetadata,
 } from "../module_bindings";
 import { Identity } from "@clockworklabs/spacetimedb-sdk";
 import z from "zod";
@@ -18,8 +19,9 @@ type ContextType = {
 	users: Map<string, User>;
 	bits: Map<number, Bit>;
 	moons: Map<number, Moon>;
-	leaderboardEntries: Map<Identity, LeaderboardEntry>;
-	metadata: Metadata;
+	leaderboardEntries: Map<string, LeaderboardEntry>;
+	staticMetadata: StaticMetadata;
+	dynamicMetadata: DynamicMetadata;
 	viewportWorldWidth: number;
 	viewportWorldHeight: number;
 	renderBuffer: number;

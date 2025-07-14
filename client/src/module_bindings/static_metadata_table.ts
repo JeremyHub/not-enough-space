@@ -32,7 +32,7 @@ import {
 	type ReducerEventContextInterface,
 	type SubscriptionEventContextInterface,
 } from "@clockworklabs/spacetimedb-sdk";
-import { Metadata } from "./metadata_type";
+import { StaticMetadata } from "./static_metadata_type";
 import {
 	type EventContext,
 	type Reducer,
@@ -41,19 +41,19 @@ import {
 } from ".";
 
 /**
- * Table handle for the table `metadata`.
+ * Table handle for the table `static_metadata`.
  *
- * Obtain a handle from the [`metadata`] property on [`RemoteTables`],
- * like `ctx.db.metadata`.
+ * Obtain a handle from the [`staticMetadata`] property on [`RemoteTables`],
+ * like `ctx.db.staticMetadata`.
  *
  * Users are encouraged not to explicitly reference this type,
  * but to directly chain method calls,
- * like `ctx.db.metadata.on_insert(...)`.
+ * like `ctx.db.staticMetadata.on_insert(...)`.
  */
-export class MetadataTableHandle {
-	tableCache: TableCache<Metadata>;
+export class StaticMetadataTableHandle {
+	tableCache: TableCache<StaticMetadata>;
 
-	constructor(tableCache: TableCache<Metadata>) {
+	constructor(tableCache: TableCache<StaticMetadata>) {
 		this.tableCache = tableCache;
 	}
 
@@ -61,23 +61,23 @@ export class MetadataTableHandle {
 		return this.tableCache.count();
 	}
 
-	iter(): Iterable<Metadata> {
+	iter(): Iterable<StaticMetadata> {
 		return this.tableCache.iter();
 	}
 
-	onInsert = (cb: (ctx: EventContext, row: Metadata) => void) => {
+	onInsert = (cb: (ctx: EventContext, row: StaticMetadata) => void) => {
 		return this.tableCache.onInsert(cb);
 	};
 
-	removeOnInsert = (cb: (ctx: EventContext, row: Metadata) => void) => {
+	removeOnInsert = (cb: (ctx: EventContext, row: StaticMetadata) => void) => {
 		return this.tableCache.removeOnInsert(cb);
 	};
 
-	onDelete = (cb: (ctx: EventContext, row: Metadata) => void) => {
+	onDelete = (cb: (ctx: EventContext, row: StaticMetadata) => void) => {
 		return this.tableCache.onDelete(cb);
 	};
 
-	removeOnDelete = (cb: (ctx: EventContext, row: Metadata) => void) => {
+	removeOnDelete = (cb: (ctx: EventContext, row: StaticMetadata) => void) => {
 		return this.tableCache.removeOnDelete(cb);
 	};
 }

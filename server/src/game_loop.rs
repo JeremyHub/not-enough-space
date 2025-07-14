@@ -25,20 +25,19 @@ pub struct TickMeta {
     last_tick: spacetimedb::Timestamp,
 }
 
-
-#[table(name = metadata, public)]
-struct Metadata {
+#[table(name = static_metadata, public)]
+struct StaticMetadata {
     world_height: i32,
     world_width: i32,
 }
 
-#[table(name = ai_metadata, public)]
-pub struct AIMetadata {
+#[table(name = dynamic_metadata, public)]
+pub struct DynamicMetadata {
     #[primary_key]
     pub id: u64,
     pub num_ais: u32,
+    pub total_users: u32,
 }
-
 
 #[reducer]
 pub fn tick(ctx: &ReducerContext, tick_schedule: TickSchedule) -> Result<(), String> {
@@ -90,13 +89,14 @@ pub fn tick(ctx: &ReducerContext, tick_schedule: TickSchedule) -> Result<(), Str
 
 #[reducer(init)]
 pub fn init(ctx: &ReducerContext) -> Result<(), String> {
-    ctx.db.metadata().insert(Metadata {
+    ctx.db.static_metadata().insert(StaticMetadata {
         world_height: super::WORLD_HEIGHT,
         world_width: super::WORLD_WIDTH,
     });
-    ctx.db.ai_metadata().insert(AIMetadata {
+    ctx.db.dynamic_metadata().insert(DynamicMetadata {
         id: 0,
         num_ais: 0,
+        total_users: 0,
     });
     ctx.db.tick_schedule().insert(TickSchedule {
         id: 0,

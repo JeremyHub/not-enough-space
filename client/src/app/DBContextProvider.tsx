@@ -5,9 +5,10 @@ import {
 	DbConnection,
 	ErrorContext,
 	EventContext,
-	Metadata,
+	StaticMetadata,
 	User,
 	LeaderboardEntry,
+	DynamicMetadata,
 } from ".././module_bindings";
 import { Identity } from "@clockworklabs/spacetimedb-sdk";
 import React from "react";
@@ -22,17 +23,38 @@ function useDBState(
 	ownIdentity: Identity | null,
 	onDeath: () => void,
 ) {
-	// --- Metadata ---
-	const [metadata, setMetadata] = useState<Metadata | null>(null);
+	// --- Static Metadata ---
+	const [staticMetadata, setStaticMetadata] = useState<StaticMetadata | null>(
+		null,
+	);
 	useEffect(() => {
 		if (!conn) return;
-		const onMetadataUpdate = (_ctx: EventContext, newMetadata: Metadata) =>
-			setMetadata(newMetadata);
-		conn.db.metadata.onInsert(onMetadataUpdate);
-		conn.db.metadata.onDelete(() => setMetadata(null));
+		const onMetadataUpdate = (
+			_ctx: EventContext,
+			newMetadata: StaticMetadata,
+		) => setStaticMetadata(newMetadata);
+		conn.db.staticMetadata.onInsert(onMetadataUpdate);
+		conn.db.staticMetadata.onDelete(() => setStaticMetadata(null));
 		return () => {
-			conn.db.metadata.removeOnInsert(onMetadataUpdate);
-			conn.db.metadata.removeOnDelete(() => setMetadata(null));
+			conn.db.staticMetadata.removeOnInsert(onMetadataUpdate);
+			conn.db.staticMetadata.removeOnDelete(() => setStaticMetadata(null));
+		};
+	}, [conn]);
+
+	// --- Dynamic Metadata ---
+	const [dynamicMetadata, setDynamicMetadata] =
+		useState<DynamicMetadata | null>(null);
+	useEffect(() => {
+		if (!conn) return;
+		const onMetadataUpdate = (
+			_ctx: EventContext,
+			newMetadata: DynamicMetadata,
+		) => setDynamicMetadata(newMetadata);
+		conn.db.dynamicMetadata.onInsert(onMetadataUpdate);
+		conn.db.dynamicMetadata.onDelete(() => setDynamicMetadata(null));
+		return () => {
+			conn.db.dynamicMetadata.removeOnInsert(onMetadataUpdate);
+			conn.db.dynamicMetadata.removeOnDelete(() => setDynamicMetadata(null));
 		};
 	}, [conn]);
 
@@ -140,12 +162,14 @@ function useDBState(
 
 	// --- Leaderboard Entries ---
 	const [leaderboardEntries, setLeaderboardEntries] = useState<
-		Map<Identity, LeaderboardEntry>
+		Map<string, LeaderboardEntry>
 	>(new Map());
 	useEffect(() => {
 		if (!conn) return;
 		const onInsert = (_ctx: EventContext, entry: LeaderboardEntry) => {
-			setLeaderboardEntries((prev) => new Map(prev.set(entry.identity, entry)));
+			setLeaderboardEntries(
+				(prev) => new Map(prev.set(entry.identity.toHexString(), entry)),
+			);
 		};
 		conn.db.leaderboardEntry.onInsert(onInsert);
 
@@ -155,15 +179,15 @@ function useDBState(
 			newEntry: LeaderboardEntry,
 		) => {
 			setLeaderboardEntries((prev) => {
-				prev.delete(oldEntry.identity);
-				return new Map(prev.set(newEntry.identity, newEntry));
+				prev.delete(oldEntry.identity.toHexString());
+				return new Map(prev.set(newEntry.identity.toHexString(), newEntry));
 			});
 		};
 		conn.db.leaderboardEntry.onUpdate(onUpdate);
 
 		const onDelete = (_ctx: EventContext, entry: LeaderboardEntry) => {
 			setLeaderboardEntries((prev) => {
-				prev.delete(entry.identity);
+				prev.delete(entry.identity.toHexString());
 				return new Map(prev);
 			});
 		};
@@ -178,7 +202,7 @@ function useDBState(
 
 	// Reset function to clear all state
 	const resetDBState = useCallback(() => {
-		setMetadata(null);
+		setStaticMetadata(null);
 		setUsers(new Map());
 		setMoons(new Map());
 		setBits(new Map());
@@ -186,8 +210,10 @@ function useDBState(
 	}, []);
 
 	return {
-		metadata,
-		setMetadata,
+		staticMetadata,
+		setMetadata: setStaticMetadata,
+		dynamicMetadata,
+		setDynamicMetadata,
 		users,
 		setUsers,
 		moons,
@@ -238,8 +264,15 @@ export function DBContextProvider({
 	]);
 
 	// Use the helper hook for all DB state
-	const { metadata, users, bits, moons, leaderboardEntries, resetDBState } =
-		useDBState(conn, identity, onDeath);
+	const {
+		staticMetadata,
+		dynamicMetadata,
+		users,
+		bits,
+		moons,
+		leaderboardEntries,
+		resetDBState,
+	} = useDBState(conn, identity, onDeath);
 
 	const self = identity ? users.get(identity.toHexString()) : null;
 
@@ -299,8 +332,9 @@ export function DBContextProvider({
 
 			subscribeToQueries(conn, [
 				`SELECT * FROM user WHERE identity = '${identity.toHexString()}';`,
-				"SELECT * FROM metadata;",
-				`SELECT * FROM leaderboard_entry;`,
+				"SELECT * FROM static_metadata;",
+				`SELECT * FROM leaderboard_entry WHERE rank <= 10 OR identity = '${identity.toHexString()}';`,
+				`SELECT * FROM dynamic_metadata;`,
 			]);
 		},
 		[setIdentity, setConnected, connectionForm, subscribeToQueries],
@@ -373,7 +407,7 @@ export function DBContextProvider({
 	useEffect(() => {
 		function subscribeToNearbyObjs(
 			conn: DbConnection,
-			metadata: Metadata,
+			staticMetadata: StaticMetadata,
 			x: number,
 			y: number,
 		) {
@@ -398,39 +432,44 @@ export function DBContextProvider({
 				const withinScreenQuery = `x < ${Math.round(x) + renderBuffer + viewportWorldWidth / 2} AND x > ${Math.round(x) - renderBuffer - viewportWorldWidth / 2} AND y < ${Math.round(y) + renderBuffer + viewportWorldHeight / 2} AND y > ${Math.round(y) - renderBuffer - viewportWorldHeight / 2}`;
 				const leftEdgeQuery =
 					x - renderBuffer < viewportWorldWidth / 2
-						? ` OR (x > ${metadata.worldWidth - (viewportWorldWidth / 2 + renderBuffer - Math.round(x))} AND (y > ${Math.round(y) - (viewportWorldHeight / 2 + renderBuffer)}) AND (y < ${Math.round(y) + (viewportWorldHeight / 2 + renderBuffer)}))`
+						? ` OR (x > ${staticMetadata.worldWidth - (viewportWorldWidth / 2 + renderBuffer - Math.round(x))} AND (y > ${Math.round(y) - (viewportWorldHeight / 2 + renderBuffer)}) AND (y < ${Math.round(y) + (viewportWorldHeight / 2 + renderBuffer)}))`
 						: "";
 				const rightEdgeQuery =
-					x + renderBuffer > metadata.worldWidth - viewportWorldWidth / 2
-						? ` OR (x < ${viewportWorldWidth / 2 + renderBuffer + Math.round(x) - metadata.worldWidth} AND (y > ${Math.round(y) - (viewportWorldHeight / 2 + renderBuffer)}) AND (y < ${Math.round(y) + (viewportWorldHeight / 2 + renderBuffer)}))`
+					x + renderBuffer > staticMetadata.worldWidth - viewportWorldWidth / 2
+						? ` OR (x < ${viewportWorldWidth / 2 + renderBuffer + Math.round(x) - staticMetadata.worldWidth} AND (y > ${Math.round(y) - (viewportWorldHeight / 2 + renderBuffer)}) AND (y < ${Math.round(y) + (viewportWorldHeight / 2 + renderBuffer)}))`
 						: "";
 				const topEdgeQuery =
 					y - renderBuffer < viewportWorldHeight / 2
-						? ` OR (y > ${metadata.worldHeight - (viewportWorldHeight / 2 + renderBuffer - Math.round(y))} AND (x > ${Math.round(x) - (viewportWorldWidth / 2 + renderBuffer)}) AND (x < ${Math.round(x) + (viewportWorldWidth / 2 + renderBuffer)}))`
+						? ` OR (y > ${staticMetadata.worldHeight - (viewportWorldHeight / 2 + renderBuffer - Math.round(y))} AND (x > ${Math.round(x) - (viewportWorldWidth / 2 + renderBuffer)}) AND (x < ${Math.round(x) + (viewportWorldWidth / 2 + renderBuffer)}))`
 						: "";
 				const bottomEdgeQuery =
-					y + renderBuffer > metadata.worldHeight - viewportWorldHeight / 2
-						? ` OR (y < ${viewportWorldHeight / 2 + renderBuffer + Math.round(y) - metadata.worldHeight} AND (x > ${Math.round(x) - (viewportWorldWidth / 2 + renderBuffer)}) AND (x < ${Math.round(x) + (viewportWorldWidth / 2 + renderBuffer)}))`
+					y + renderBuffer >
+					staticMetadata.worldHeight - viewportWorldHeight / 2
+						? ` OR (y < ${viewportWorldHeight / 2 + renderBuffer + Math.round(y) - staticMetadata.worldHeight} AND (x > ${Math.round(x) - (viewportWorldWidth / 2 + renderBuffer)}) AND (x < ${Math.round(x) + (viewportWorldWidth / 2 + renderBuffer)}))`
 						: "";
 				const topLeftCornerQuery =
 					x - renderBuffer < viewportWorldWidth / 2 &&
 					y - renderBuffer < viewportWorldHeight / 2
-						? ` OR (x > ${metadata.worldWidth - (viewportWorldWidth / 2 + renderBuffer - Math.round(x))} AND y > ${metadata.worldHeight - (viewportWorldHeight / 2 + renderBuffer - Math.round(y))})`
+						? ` OR (x > ${staticMetadata.worldWidth - (viewportWorldWidth / 2 + renderBuffer - Math.round(x))} AND y > ${staticMetadata.worldHeight - (viewportWorldHeight / 2 + renderBuffer - Math.round(y))})`
 						: "";
 				const topRightCornerQuery =
-					x + renderBuffer > metadata.worldWidth - viewportWorldWidth / 2 &&
+					x + renderBuffer >
+						staticMetadata.worldWidth - viewportWorldWidth / 2 &&
 					y - renderBuffer < viewportWorldHeight / 2
-						? ` OR (x < ${viewportWorldWidth / 2 + renderBuffer + Math.round(x) - metadata.worldWidth} AND y > ${metadata.worldHeight - (viewportWorldHeight / 2 + renderBuffer - Math.round(y))})`
+						? ` OR (x < ${viewportWorldWidth / 2 + renderBuffer + Math.round(x) - staticMetadata.worldWidth} AND y > ${staticMetadata.worldHeight - (viewportWorldHeight / 2 + renderBuffer - Math.round(y))})`
 						: "";
 				const bottomLeftCornerQuery =
 					x - renderBuffer < viewportWorldWidth / 2 &&
-					y + renderBuffer > metadata.worldHeight - viewportWorldHeight / 2
-						? ` OR (x > ${metadata.worldWidth - (viewportWorldWidth / 2 + renderBuffer - Math.round(x))} AND y < ${viewportWorldHeight / 2 + renderBuffer + Math.round(y) - metadata.worldHeight})`
+					y + renderBuffer >
+						staticMetadata.worldHeight - viewportWorldHeight / 2
+						? ` OR (x > ${staticMetadata.worldWidth - (viewportWorldWidth / 2 + renderBuffer - Math.round(x))} AND y < ${viewportWorldHeight / 2 + renderBuffer + Math.round(y) - staticMetadata.worldHeight})`
 						: "";
 				const bottomRightCornerQuery =
-					x + renderBuffer > metadata.worldWidth - viewportWorldWidth / 2 &&
-					y + renderBuffer > metadata.worldHeight - viewportWorldHeight / 2
-						? ` OR (x < ${viewportWorldWidth / 2 + renderBuffer + Math.round(x) - metadata.worldWidth} AND y < ${viewportWorldHeight / 2 + renderBuffer + Math.round(y) - metadata.worldHeight})`
+					x + renderBuffer >
+						staticMetadata.worldWidth - viewportWorldWidth / 2 &&
+					y + renderBuffer >
+						staticMetadata.worldHeight - viewportWorldHeight / 2
+						? ` OR (x < ${viewportWorldWidth / 2 + renderBuffer + Math.round(x) - staticMetadata.worldWidth} AND y < ${viewportWorldHeight / 2 + renderBuffer + Math.round(y) - staticMetadata.worldHeight})`
 						: "";
 
 				return `WHERE (${withinScreenQuery}${leftEdgeQuery}${rightEdgeQuery}${topEdgeQuery}${bottomEdgeQuery}${topLeftCornerQuery}${topRightCornerQuery}${bottomLeftCornerQuery}${bottomRightCornerQuery})`;
@@ -448,21 +487,22 @@ export function DBContextProvider({
 			changingSubscriptions?.unsubscribe();
 			setChangingSubscriptions(handle);
 		}
-		if (conn && self && metadata) {
-			subscribeToNearbyObjs(conn, metadata, self.x, self.y);
+		if (conn && self && staticMetadata) {
+			subscribeToNearbyObjs(conn, staticMetadata, self.x, self.y);
 		}
 
 		return () => {
 			// subscriptions?.unsubscribe();
 		};
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [viewportWorldHeight, viewportWorldWidth, metadata, self]);
+	}, [viewportWorldHeight, viewportWorldWidth, staticMetadata, self]);
 
 	if (
 		!conn ||
 		!connected ||
 		!identity ||
-		!metadata ||
+		!staticMetadata ||
+		!dynamicMetadata ||
 		!self ||
 		!viewportWorldHeight ||
 		!viewportWorldWidth
@@ -489,7 +529,8 @@ export function DBContextProvider({
 				bits,
 				moons,
 				leaderboardEntries,
-				metadata,
+				staticMetadata,
+				dynamicMetadata,
 				viewportWorldWidth,
 				viewportWorldHeight,
 				renderBuffer,

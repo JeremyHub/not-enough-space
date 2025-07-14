@@ -32,7 +32,7 @@ import {
 	type ReducerEventContextInterface,
 	type SubscriptionEventContextInterface,
 } from "@clockworklabs/spacetimedb-sdk";
-import { AiMetadata } from "./ai_metadata_type";
+import { DynamicMetadata } from "./dynamic_metadata_type";
 import {
 	type EventContext,
 	type Reducer,
@@ -41,19 +41,19 @@ import {
 } from ".";
 
 /**
- * Table handle for the table `ai_metadata`.
+ * Table handle for the table `dynamic_metadata`.
  *
- * Obtain a handle from the [`aiMetadata`] property on [`RemoteTables`],
- * like `ctx.db.aiMetadata`.
+ * Obtain a handle from the [`dynamicMetadata`] property on [`RemoteTables`],
+ * like `ctx.db.dynamicMetadata`.
  *
  * Users are encouraged not to explicitly reference this type,
  * but to directly chain method calls,
- * like `ctx.db.aiMetadata.on_insert(...)`.
+ * like `ctx.db.dynamicMetadata.on_insert(...)`.
  */
-export class AiMetadataTableHandle {
-	tableCache: TableCache<AiMetadata>;
+export class DynamicMetadataTableHandle {
+	tableCache: TableCache<DynamicMetadata>;
 
-	constructor(tableCache: TableCache<AiMetadata>) {
+	constructor(tableCache: TableCache<DynamicMetadata>) {
 		this.tableCache = tableCache;
 	}
 
@@ -61,24 +61,24 @@ export class AiMetadataTableHandle {
 		return this.tableCache.count();
 	}
 
-	iter(): Iterable<AiMetadata> {
+	iter(): Iterable<DynamicMetadata> {
 		return this.tableCache.iter();
 	}
 	/**
-	 * Access to the `id` unique index on the table `ai_metadata`,
+	 * Access to the `id` unique index on the table `dynamic_metadata`,
 	 * which allows point queries on the field of the same name
-	 * via the [`AiMetadataIdUnique.find`] method.
+	 * via the [`DynamicMetadataIdUnique.find`] method.
 	 *
 	 * Users are encouraged not to explicitly reference this type,
 	 * but to directly chain method calls,
-	 * like `ctx.db.aiMetadata.id().find(...)`.
+	 * like `ctx.db.dynamicMetadata.id().find(...)`.
 	 *
-	 * Get a handle on the `id` unique index on the table `ai_metadata`.
+	 * Get a handle on the `id` unique index on the table `dynamic_metadata`.
 	 */
 	id = {
 		// Find the subscribed row whose `id` column value is equal to `col_val`,
 		// if such a row is present in the client cache.
-		find: (col_val: bigint): AiMetadata | undefined => {
+		find: (col_val: bigint): DynamicMetadata | undefined => {
 			for (let row of this.tableCache.iter()) {
 				if (deepEqual(row.id, col_val)) {
 					return row;
@@ -87,31 +87,39 @@ export class AiMetadataTableHandle {
 		},
 	};
 
-	onInsert = (cb: (ctx: EventContext, row: AiMetadata) => void) => {
+	onInsert = (cb: (ctx: EventContext, row: DynamicMetadata) => void) => {
 		return this.tableCache.onInsert(cb);
 	};
 
-	removeOnInsert = (cb: (ctx: EventContext, row: AiMetadata) => void) => {
+	removeOnInsert = (cb: (ctx: EventContext, row: DynamicMetadata) => void) => {
 		return this.tableCache.removeOnInsert(cb);
 	};
 
-	onDelete = (cb: (ctx: EventContext, row: AiMetadata) => void) => {
+	onDelete = (cb: (ctx: EventContext, row: DynamicMetadata) => void) => {
 		return this.tableCache.onDelete(cb);
 	};
 
-	removeOnDelete = (cb: (ctx: EventContext, row: AiMetadata) => void) => {
+	removeOnDelete = (cb: (ctx: EventContext, row: DynamicMetadata) => void) => {
 		return this.tableCache.removeOnDelete(cb);
 	};
 
 	// Updates are only defined for tables with primary keys.
 	onUpdate = (
-		cb: (ctx: EventContext, oldRow: AiMetadata, newRow: AiMetadata) => void,
+		cb: (
+			ctx: EventContext,
+			oldRow: DynamicMetadata,
+			newRow: DynamicMetadata,
+		) => void,
 	) => {
 		return this.tableCache.onUpdate(cb);
 	};
 
 	removeOnUpdate = (
-		cb: (ctx: EventContext, onRow: AiMetadata, newRow: AiMetadata) => void,
+		cb: (
+			ctx: EventContext,
+			onRow: DynamicMetadata,
+			newRow: DynamicMetadata,
+		) => void,
 	) => {
 		return this.tableCache.removeOnUpdate(cb);
 	};

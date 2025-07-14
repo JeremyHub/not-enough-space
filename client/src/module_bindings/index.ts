@@ -50,18 +50,18 @@ import { UpdateLeaderboard } from "./update_leaderboard_reducer.ts";
 export { UpdateLeaderboard };
 
 // Import and reexport all table handle types
-import { AiMetadataTableHandle } from "./ai_metadata_table.ts";
-export { AiMetadataTableHandle };
 import { BitTableHandle } from "./bit_table.ts";
 export { BitTableHandle };
+import { DynamicMetadataTableHandle } from "./dynamic_metadata_table.ts";
+export { DynamicMetadataTableHandle };
 import { LeaderboardEntryTableHandle } from "./leaderboard_entry_table.ts";
 export { LeaderboardEntryTableHandle };
 import { LeaderboardUpdateScheduleTableHandle } from "./leaderboard_update_schedule_table.ts";
 export { LeaderboardUpdateScheduleTableHandle };
-import { MetadataTableHandle } from "./metadata_table.ts";
-export { MetadataTableHandle };
 import { MoonTableHandle } from "./moon_table.ts";
 export { MoonTableHandle };
+import { StaticMetadataTableHandle } from "./static_metadata_table.ts";
+export { StaticMetadataTableHandle };
 import { TickMetaTableHandle } from "./tick_meta_table.ts";
 export { TickMetaTableHandle };
 import { TickScheduleTableHandle } from "./tick_schedule_table.ts";
@@ -70,22 +70,22 @@ import { UserTableHandle } from "./user_table.ts";
 export { UserTableHandle };
 
 // Import and reexport all types
-import { AiMetadata } from "./ai_metadata_type.ts";
-export { AiMetadata };
 import { Bit } from "./bit_type.ts";
 export { Bit };
 import { Color } from "./color_type.ts";
 export { Color };
+import { DynamicMetadata } from "./dynamic_metadata_type.ts";
+export { DynamicMetadata };
 import { LeaderboardEntry } from "./leaderboard_entry_type.ts";
 export { LeaderboardEntry };
 import { LeaderboardUpdateSchedule } from "./leaderboard_update_schedule_type.ts";
 export { LeaderboardUpdateSchedule };
-import { Metadata } from "./metadata_type.ts";
-export { Metadata };
 import { Moon } from "./moon_type.ts";
 export { Moon };
 import { OrbitState } from "./orbit_state_type.ts";
 export { OrbitState };
+import { StaticMetadata } from "./static_metadata_type.ts";
+export { StaticMetadata };
 import { TickMeta } from "./tick_meta_type.ts";
 export { TickMeta };
 import { TickSchedule } from "./tick_schedule_type.ts";
@@ -95,17 +95,6 @@ export { User };
 
 const REMOTE_MODULE = {
 	tables: {
-		ai_metadata: {
-			tableName: "ai_metadata",
-			rowType: AiMetadata.getTypeScriptAlgebraicType(),
-			primaryKey: "id",
-			primaryKeyInfo: {
-				colName: "id",
-				colType:
-					AiMetadata.getTypeScriptAlgebraicType().product.elements[0]
-						.algebraicType,
-			},
-		},
 		bit: {
 			tableName: "bit",
 			rowType: Bit.getTypeScriptAlgebraicType(),
@@ -114,6 +103,17 @@ const REMOTE_MODULE = {
 				colName: "bitId",
 				colType:
 					Bit.getTypeScriptAlgebraicType().product.elements[0].algebraicType,
+			},
+		},
+		dynamic_metadata: {
+			tableName: "dynamic_metadata",
+			rowType: DynamicMetadata.getTypeScriptAlgebraicType(),
+			primaryKey: "id",
+			primaryKeyInfo: {
+				colName: "id",
+				colType:
+					DynamicMetadata.getTypeScriptAlgebraicType().product.elements[0]
+						.algebraicType,
 			},
 		},
 		leaderboard_entry: {
@@ -138,10 +138,6 @@ const REMOTE_MODULE = {
 						.elements[0].algebraicType,
 			},
 		},
-		metadata: {
-			tableName: "metadata",
-			rowType: Metadata.getTypeScriptAlgebraicType(),
-		},
 		moon: {
 			tableName: "moon",
 			rowType: Moon.getTypeScriptAlgebraicType(),
@@ -151,6 +147,10 @@ const REMOTE_MODULE = {
 				colType:
 					Moon.getTypeScriptAlgebraicType().product.elements[0].algebraicType,
 			},
+		},
+		static_metadata: {
+			tableName: "static_metadata",
+			rowType: StaticMetadata.getTypeScriptAlgebraicType(),
 		},
 		tick_meta: {
 			tableName: "tick_meta",
@@ -452,18 +452,18 @@ export class SetReducerFlags {
 export class RemoteTables {
 	constructor(private connection: DbConnectionImpl) {}
 
-	get aiMetadata(): AiMetadataTableHandle {
-		return new AiMetadataTableHandle(
-			this.connection.clientCache.getOrCreateTable<AiMetadata>(
-				REMOTE_MODULE.tables.ai_metadata,
-			),
-		);
-	}
-
 	get bit(): BitTableHandle {
 		return new BitTableHandle(
 			this.connection.clientCache.getOrCreateTable<Bit>(
 				REMOTE_MODULE.tables.bit,
+			),
+		);
+	}
+
+	get dynamicMetadata(): DynamicMetadataTableHandle {
+		return new DynamicMetadataTableHandle(
+			this.connection.clientCache.getOrCreateTable<DynamicMetadata>(
+				REMOTE_MODULE.tables.dynamic_metadata,
 			),
 		);
 	}
@@ -484,18 +484,18 @@ export class RemoteTables {
 		);
 	}
 
-	get metadata(): MetadataTableHandle {
-		return new MetadataTableHandle(
-			this.connection.clientCache.getOrCreateTable<Metadata>(
-				REMOTE_MODULE.tables.metadata,
-			),
-		);
-	}
-
 	get moon(): MoonTableHandle {
 		return new MoonTableHandle(
 			this.connection.clientCache.getOrCreateTable<Moon>(
 				REMOTE_MODULE.tables.moon,
+			),
+		);
+	}
+
+	get staticMetadata(): StaticMetadataTableHandle {
+		return new StaticMetadataTableHandle(
+			this.connection.clientCache.getOrCreateTable<StaticMetadata>(
+				REMOTE_MODULE.tables.static_metadata,
 			),
 		);
 	}

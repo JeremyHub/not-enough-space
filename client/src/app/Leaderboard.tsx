@@ -15,7 +15,7 @@ export function Leaderboard() {
 	if (!context) {
 		throw new Error("DBContext is not available");
 	}
-	const { leaderboardEntries, self } = context;
+	const { leaderboardEntries, self, dynamicMetadata } = context;
 
 	return (
 		<Card className="border-4 border-zinc-800 bg-zinc-900 shadow-lg w-full h-full flex flex-col p-0 bg-zinc-950 overflow-hidden">
@@ -24,7 +24,7 @@ export function Leaderboard() {
 					<TableHeader>
 						<TableRow>
 							<TableHead className="text-white">
-								Rank {`(of ${leaderboardEntries.size})`}
+								Rank {`(of ${dynamicMetadata.totalUsers})`}
 							</TableHead>
 							<TableHead className="text-white">Username</TableHead>
 							<TableHead className="text-white">Size</TableHead>
