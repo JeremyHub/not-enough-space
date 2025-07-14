@@ -15,7 +15,7 @@ pub mod leaderboard;
 pub const WORLD_WIDTH: i32 = 10000;
 pub const WORLD_HEIGHT: i32 = 10000;
 pub const TICK_TIME: i64 = 80000;
-pub const GLOBAL_VELOCITY_MULTIPLIER: f32 = TICK_TIME as f32 / 20000.0;
+pub const GLOBAL_VELOCITY_MULTIPLIER: f32 = (TICK_TIME as f32 / 20000.0) * 1.0;
 pub const FRICTION: f32 = 0.85;
 
 // debug
@@ -71,8 +71,8 @@ pub const MIN_ORBIT_RADIUS_BY_USER_SIZE: f32 = 0.05;
 pub const MAX_MOON_SIZE_PER_HEALTH: f32 = 1.0;
 pub const MIN_MOON_SIZE_PER_HEALTH: f32 = 0.3;
 pub const PORTION_HEALTH_SACRIFICE: f32 = 1.0/20.0;
-pub const MAX_HEALTH_SACRIFICE: f32 = 10.0;
-pub const MIN_HEALTH_SACRIFICE: f32 = 1.0;
+pub const MAX_HEALTH_SACRIFICE: f32 = 15.0;
+pub const MIN_HEALTH_SACRIFICE: f32 = 5.0;
 pub const SACRIFICE_SPEED_BOOST: f32 = USER_ACCELERATION;
 
 // moon common
