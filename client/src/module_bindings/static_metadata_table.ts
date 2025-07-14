@@ -7,38 +7,33 @@
 /* tslint:disable */
 // @ts-nocheck
 import {
-	AlgebraicType,
-	AlgebraicValue,
-	BinaryReader,
-	BinaryWriter,
-	ConnectionId,
-	DbConnectionBuilder,
-	DbConnectionImpl,
-	Identity,
-	ProductType,
-	ProductTypeElement,
-	SubscriptionBuilderImpl,
-	SumType,
-	SumTypeVariant,
-	TableCache,
-	TimeDuration,
-	Timestamp,
-	deepEqual,
-	type CallReducerFlags,
-	type DbContext,
-	type ErrorContextInterface,
-	type Event,
-	type EventContextInterface,
-	type ReducerEventContextInterface,
-	type SubscriptionEventContextInterface,
+  AlgebraicType,
+  AlgebraicValue,
+  BinaryReader,
+  BinaryWriter,
+  ConnectionId,
+  DbConnectionBuilder,
+  DbConnectionImpl,
+  Identity,
+  ProductType,
+  ProductTypeElement,
+  SubscriptionBuilderImpl,
+  SumType,
+  SumTypeVariant,
+  TableCache,
+  TimeDuration,
+  Timestamp,
+  deepEqual,
+  type CallReducerFlags,
+  type DbContext,
+  type ErrorContextInterface,
+  type Event,
+  type EventContextInterface,
+  type ReducerEventContextInterface,
+  type SubscriptionEventContextInterface,
 } from "@clockworklabs/spacetimedb-sdk";
 import { StaticMetadata } from "./static_metadata_type";
-import {
-	type EventContext,
-	type Reducer,
-	RemoteReducers,
-	RemoteTables,
-} from ".";
+import { type EventContext, type Reducer, RemoteReducers, RemoteTables } from ".";
 
 /**
  * Table handle for the table `static_metadata`.
@@ -51,33 +46,33 @@ import {
  * like `ctx.db.staticMetadata.on_insert(...)`.
  */
 export class StaticMetadataTableHandle {
-	tableCache: TableCache<StaticMetadata>;
+  tableCache: TableCache<StaticMetadata>;
 
-	constructor(tableCache: TableCache<StaticMetadata>) {
-		this.tableCache = tableCache;
-	}
+  constructor(tableCache: TableCache<StaticMetadata>) {
+    this.tableCache = tableCache;
+  }
 
-	count(): number {
-		return this.tableCache.count();
-	}
+  count(): number {
+    return this.tableCache.count();
+  }
 
-	iter(): Iterable<StaticMetadata> {
-		return this.tableCache.iter();
-	}
+  iter(): Iterable<StaticMetadata> {
+    return this.tableCache.iter();
+  }
 
-	onInsert = (cb: (ctx: EventContext, row: StaticMetadata) => void) => {
-		return this.tableCache.onInsert(cb);
-	};
+  onInsert = (cb: (ctx: EventContext, row: StaticMetadata) => void) => {
+    return this.tableCache.onInsert(cb);
+  }
 
-	removeOnInsert = (cb: (ctx: EventContext, row: StaticMetadata) => void) => {
-		return this.tableCache.removeOnInsert(cb);
-	};
+  removeOnInsert = (cb: (ctx: EventContext, row: StaticMetadata) => void) => {
+    return this.tableCache.removeOnInsert(cb);
+  }
 
-	onDelete = (cb: (ctx: EventContext, row: StaticMetadata) => void) => {
-		return this.tableCache.onDelete(cb);
-	};
+  onDelete = (cb: (ctx: EventContext, row: StaticMetadata) => void) => {
+    return this.tableCache.onDelete(cb);
+  }
 
-	removeOnDelete = (cb: (ctx: EventContext, row: StaticMetadata) => void) => {
-		return this.tableCache.removeOnDelete(cb);
-	};
+  removeOnDelete = (cb: (ctx: EventContext, row: StaticMetadata) => void) => {
+    return this.tableCache.removeOnDelete(cb);
+  }
 }

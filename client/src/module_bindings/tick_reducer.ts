@@ -7,60 +7,59 @@
 /* tslint:disable */
 // @ts-nocheck
 import {
-	AlgebraicType,
-	AlgebraicValue,
-	BinaryReader,
-	BinaryWriter,
-	ConnectionId,
-	DbConnectionBuilder,
-	DbConnectionImpl,
-	Identity,
-	ProductType,
-	ProductTypeElement,
-	SubscriptionBuilderImpl,
-	SumType,
-	SumTypeVariant,
-	TableCache,
-	TimeDuration,
-	Timestamp,
-	deepEqual,
-	type CallReducerFlags,
-	type DbContext,
-	type ErrorContextInterface,
-	type Event,
-	type EventContextInterface,
-	type ReducerEventContextInterface,
-	type SubscriptionEventContextInterface,
+  AlgebraicType,
+  AlgebraicValue,
+  BinaryReader,
+  BinaryWriter,
+  ConnectionId,
+  DbConnectionBuilder,
+  DbConnectionImpl,
+  Identity,
+  ProductType,
+  ProductTypeElement,
+  SubscriptionBuilderImpl,
+  SumType,
+  SumTypeVariant,
+  TableCache,
+  TimeDuration,
+  Timestamp,
+  deepEqual,
+  type CallReducerFlags,
+  type DbContext,
+  type ErrorContextInterface,
+  type Event,
+  type EventContextInterface,
+  type ReducerEventContextInterface,
+  type SubscriptionEventContextInterface,
 } from "@clockworklabs/spacetimedb-sdk";
 
 import { TickSchedule as __TickSchedule } from "./tick_schedule_type";
 
 export type Tick = {
-	tickSchedule: __TickSchedule;
+  tickSchedule: __TickSchedule,
 };
 
 /**
  * A namespace for generated helper functions.
  */
 export namespace Tick {
-	/**
-	 * A function which returns this type represented as an AlgebraicType.
-	 * This function is derived from the AlgebraicType used to generate this type.
-	 */
-	export function getTypeScriptAlgebraicType(): AlgebraicType {
-		return AlgebraicType.createProductType([
-			new ProductTypeElement(
-				"tickSchedule",
-				__TickSchedule.getTypeScriptAlgebraicType(),
-			),
-		]);
-	}
+  /**
+  * A function which returns this type represented as an AlgebraicType.
+  * This function is derived from the AlgebraicType used to generate this type.
+  */
+  export function getTypeScriptAlgebraicType(): AlgebraicType {
+    return AlgebraicType.createProductType([
+      new ProductTypeElement("tickSchedule", __TickSchedule.getTypeScriptAlgebraicType()),
+    ]);
+  }
 
-	export function serialize(writer: BinaryWriter, value: Tick): void {
-		Tick.getTypeScriptAlgebraicType().serialize(writer, value);
-	}
+  export function serialize(writer: BinaryWriter, value: Tick): void {
+    Tick.getTypeScriptAlgebraicType().serialize(writer, value);
+  }
 
-	export function deserialize(reader: BinaryReader): Tick {
-		return Tick.getTypeScriptAlgebraicType().deserialize(reader);
-	}
+  export function deserialize(reader: BinaryReader): Tick {
+    return Tick.getTypeScriptAlgebraicType().deserialize(reader);
+  }
+
 }
+

@@ -7,41 +7,36 @@
 /* tslint:disable */
 // @ts-nocheck
 import {
-	AlgebraicType,
-	AlgebraicValue,
-	BinaryReader,
-	BinaryWriter,
-	ConnectionId,
-	DbConnectionBuilder,
-	DbConnectionImpl,
-	Identity,
-	ProductType,
-	ProductTypeElement,
-	SubscriptionBuilderImpl,
-	SumType,
-	SumTypeVariant,
-	TableCache,
-	TimeDuration,
-	Timestamp,
-	deepEqual,
-	type CallReducerFlags,
-	type DbContext,
-	type ErrorContextInterface,
-	type Event,
-	type EventContextInterface,
-	type ReducerEventContextInterface,
-	type SubscriptionEventContextInterface,
+  AlgebraicType,
+  AlgebraicValue,
+  BinaryReader,
+  BinaryWriter,
+  ConnectionId,
+  DbConnectionBuilder,
+  DbConnectionImpl,
+  Identity,
+  ProductType,
+  ProductTypeElement,
+  SubscriptionBuilderImpl,
+  SumType,
+  SumTypeVariant,
+  TableCache,
+  TimeDuration,
+  Timestamp,
+  deepEqual,
+  type CallReducerFlags,
+  type DbContext,
+  type ErrorContextInterface,
+  type Event,
+  type EventContextInterface,
+  type ReducerEventContextInterface,
+  type SubscriptionEventContextInterface,
 } from "@clockworklabs/spacetimedb-sdk";
 import { Moon } from "./moon_type";
 import { Color as __Color } from "./color_type";
 import { OrbitState as __OrbitState } from "./orbit_state_type";
 
-import {
-	type EventContext,
-	type Reducer,
-	RemoteReducers,
-	RemoteTables,
-} from ".";
+import { type EventContext, type Reducer, RemoteReducers, RemoteTables } from ".";
 
 /**
  * Table handle for the table `moon`.
@@ -54,66 +49,63 @@ import {
  * like `ctx.db.moon.on_insert(...)`.
  */
 export class MoonTableHandle {
-	tableCache: TableCache<Moon>;
+  tableCache: TableCache<Moon>;
 
-	constructor(tableCache: TableCache<Moon>) {
-		this.tableCache = tableCache;
-	}
+  constructor(tableCache: TableCache<Moon>) {
+    this.tableCache = tableCache;
+  }
 
-	count(): number {
-		return this.tableCache.count();
-	}
+  count(): number {
+    return this.tableCache.count();
+  }
 
-	iter(): Iterable<Moon> {
-		return this.tableCache.iter();
-	}
-	/**
-	 * Access to the `moonId` unique index on the table `moon`,
-	 * which allows point queries on the field of the same name
-	 * via the [`MoonMoonIdUnique.find`] method.
-	 *
-	 * Users are encouraged not to explicitly reference this type,
-	 * but to directly chain method calls,
-	 * like `ctx.db.moon.moonId().find(...)`.
-	 *
-	 * Get a handle on the `moonId` unique index on the table `moon`.
-	 */
-	moonId = {
-		// Find the subscribed row whose `moonId` column value is equal to `col_val`,
-		// if such a row is present in the client cache.
-		find: (col_val: number): Moon | undefined => {
-			for (let row of this.tableCache.iter()) {
-				if (deepEqual(row.moonId, col_val)) {
-					return row;
-				}
-			}
-		},
-	};
+  iter(): Iterable<Moon> {
+    return this.tableCache.iter();
+  }
+  /**
+   * Access to the `moonId` unique index on the table `moon`,
+   * which allows point queries on the field of the same name
+   * via the [`MoonMoonIdUnique.find`] method.
+   *
+   * Users are encouraged not to explicitly reference this type,
+   * but to directly chain method calls,
+   * like `ctx.db.moon.moonId().find(...)`.
+   *
+   * Get a handle on the `moonId` unique index on the table `moon`.
+   */
+  moonId = {
+    // Find the subscribed row whose `moonId` column value is equal to `col_val`,
+    // if such a row is present in the client cache.
+    find: (col_val: number): Moon | undefined => {
+      for (let row of this.tableCache.iter()) {
+        if (deepEqual(row.moonId, col_val)) {
+          return row;
+        }
+      }
+    },
+  };
 
-	onInsert = (cb: (ctx: EventContext, row: Moon) => void) => {
-		return this.tableCache.onInsert(cb);
-	};
+  onInsert = (cb: (ctx: EventContext, row: Moon) => void) => {
+    return this.tableCache.onInsert(cb);
+  }
 
-	removeOnInsert = (cb: (ctx: EventContext, row: Moon) => void) => {
-		return this.tableCache.removeOnInsert(cb);
-	};
+  removeOnInsert = (cb: (ctx: EventContext, row: Moon) => void) => {
+    return this.tableCache.removeOnInsert(cb);
+  }
 
-	onDelete = (cb: (ctx: EventContext, row: Moon) => void) => {
-		return this.tableCache.onDelete(cb);
-	};
+  onDelete = (cb: (ctx: EventContext, row: Moon) => void) => {
+    return this.tableCache.onDelete(cb);
+  }
 
-	removeOnDelete = (cb: (ctx: EventContext, row: Moon) => void) => {
-		return this.tableCache.removeOnDelete(cb);
-	};
+  removeOnDelete = (cb: (ctx: EventContext, row: Moon) => void) => {
+    return this.tableCache.removeOnDelete(cb);
+  }
 
-	// Updates are only defined for tables with primary keys.
-	onUpdate = (cb: (ctx: EventContext, oldRow: Moon, newRow: Moon) => void) => {
-		return this.tableCache.onUpdate(cb);
-	};
+  // Updates are only defined for tables with primary keys.
+  onUpdate = (cb: (ctx: EventContext, oldRow: Moon, newRow: Moon) => void) => {
+    return this.tableCache.onUpdate(cb);
+  }
 
-	removeOnUpdate = (
-		cb: (ctx: EventContext, onRow: Moon, newRow: Moon) => void,
-	) => {
-		return this.tableCache.removeOnUpdate(cb);
-	};
-}
+  removeOnUpdate = (cb: (ctx: EventContext, onRow: Moon, newRow: Moon) => void) => {
+    return this.tableCache.removeOnUpdate(cb);
+  }}

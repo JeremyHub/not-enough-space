@@ -7,56 +7,59 @@
 /* tslint:disable */
 // @ts-nocheck
 import {
-	AlgebraicType,
-	AlgebraicValue,
-	BinaryReader,
-	BinaryWriter,
-	ConnectionId,
-	DbConnectionBuilder,
-	DbConnectionImpl,
-	Identity,
-	ProductType,
-	ProductTypeElement,
-	SubscriptionBuilderImpl,
-	SumType,
-	SumTypeVariant,
-	TableCache,
-	TimeDuration,
-	Timestamp,
-	deepEqual,
-	type CallReducerFlags,
-	type DbContext,
-	type ErrorContextInterface,
-	type Event,
-	type EventContextInterface,
-	type ReducerEventContextInterface,
-	type SubscriptionEventContextInterface,
+  AlgebraicType,
+  AlgebraicValue,
+  BinaryReader,
+  BinaryWriter,
+  ConnectionId,
+  DbConnectionBuilder,
+  DbConnectionImpl,
+  Identity,
+  ProductType,
+  ProductTypeElement,
+  SubscriptionBuilderImpl,
+  SumType,
+  SumTypeVariant,
+  TableCache,
+  TimeDuration,
+  Timestamp,
+  deepEqual,
+  type CallReducerFlags,
+  type DbContext,
+  type ErrorContextInterface,
+  type Event,
+  type EventContextInterface,
+  type ReducerEventContextInterface,
+  type SubscriptionEventContextInterface,
 } from "@clockworklabs/spacetimedb-sdk";
 export type TickMeta = {
-	id: bigint;
-	lastTick: Timestamp;
+  id: bigint,
+  lastTick: Timestamp,
 };
 
 /**
  * A namespace for generated helper functions.
  */
 export namespace TickMeta {
-	/**
-	 * A function which returns this type represented as an AlgebraicType.
-	 * This function is derived from the AlgebraicType used to generate this type.
-	 */
-	export function getTypeScriptAlgebraicType(): AlgebraicType {
-		return AlgebraicType.createProductType([
-			new ProductTypeElement("id", AlgebraicType.createU64Type()),
-			new ProductTypeElement("lastTick", AlgebraicType.createTimestampType()),
-		]);
-	}
+  /**
+  * A function which returns this type represented as an AlgebraicType.
+  * This function is derived from the AlgebraicType used to generate this type.
+  */
+  export function getTypeScriptAlgebraicType(): AlgebraicType {
+    return AlgebraicType.createProductType([
+      new ProductTypeElement("id", AlgebraicType.createU64Type()),
+      new ProductTypeElement("lastTick", AlgebraicType.createTimestampType()),
+    ]);
+  }
 
-	export function serialize(writer: BinaryWriter, value: TickMeta): void {
-		TickMeta.getTypeScriptAlgebraicType().serialize(writer, value);
-	}
+  export function serialize(writer: BinaryWriter, value: TickMeta): void {
+    TickMeta.getTypeScriptAlgebraicType().serialize(writer, value);
+  }
 
-	export function deserialize(reader: BinaryReader): TickMeta {
-		return TickMeta.getTypeScriptAlgebraicType().deserialize(reader);
-	}
+  export function deserialize(reader: BinaryReader): TickMeta {
+    return TickMeta.getTypeScriptAlgebraicType().deserialize(reader);
+  }
+
 }
+
+

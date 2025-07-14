@@ -7,95 +7,95 @@
 /* tslint:disable */
 // @ts-nocheck
 import {
-	AlgebraicType,
-	AlgebraicValue,
-	BinaryReader,
-	BinaryWriter,
-	ConnectionId,
-	DbConnectionBuilder,
-	DbConnectionImpl,
-	Identity,
-	ProductType,
-	ProductTypeElement,
-	SubscriptionBuilderImpl,
-	SumType,
-	SumTypeVariant,
-	TableCache,
-	TimeDuration,
-	Timestamp,
-	deepEqual,
-	type CallReducerFlags,
-	type DbContext,
-	type ErrorContextInterface,
-	type Event,
-	type EventContextInterface,
-	type ReducerEventContextInterface,
-	type SubscriptionEventContextInterface,
+  AlgebraicType,
+  AlgebraicValue,
+  BinaryReader,
+  BinaryWriter,
+  ConnectionId,
+  DbConnectionBuilder,
+  DbConnectionImpl,
+  Identity,
+  ProductType,
+  ProductTypeElement,
+  SubscriptionBuilderImpl,
+  SumType,
+  SumTypeVariant,
+  TableCache,
+  TimeDuration,
+  Timestamp,
+  deepEqual,
+  type CallReducerFlags,
+  type DbContext,
+  type ErrorContextInterface,
+  type Event,
+  type EventContextInterface,
+  type ReducerEventContextInterface,
+  type SubscriptionEventContextInterface,
 } from "@clockworklabs/spacetimedb-sdk";
 import { Color as __Color } from "./color_type";
 
 export type User = {
-	identity: Identity;
-	online: boolean;
-	username: string;
-	colIndex: number;
-	x: number;
-	y: number;
-	dx: number;
-	dy: number;
-	dirVecX: number;
-	dirVecY: number;
-	color: __Color;
-	health: number;
-	size: number;
-	totalMoonSizeOrbiting: number;
-	isAi: boolean;
-	speedBoost: number;
-	kills: number;
-	damage: number;
-	seed: bigint;
+  identity: Identity,
+  online: boolean,
+  username: string,
+  colIndex: number,
+  x: number,
+  y: number,
+  dx: number,
+  dy: number,
+  dirVecX: number,
+  dirVecY: number,
+  color: __Color,
+  health: number,
+  size: number,
+  totalMoonSizeOrbiting: number,
+  isAi: boolean,
+  speedBoost: number,
+  kills: number,
+  damage: number,
+  seed: bigint,
 };
 
 /**
  * A namespace for generated helper functions.
  */
 export namespace User {
-	/**
-	 * A function which returns this type represented as an AlgebraicType.
-	 * This function is derived from the AlgebraicType used to generate this type.
-	 */
-	export function getTypeScriptAlgebraicType(): AlgebraicType {
-		return AlgebraicType.createProductType([
-			new ProductTypeElement("identity", AlgebraicType.createIdentityType()),
-			new ProductTypeElement("online", AlgebraicType.createBoolType()),
-			new ProductTypeElement("username", AlgebraicType.createStringType()),
-			new ProductTypeElement("colIndex", AlgebraicType.createI32Type()),
-			new ProductTypeElement("x", AlgebraicType.createF32Type()),
-			new ProductTypeElement("y", AlgebraicType.createF32Type()),
-			new ProductTypeElement("dx", AlgebraicType.createF32Type()),
-			new ProductTypeElement("dy", AlgebraicType.createF32Type()),
-			new ProductTypeElement("dirVecX", AlgebraicType.createF32Type()),
-			new ProductTypeElement("dirVecY", AlgebraicType.createF32Type()),
-			new ProductTypeElement("color", __Color.getTypeScriptAlgebraicType()),
-			new ProductTypeElement("health", AlgebraicType.createF32Type()),
-			new ProductTypeElement("size", AlgebraicType.createF32Type()),
-			new ProductTypeElement(
-				"totalMoonSizeOrbiting",
-				AlgebraicType.createF32Type(),
-			),
-			new ProductTypeElement("isAi", AlgebraicType.createBoolType()),
-			new ProductTypeElement("speedBoost", AlgebraicType.createF32Type()),
-			new ProductTypeElement("kills", AlgebraicType.createU32Type()),
-			new ProductTypeElement("damage", AlgebraicType.createF32Type()),
-			new ProductTypeElement("seed", AlgebraicType.createU64Type()),
-		]);
-	}
+  /**
+  * A function which returns this type represented as an AlgebraicType.
+  * This function is derived from the AlgebraicType used to generate this type.
+  */
+  export function getTypeScriptAlgebraicType(): AlgebraicType {
+    return AlgebraicType.createProductType([
+      new ProductTypeElement("identity", AlgebraicType.createIdentityType()),
+      new ProductTypeElement("online", AlgebraicType.createBoolType()),
+      new ProductTypeElement("username", AlgebraicType.createStringType()),
+      new ProductTypeElement("colIndex", AlgebraicType.createI32Type()),
+      new ProductTypeElement("x", AlgebraicType.createF32Type()),
+      new ProductTypeElement("y", AlgebraicType.createF32Type()),
+      new ProductTypeElement("dx", AlgebraicType.createF32Type()),
+      new ProductTypeElement("dy", AlgebraicType.createF32Type()),
+      new ProductTypeElement("dirVecX", AlgebraicType.createF32Type()),
+      new ProductTypeElement("dirVecY", AlgebraicType.createF32Type()),
+      new ProductTypeElement("color", __Color.getTypeScriptAlgebraicType()),
+      new ProductTypeElement("health", AlgebraicType.createF32Type()),
+      new ProductTypeElement("size", AlgebraicType.createF32Type()),
+      new ProductTypeElement("totalMoonSizeOrbiting", AlgebraicType.createF32Type()),
+      new ProductTypeElement("isAi", AlgebraicType.createBoolType()),
+      new ProductTypeElement("speedBoost", AlgebraicType.createF32Type()),
+      new ProductTypeElement("kills", AlgebraicType.createU32Type()),
+      new ProductTypeElement("damage", AlgebraicType.createF32Type()),
+      new ProductTypeElement("seed", AlgebraicType.createU64Type()),
+    ]);
+  }
 
-	export function serialize(writer: BinaryWriter, value: User): void {
-		User.getTypeScriptAlgebraicType().serialize(writer, value);
-	}
+  export function serialize(writer: BinaryWriter, value: User): void {
+    User.getTypeScriptAlgebraicType().serialize(writer, value);
+  }
 
-	export function deserialize(reader: BinaryReader): User {
-		return User.getTypeScriptAlgebraicType().deserialize(reader);
-	}
+  export function deserialize(reader: BinaryReader): User {
+    return User.getTypeScriptAlgebraicType().deserialize(reader);
+  }
+
 }
+
+

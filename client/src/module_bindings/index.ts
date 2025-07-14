@@ -7,30 +7,30 @@
 /* tslint:disable */
 // @ts-nocheck
 import {
-	AlgebraicType,
-	AlgebraicValue,
-	BinaryReader,
-	BinaryWriter,
-	ConnectionId,
-	DbConnectionBuilder,
-	DbConnectionImpl,
-	Identity,
-	ProductType,
-	ProductTypeElement,
-	SubscriptionBuilderImpl,
-	SumType,
-	SumTypeVariant,
-	TableCache,
-	TimeDuration,
-	Timestamp,
-	deepEqual,
-	type CallReducerFlags,
-	type DbContext,
-	type ErrorContextInterface,
-	type Event,
-	type EventContextInterface,
-	type ReducerEventContextInterface,
-	type SubscriptionEventContextInterface,
+  AlgebraicType,
+  AlgebraicValue,
+  BinaryReader,
+  BinaryWriter,
+  ConnectionId,
+  DbConnectionBuilder,
+  DbConnectionImpl,
+  Identity,
+  ProductType,
+  ProductTypeElement,
+  SubscriptionBuilderImpl,
+  SumType,
+  SumTypeVariant,
+  TableCache,
+  TimeDuration,
+  Timestamp,
+  deepEqual,
+  type CallReducerFlags,
+  type DbContext,
+  type ErrorContextInterface,
+  type Event,
+  type EventContextInterface,
+  type ReducerEventContextInterface,
+  type SubscriptionEventContextInterface,
 } from "@clockworklabs/spacetimedb-sdk";
 
 // Import and reexport all reducer arg types
@@ -94,483 +94,329 @@ import { User } from "./user_type.ts";
 export { User };
 
 const REMOTE_MODULE = {
-	tables: {
-		bit: {
-			tableName: "bit",
-			rowType: Bit.getTypeScriptAlgebraicType(),
-			primaryKey: "bitId",
-			primaryKeyInfo: {
-				colName: "bitId",
-				colType:
-					Bit.getTypeScriptAlgebraicType().product.elements[0].algebraicType,
-			},
-		},
-		dynamic_metadata: {
-			tableName: "dynamic_metadata",
-			rowType: DynamicMetadata.getTypeScriptAlgebraicType(),
-			primaryKey: "id",
-			primaryKeyInfo: {
-				colName: "id",
-				colType:
-					DynamicMetadata.getTypeScriptAlgebraicType().product.elements[0]
-						.algebraicType,
-			},
-		},
-		leaderboard_entry: {
-			tableName: "leaderboard_entry",
-			rowType: LeaderboardEntry.getTypeScriptAlgebraicType(),
-			primaryKey: "identity",
-			primaryKeyInfo: {
-				colName: "identity",
-				colType:
-					LeaderboardEntry.getTypeScriptAlgebraicType().product.elements[1]
-						.algebraicType,
-			},
-		},
-		leaderboard_update_schedule: {
-			tableName: "leaderboard_update_schedule",
-			rowType: LeaderboardUpdateSchedule.getTypeScriptAlgebraicType(),
-			primaryKey: "id",
-			primaryKeyInfo: {
-				colName: "id",
-				colType:
-					LeaderboardUpdateSchedule.getTypeScriptAlgebraicType().product
-						.elements[0].algebraicType,
-			},
-		},
-		moon: {
-			tableName: "moon",
-			rowType: Moon.getTypeScriptAlgebraicType(),
-			primaryKey: "moonId",
-			primaryKeyInfo: {
-				colName: "moonId",
-				colType:
-					Moon.getTypeScriptAlgebraicType().product.elements[0].algebraicType,
-			},
-		},
-		static_metadata: {
-			tableName: "static_metadata",
-			rowType: StaticMetadata.getTypeScriptAlgebraicType(),
-		},
-		tick_meta: {
-			tableName: "tick_meta",
-			rowType: TickMeta.getTypeScriptAlgebraicType(),
-			primaryKey: "id",
-			primaryKeyInfo: {
-				colName: "id",
-				colType:
-					TickMeta.getTypeScriptAlgebraicType().product.elements[0]
-						.algebraicType,
-			},
-		},
-		tick_schedule: {
-			tableName: "tick_schedule",
-			rowType: TickSchedule.getTypeScriptAlgebraicType(),
-			primaryKey: "id",
-			primaryKeyInfo: {
-				colName: "id",
-				colType:
-					TickSchedule.getTypeScriptAlgebraicType().product.elements[0]
-						.algebraicType,
-			},
-		},
-		user: {
-			tableName: "user",
-			rowType: User.getTypeScriptAlgebraicType(),
-			primaryKey: "identity",
-			primaryKeyInfo: {
-				colName: "identity",
-				colType:
-					User.getTypeScriptAlgebraicType().product.elements[0].algebraicType,
-			},
-		},
-	},
-	reducers: {
-		client_connected: {
-			reducerName: "client_connected",
-			argsType: ClientConnected.getTypeScriptAlgebraicType(),
-		},
-		identity_disconnected: {
-			reducerName: "identity_disconnected",
-			argsType: IdentityDisconnected.getTypeScriptAlgebraicType(),
-		},
-		sacrifice_health_for_moon_reducer: {
-			reducerName: "sacrifice_health_for_moon_reducer",
-			argsType: SacrificeHealthForMoonReducer.getTypeScriptAlgebraicType(),
-		},
-		set_dir_vec: {
-			reducerName: "set_dir_vec",
-			argsType: SetDirVec.getTypeScriptAlgebraicType(),
-		},
-		set_user_meta: {
-			reducerName: "set_user_meta",
-			argsType: SetUserMeta.getTypeScriptAlgebraicType(),
-		},
-		tick: {
-			reducerName: "tick",
-			argsType: Tick.getTypeScriptAlgebraicType(),
-		},
-		update_leaderboard: {
-			reducerName: "update_leaderboard",
-			argsType: UpdateLeaderboard.getTypeScriptAlgebraicType(),
-		},
-	},
-	versionInfo: {
-		cliVersion: "1.2.0",
-	},
-	// Constructors which are used by the DbConnectionImpl to
-	// extract type information from the generated RemoteModule.
-	//
-	// NOTE: This is not strictly necessary for `eventContextConstructor` because
-	// all we do is build a TypeScript object which we could have done inside the
-	// SDK, but if in the future we wanted to create a class this would be
-	// necessary because classes have methods, so we'll keep it.
-	eventContextConstructor: (imp: DbConnectionImpl, event: Event<Reducer>) => {
-		return {
-			...(imp as DbConnection),
-			event,
-		};
-	},
-	dbViewConstructor: (imp: DbConnectionImpl) => {
-		return new RemoteTables(imp);
-	},
-	reducersConstructor: (
-		imp: DbConnectionImpl,
-		setReducerFlags: SetReducerFlags,
-	) => {
-		return new RemoteReducers(imp, setReducerFlags);
-	},
-	setReducerFlagsConstructor: () => {
-		return new SetReducerFlags();
-	},
-};
+  tables: {
+    bit: {
+      tableName: "bit",
+      rowType: Bit.getTypeScriptAlgebraicType(),
+      primaryKey: "bitId",
+      primaryKeyInfo: {
+        colName: "bitId",
+        colType: Bit.getTypeScriptAlgebraicType().product.elements[0].algebraicType,
+      },
+    },
+    dynamic_metadata: {
+      tableName: "dynamic_metadata",
+      rowType: DynamicMetadata.getTypeScriptAlgebraicType(),
+      primaryKey: "id",
+      primaryKeyInfo: {
+        colName: "id",
+        colType: DynamicMetadata.getTypeScriptAlgebraicType().product.elements[0].algebraicType,
+      },
+    },
+    leaderboard_entry: {
+      tableName: "leaderboard_entry",
+      rowType: LeaderboardEntry.getTypeScriptAlgebraicType(),
+      primaryKey: "identity",
+      primaryKeyInfo: {
+        colName: "identity",
+        colType: LeaderboardEntry.getTypeScriptAlgebraicType().product.elements[1].algebraicType,
+      },
+    },
+    leaderboard_update_schedule: {
+      tableName: "leaderboard_update_schedule",
+      rowType: LeaderboardUpdateSchedule.getTypeScriptAlgebraicType(),
+      primaryKey: "id",
+      primaryKeyInfo: {
+        colName: "id",
+        colType: LeaderboardUpdateSchedule.getTypeScriptAlgebraicType().product.elements[0].algebraicType,
+      },
+    },
+    moon: {
+      tableName: "moon",
+      rowType: Moon.getTypeScriptAlgebraicType(),
+      primaryKey: "moonId",
+      primaryKeyInfo: {
+        colName: "moonId",
+        colType: Moon.getTypeScriptAlgebraicType().product.elements[0].algebraicType,
+      },
+    },
+    static_metadata: {
+      tableName: "static_metadata",
+      rowType: StaticMetadata.getTypeScriptAlgebraicType(),
+    },
+    tick_meta: {
+      tableName: "tick_meta",
+      rowType: TickMeta.getTypeScriptAlgebraicType(),
+      primaryKey: "id",
+      primaryKeyInfo: {
+        colName: "id",
+        colType: TickMeta.getTypeScriptAlgebraicType().product.elements[0].algebraicType,
+      },
+    },
+    tick_schedule: {
+      tableName: "tick_schedule",
+      rowType: TickSchedule.getTypeScriptAlgebraicType(),
+      primaryKey: "id",
+      primaryKeyInfo: {
+        colName: "id",
+        colType: TickSchedule.getTypeScriptAlgebraicType().product.elements[0].algebraicType,
+      },
+    },
+    user: {
+      tableName: "user",
+      rowType: User.getTypeScriptAlgebraicType(),
+      primaryKey: "identity",
+      primaryKeyInfo: {
+        colName: "identity",
+        colType: User.getTypeScriptAlgebraicType().product.elements[0].algebraicType,
+      },
+    },
+  },
+  reducers: {
+    client_connected: {
+      reducerName: "client_connected",
+      argsType: ClientConnected.getTypeScriptAlgebraicType(),
+    },
+    identity_disconnected: {
+      reducerName: "identity_disconnected",
+      argsType: IdentityDisconnected.getTypeScriptAlgebraicType(),
+    },
+    sacrifice_health_for_moon_reducer: {
+      reducerName: "sacrifice_health_for_moon_reducer",
+      argsType: SacrificeHealthForMoonReducer.getTypeScriptAlgebraicType(),
+    },
+    set_dir_vec: {
+      reducerName: "set_dir_vec",
+      argsType: SetDirVec.getTypeScriptAlgebraicType(),
+    },
+    set_user_meta: {
+      reducerName: "set_user_meta",
+      argsType: SetUserMeta.getTypeScriptAlgebraicType(),
+    },
+    tick: {
+      reducerName: "tick",
+      argsType: Tick.getTypeScriptAlgebraicType(),
+    },
+    update_leaderboard: {
+      reducerName: "update_leaderboard",
+      argsType: UpdateLeaderboard.getTypeScriptAlgebraicType(),
+    },
+  },
+  versionInfo: {
+    cliVersion: "1.2.0",
+  },
+  // Constructors which are used by the DbConnectionImpl to
+  // extract type information from the generated RemoteModule.
+  //
+  // NOTE: This is not strictly necessary for `eventContextConstructor` because
+  // all we do is build a TypeScript object which we could have done inside the
+  // SDK, but if in the future we wanted to create a class this would be
+  // necessary because classes have methods, so we'll keep it.
+  eventContextConstructor: (imp: DbConnectionImpl, event: Event<Reducer>) => {
+    return {
+      ...(imp as DbConnection),
+      event
+    }
+  },
+  dbViewConstructor: (imp: DbConnectionImpl) => {
+    return new RemoteTables(imp);
+  },
+  reducersConstructor: (imp: DbConnectionImpl, setReducerFlags: SetReducerFlags) => {
+    return new RemoteReducers(imp, setReducerFlags);
+  },
+  setReducerFlagsConstructor: () => {
+    return new SetReducerFlags();
+  }
+}
 
 // A type representing all the possible variants of a reducer.
-export type Reducer =
-	| never
-	| { name: "ClientConnected"; args: ClientConnected }
-	| { name: "IdentityDisconnected"; args: IdentityDisconnected }
-	| {
-			name: "SacrificeHealthForMoonReducer";
-			args: SacrificeHealthForMoonReducer;
-	  }
-	| { name: "SetDirVec"; args: SetDirVec }
-	| { name: "SetUserMeta"; args: SetUserMeta }
-	| { name: "Tick"; args: Tick }
-	| { name: "UpdateLeaderboard"; args: UpdateLeaderboard };
+export type Reducer = never
+| { name: "ClientConnected", args: ClientConnected }
+| { name: "IdentityDisconnected", args: IdentityDisconnected }
+| { name: "SacrificeHealthForMoonReducer", args: SacrificeHealthForMoonReducer }
+| { name: "SetDirVec", args: SetDirVec }
+| { name: "SetUserMeta", args: SetUserMeta }
+| { name: "Tick", args: Tick }
+| { name: "UpdateLeaderboard", args: UpdateLeaderboard }
+;
 
 export class RemoteReducers {
-	constructor(
-		private connection: DbConnectionImpl,
-		private setCallReducerFlags: SetReducerFlags,
-	) {}
+  constructor(private connection: DbConnectionImpl, private setCallReducerFlags: SetReducerFlags) {}
 
-	onClientConnected(callback: (ctx: ReducerEventContext) => void) {
-		this.connection.onReducer("client_connected", callback);
-	}
+  onClientConnected(callback: (ctx: ReducerEventContext) => void) {
+    this.connection.onReducer("client_connected", callback);
+  }
 
-	removeOnClientConnected(callback: (ctx: ReducerEventContext) => void) {
-		this.connection.offReducer("client_connected", callback);
-	}
+  removeOnClientConnected(callback: (ctx: ReducerEventContext) => void) {
+    this.connection.offReducer("client_connected", callback);
+  }
 
-	onIdentityDisconnected(callback: (ctx: ReducerEventContext) => void) {
-		this.connection.onReducer("identity_disconnected", callback);
-	}
+  onIdentityDisconnected(callback: (ctx: ReducerEventContext) => void) {
+    this.connection.onReducer("identity_disconnected", callback);
+  }
 
-	removeOnIdentityDisconnected(callback: (ctx: ReducerEventContext) => void) {
-		this.connection.offReducer("identity_disconnected", callback);
-	}
+  removeOnIdentityDisconnected(callback: (ctx: ReducerEventContext) => void) {
+    this.connection.offReducer("identity_disconnected", callback);
+  }
 
-	sacrificeHealthForMoonReducer() {
-		this.connection.callReducer(
-			"sacrifice_health_for_moon_reducer",
-			new Uint8Array(0),
-			this.setCallReducerFlags.sacrificeHealthForMoonReducerFlags,
-		);
-	}
+  sacrificeHealthForMoonReducer() {
+    this.connection.callReducer("sacrifice_health_for_moon_reducer", new Uint8Array(0), this.setCallReducerFlags.sacrificeHealthForMoonReducerFlags);
+  }
 
-	onSacrificeHealthForMoonReducer(
-		callback: (ctx: ReducerEventContext) => void,
-	) {
-		this.connection.onReducer("sacrifice_health_for_moon_reducer", callback);
-	}
+  onSacrificeHealthForMoonReducer(callback: (ctx: ReducerEventContext) => void) {
+    this.connection.onReducer("sacrifice_health_for_moon_reducer", callback);
+  }
 
-	removeOnSacrificeHealthForMoonReducer(
-		callback: (ctx: ReducerEventContext) => void,
-	) {
-		this.connection.offReducer("sacrifice_health_for_moon_reducer", callback);
-	}
+  removeOnSacrificeHealthForMoonReducer(callback: (ctx: ReducerEventContext) => void) {
+    this.connection.offReducer("sacrifice_health_for_moon_reducer", callback);
+  }
 
-	setDirVec(dirVecX: number, dirVecY: number) {
-		const __args = { dirVecX, dirVecY };
-		let __writer = new BinaryWriter(1024);
-		SetDirVec.getTypeScriptAlgebraicType().serialize(__writer, __args);
-		let __argsBuffer = __writer.getBuffer();
-		this.connection.callReducer(
-			"set_dir_vec",
-			__argsBuffer,
-			this.setCallReducerFlags.setDirVecFlags,
-		);
-	}
+  setDirVec(dirVecX: number, dirVecY: number) {
+    const __args = { dirVecX, dirVecY };
+    let __writer = new BinaryWriter(1024);
+    SetDirVec.getTypeScriptAlgebraicType().serialize(__writer, __args);
+    let __argsBuffer = __writer.getBuffer();
+    this.connection.callReducer("set_dir_vec", __argsBuffer, this.setCallReducerFlags.setDirVecFlags);
+  }
 
-	onSetDirVec(
-		callback: (
-			ctx: ReducerEventContext,
-			dirVecX: number,
-			dirVecY: number,
-		) => void,
-	) {
-		this.connection.onReducer("set_dir_vec", callback);
-	}
+  onSetDirVec(callback: (ctx: ReducerEventContext, dirVecX: number, dirVecY: number) => void) {
+    this.connection.onReducer("set_dir_vec", callback);
+  }
 
-	removeOnSetDirVec(
-		callback: (
-			ctx: ReducerEventContext,
-			dirVecX: number,
-			dirVecY: number,
-		) => void,
-	) {
-		this.connection.offReducer("set_dir_vec", callback);
-	}
+  removeOnSetDirVec(callback: (ctx: ReducerEventContext, dirVecX: number, dirVecY: number) => void) {
+    this.connection.offReducer("set_dir_vec", callback);
+  }
 
-	setUserMeta(username: string, color: Color, seed: bigint) {
-		const __args = { username, color, seed };
-		let __writer = new BinaryWriter(1024);
-		SetUserMeta.getTypeScriptAlgebraicType().serialize(__writer, __args);
-		let __argsBuffer = __writer.getBuffer();
-		this.connection.callReducer(
-			"set_user_meta",
-			__argsBuffer,
-			this.setCallReducerFlags.setUserMetaFlags,
-		);
-	}
+  setUserMeta(username: string, color: Color, seed: bigint) {
+    const __args = { username, color, seed };
+    let __writer = new BinaryWriter(1024);
+    SetUserMeta.getTypeScriptAlgebraicType().serialize(__writer, __args);
+    let __argsBuffer = __writer.getBuffer();
+    this.connection.callReducer("set_user_meta", __argsBuffer, this.setCallReducerFlags.setUserMetaFlags);
+  }
 
-	onSetUserMeta(
-		callback: (
-			ctx: ReducerEventContext,
-			username: string,
-			color: Color,
-			seed: bigint,
-		) => void,
-	) {
-		this.connection.onReducer("set_user_meta", callback);
-	}
+  onSetUserMeta(callback: (ctx: ReducerEventContext, username: string, color: Color, seed: bigint) => void) {
+    this.connection.onReducer("set_user_meta", callback);
+  }
 
-	removeOnSetUserMeta(
-		callback: (
-			ctx: ReducerEventContext,
-			username: string,
-			color: Color,
-			seed: bigint,
-		) => void,
-	) {
-		this.connection.offReducer("set_user_meta", callback);
-	}
+  removeOnSetUserMeta(callback: (ctx: ReducerEventContext, username: string, color: Color, seed: bigint) => void) {
+    this.connection.offReducer("set_user_meta", callback);
+  }
 
-	tick(tickSchedule: TickSchedule) {
-		const __args = { tickSchedule };
-		let __writer = new BinaryWriter(1024);
-		Tick.getTypeScriptAlgebraicType().serialize(__writer, __args);
-		let __argsBuffer = __writer.getBuffer();
-		this.connection.callReducer(
-			"tick",
-			__argsBuffer,
-			this.setCallReducerFlags.tickFlags,
-		);
-	}
+  tick(tickSchedule: TickSchedule) {
+    const __args = { tickSchedule };
+    let __writer = new BinaryWriter(1024);
+    Tick.getTypeScriptAlgebraicType().serialize(__writer, __args);
+    let __argsBuffer = __writer.getBuffer();
+    this.connection.callReducer("tick", __argsBuffer, this.setCallReducerFlags.tickFlags);
+  }
 
-	onTick(
-		callback: (ctx: ReducerEventContext, tickSchedule: TickSchedule) => void,
-	) {
-		this.connection.onReducer("tick", callback);
-	}
+  onTick(callback: (ctx: ReducerEventContext, tickSchedule: TickSchedule) => void) {
+    this.connection.onReducer("tick", callback);
+  }
 
-	removeOnTick(
-		callback: (ctx: ReducerEventContext, tickSchedule: TickSchedule) => void,
-	) {
-		this.connection.offReducer("tick", callback);
-	}
+  removeOnTick(callback: (ctx: ReducerEventContext, tickSchedule: TickSchedule) => void) {
+    this.connection.offReducer("tick", callback);
+  }
 
-	updateLeaderboard(leaderboardUpdateSchedule: LeaderboardUpdateSchedule) {
-		const __args = { leaderboardUpdateSchedule };
-		let __writer = new BinaryWriter(1024);
-		UpdateLeaderboard.getTypeScriptAlgebraicType().serialize(__writer, __args);
-		let __argsBuffer = __writer.getBuffer();
-		this.connection.callReducer(
-			"update_leaderboard",
-			__argsBuffer,
-			this.setCallReducerFlags.updateLeaderboardFlags,
-		);
-	}
+  updateLeaderboard(leaderboardUpdateSchedule: LeaderboardUpdateSchedule) {
+    const __args = { leaderboardUpdateSchedule };
+    let __writer = new BinaryWriter(1024);
+    UpdateLeaderboard.getTypeScriptAlgebraicType().serialize(__writer, __args);
+    let __argsBuffer = __writer.getBuffer();
+    this.connection.callReducer("update_leaderboard", __argsBuffer, this.setCallReducerFlags.updateLeaderboardFlags);
+  }
 
-	onUpdateLeaderboard(
-		callback: (
-			ctx: ReducerEventContext,
-			leaderboardUpdateSchedule: LeaderboardUpdateSchedule,
-		) => void,
-	) {
-		this.connection.onReducer("update_leaderboard", callback);
-	}
+  onUpdateLeaderboard(callback: (ctx: ReducerEventContext, leaderboardUpdateSchedule: LeaderboardUpdateSchedule) => void) {
+    this.connection.onReducer("update_leaderboard", callback);
+  }
 
-	removeOnUpdateLeaderboard(
-		callback: (
-			ctx: ReducerEventContext,
-			leaderboardUpdateSchedule: LeaderboardUpdateSchedule,
-		) => void,
-	) {
-		this.connection.offReducer("update_leaderboard", callback);
-	}
+  removeOnUpdateLeaderboard(callback: (ctx: ReducerEventContext, leaderboardUpdateSchedule: LeaderboardUpdateSchedule) => void) {
+    this.connection.offReducer("update_leaderboard", callback);
+  }
+
 }
 
 export class SetReducerFlags {
-	sacrificeHealthForMoonReducerFlags: CallReducerFlags = "FullUpdate";
-	sacrificeHealthForMoonReducer(flags: CallReducerFlags) {
-		this.sacrificeHealthForMoonReducerFlags = flags;
-	}
+  sacrificeHealthForMoonReducerFlags: CallReducerFlags = 'FullUpdate';
+  sacrificeHealthForMoonReducer(flags: CallReducerFlags) {
+    this.sacrificeHealthForMoonReducerFlags = flags;
+  }
 
-	setDirVecFlags: CallReducerFlags = "FullUpdate";
-	setDirVec(flags: CallReducerFlags) {
-		this.setDirVecFlags = flags;
-	}
+  setDirVecFlags: CallReducerFlags = 'FullUpdate';
+  setDirVec(flags: CallReducerFlags) {
+    this.setDirVecFlags = flags;
+  }
 
-	setUserMetaFlags: CallReducerFlags = "FullUpdate";
-	setUserMeta(flags: CallReducerFlags) {
-		this.setUserMetaFlags = flags;
-	}
+  setUserMetaFlags: CallReducerFlags = 'FullUpdate';
+  setUserMeta(flags: CallReducerFlags) {
+    this.setUserMetaFlags = flags;
+  }
 
-	tickFlags: CallReducerFlags = "FullUpdate";
-	tick(flags: CallReducerFlags) {
-		this.tickFlags = flags;
-	}
+  tickFlags: CallReducerFlags = 'FullUpdate';
+  tick(flags: CallReducerFlags) {
+    this.tickFlags = flags;
+  }
 
-	updateLeaderboardFlags: CallReducerFlags = "FullUpdate";
-	updateLeaderboard(flags: CallReducerFlags) {
-		this.updateLeaderboardFlags = flags;
-	}
+  updateLeaderboardFlags: CallReducerFlags = 'FullUpdate';
+  updateLeaderboard(flags: CallReducerFlags) {
+    this.updateLeaderboardFlags = flags;
+  }
+
 }
 
 export class RemoteTables {
-	constructor(private connection: DbConnectionImpl) {}
+  constructor(private connection: DbConnectionImpl) {}
 
-	get bit(): BitTableHandle {
-		return new BitTableHandle(
-			this.connection.clientCache.getOrCreateTable<Bit>(
-				REMOTE_MODULE.tables.bit,
-			),
-		);
-	}
+  get bit(): BitTableHandle {
+    return new BitTableHandle(this.connection.clientCache.getOrCreateTable<Bit>(REMOTE_MODULE.tables.bit));
+  }
 
-	get dynamicMetadata(): DynamicMetadataTableHandle {
-		return new DynamicMetadataTableHandle(
-			this.connection.clientCache.getOrCreateTable<DynamicMetadata>(
-				REMOTE_MODULE.tables.dynamic_metadata,
-			),
-		);
-	}
+  get dynamicMetadata(): DynamicMetadataTableHandle {
+    return new DynamicMetadataTableHandle(this.connection.clientCache.getOrCreateTable<DynamicMetadata>(REMOTE_MODULE.tables.dynamic_metadata));
+  }
 
-	get leaderboardEntry(): LeaderboardEntryTableHandle {
-		return new LeaderboardEntryTableHandle(
-			this.connection.clientCache.getOrCreateTable<LeaderboardEntry>(
-				REMOTE_MODULE.tables.leaderboard_entry,
-			),
-		);
-	}
+  get leaderboardEntry(): LeaderboardEntryTableHandle {
+    return new LeaderboardEntryTableHandle(this.connection.clientCache.getOrCreateTable<LeaderboardEntry>(REMOTE_MODULE.tables.leaderboard_entry));
+  }
 
-	get leaderboardUpdateSchedule(): LeaderboardUpdateScheduleTableHandle {
-		return new LeaderboardUpdateScheduleTableHandle(
-			this.connection.clientCache.getOrCreateTable<LeaderboardUpdateSchedule>(
-				REMOTE_MODULE.tables.leaderboard_update_schedule,
-			),
-		);
-	}
+  get leaderboardUpdateSchedule(): LeaderboardUpdateScheduleTableHandle {
+    return new LeaderboardUpdateScheduleTableHandle(this.connection.clientCache.getOrCreateTable<LeaderboardUpdateSchedule>(REMOTE_MODULE.tables.leaderboard_update_schedule));
+  }
 
-	get moon(): MoonTableHandle {
-		return new MoonTableHandle(
-			this.connection.clientCache.getOrCreateTable<Moon>(
-				REMOTE_MODULE.tables.moon,
-			),
-		);
-	}
+  get moon(): MoonTableHandle {
+    return new MoonTableHandle(this.connection.clientCache.getOrCreateTable<Moon>(REMOTE_MODULE.tables.moon));
+  }
 
-	get staticMetadata(): StaticMetadataTableHandle {
-		return new StaticMetadataTableHandle(
-			this.connection.clientCache.getOrCreateTable<StaticMetadata>(
-				REMOTE_MODULE.tables.static_metadata,
-			),
-		);
-	}
+  get staticMetadata(): StaticMetadataTableHandle {
+    return new StaticMetadataTableHandle(this.connection.clientCache.getOrCreateTable<StaticMetadata>(REMOTE_MODULE.tables.static_metadata));
+  }
 
-	get tickMeta(): TickMetaTableHandle {
-		return new TickMetaTableHandle(
-			this.connection.clientCache.getOrCreateTable<TickMeta>(
-				REMOTE_MODULE.tables.tick_meta,
-			),
-		);
-	}
+  get tickMeta(): TickMetaTableHandle {
+    return new TickMetaTableHandle(this.connection.clientCache.getOrCreateTable<TickMeta>(REMOTE_MODULE.tables.tick_meta));
+  }
 
-	get tickSchedule(): TickScheduleTableHandle {
-		return new TickScheduleTableHandle(
-			this.connection.clientCache.getOrCreateTable<TickSchedule>(
-				REMOTE_MODULE.tables.tick_schedule,
-			),
-		);
-	}
+  get tickSchedule(): TickScheduleTableHandle {
+    return new TickScheduleTableHandle(this.connection.clientCache.getOrCreateTable<TickSchedule>(REMOTE_MODULE.tables.tick_schedule));
+  }
 
-	get user(): UserTableHandle {
-		return new UserTableHandle(
-			this.connection.clientCache.getOrCreateTable<User>(
-				REMOTE_MODULE.tables.user,
-			),
-		);
-	}
+  get user(): UserTableHandle {
+    return new UserTableHandle(this.connection.clientCache.getOrCreateTable<User>(REMOTE_MODULE.tables.user));
+  }
 }
 
-export class SubscriptionBuilder extends SubscriptionBuilderImpl<
-	RemoteTables,
-	RemoteReducers,
-	SetReducerFlags
-> {}
+export class SubscriptionBuilder extends SubscriptionBuilderImpl<RemoteTables, RemoteReducers, SetReducerFlags> { }
 
-export class DbConnection extends DbConnectionImpl<
-	RemoteTables,
-	RemoteReducers,
-	SetReducerFlags
-> {
-	static builder = (): DbConnectionBuilder<
-		DbConnection,
-		ErrorContext,
-		SubscriptionEventContext
-	> => {
-		return new DbConnectionBuilder<
-			DbConnection,
-			ErrorContext,
-			SubscriptionEventContext
-		>(REMOTE_MODULE, (imp: DbConnectionImpl) => imp as DbConnection);
-	};
-	subscriptionBuilder = (): SubscriptionBuilder => {
-		return new SubscriptionBuilder(this);
-	};
+export class DbConnection extends DbConnectionImpl<RemoteTables, RemoteReducers, SetReducerFlags> {
+  static builder = (): DbConnectionBuilder<DbConnection, ErrorContext, SubscriptionEventContext> => {
+    return new DbConnectionBuilder<DbConnection, ErrorContext, SubscriptionEventContext>(REMOTE_MODULE, (imp: DbConnectionImpl) => imp as DbConnection);
+  }
+  subscriptionBuilder = (): SubscriptionBuilder => {
+    return new SubscriptionBuilder(this);
+  }
 }
 
-export type EventContext = EventContextInterface<
-	RemoteTables,
-	RemoteReducers,
-	SetReducerFlags,
-	Reducer
->;
-export type ReducerEventContext = ReducerEventContextInterface<
-	RemoteTables,
-	RemoteReducers,
-	SetReducerFlags,
-	Reducer
->;
-export type SubscriptionEventContext = SubscriptionEventContextInterface<
-	RemoteTables,
-	RemoteReducers,
-	SetReducerFlags
->;
-export type ErrorContext = ErrorContextInterface<
-	RemoteTables,
-	RemoteReducers,
-	SetReducerFlags
->;
+export type EventContext = EventContextInterface<RemoteTables, RemoteReducers, SetReducerFlags, Reducer>;
+export type ReducerEventContext = ReducerEventContextInterface<RemoteTables, RemoteReducers, SetReducerFlags, Reducer>;
+export type SubscriptionEventContext = SubscriptionEventContextInterface<RemoteTables, RemoteReducers, SetReducerFlags>;
+export type ErrorContext = ErrorContextInterface<RemoteTables, RemoteReducers, SetReducerFlags>;

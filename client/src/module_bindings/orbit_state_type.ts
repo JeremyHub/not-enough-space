@@ -7,65 +7,67 @@
 /* tslint:disable */
 // @ts-nocheck
 import {
-	AlgebraicType,
-	AlgebraicValue,
-	BinaryReader,
-	BinaryWriter,
-	ConnectionId,
-	DbConnectionBuilder,
-	DbConnectionImpl,
-	Identity,
-	ProductType,
-	ProductTypeElement,
-	SubscriptionBuilderImpl,
-	SumType,
-	SumTypeVariant,
-	TableCache,
-	TimeDuration,
-	Timestamp,
-	deepEqual,
-	type CallReducerFlags,
-	type DbContext,
-	type ErrorContextInterface,
-	type Event,
-	type EventContextInterface,
-	type ReducerEventContextInterface,
-	type SubscriptionEventContextInterface,
+  AlgebraicType,
+  AlgebraicValue,
+  BinaryReader,
+  BinaryWriter,
+  ConnectionId,
+  DbConnectionBuilder,
+  DbConnectionImpl,
+  Identity,
+  ProductType,
+  ProductTypeElement,
+  SubscriptionBuilderImpl,
+  SumType,
+  SumTypeVariant,
+  TableCache,
+  TimeDuration,
+  Timestamp,
+  deepEqual,
+  type CallReducerFlags,
+  type DbContext,
+  type ErrorContextInterface,
+  type Event,
+  type EventContextInterface,
+  type ReducerEventContextInterface,
+  type SubscriptionEventContextInterface,
 } from "@clockworklabs/spacetimedb-sdk";
 // A namespace for generated variants and helper functions.
 export namespace OrbitState {
-	// These are the generated variant types for each variant of the tagged union.
-	// One type is generated per variant and will be used in the `value` field of
-	// the tagged union.
-	export type Stationary = { tag: "Stationary" };
-	export type Moving = { tag: "Moving" };
+  // These are the generated variant types for each variant of the tagged union.
+  // One type is generated per variant and will be used in the `value` field of
+  // the tagged union.
+  export type Stationary = { tag: "Stationary" };
+  export type Moving = { tag: "Moving" };
 
-	// Helper functions for constructing each variant of the tagged union.
-	// ```
-	// const foo = Foo.A(42);
-	// assert!(foo.tag === "A");
-	// assert!(foo.value === 42);
-	// ```
-	export const Stationary = { tag: "Stationary" };
-	export const Moving = { tag: "Moving" };
+  // Helper functions for constructing each variant of the tagged union.
+  // ```
+  // const foo = Foo.A(42);
+  // assert!(foo.tag === "A");
+  // assert!(foo.value === 42);
+  // ```
+  export const Stationary = { tag: "Stationary" };
+  export const Moving = { tag: "Moving" };
 
-	export function getTypeScriptAlgebraicType(): AlgebraicType {
-		return AlgebraicType.createSumType([
-			new SumTypeVariant("Stationary", AlgebraicType.createProductType([])),
-			new SumTypeVariant("Moving", AlgebraicType.createProductType([])),
-		]);
-	}
+  export function getTypeScriptAlgebraicType(): AlgebraicType {
+    return AlgebraicType.createSumType([
+      new SumTypeVariant("Stationary", AlgebraicType.createProductType([])),
+      new SumTypeVariant("Moving", AlgebraicType.createProductType([])),
+    ]);
+  }
 
-	export function serialize(writer: BinaryWriter, value: OrbitState): void {
-		OrbitState.getTypeScriptAlgebraicType().serialize(writer, value);
-	}
+  export function serialize(writer: BinaryWriter, value: OrbitState): void {
+      OrbitState.getTypeScriptAlgebraicType().serialize(writer, value);
+  }
 
-	export function deserialize(reader: BinaryReader): OrbitState {
-		return OrbitState.getTypeScriptAlgebraicType().deserialize(reader);
-	}
+  export function deserialize(reader: BinaryReader): OrbitState {
+      return OrbitState.getTypeScriptAlgebraicType().deserialize(reader);
+  }
+
 }
 
 // The tagged union or sum type for the algebraic type `OrbitState`.
 export type OrbitState = OrbitState.Stationary | OrbitState.Moving;
 
 export default OrbitState;
+
