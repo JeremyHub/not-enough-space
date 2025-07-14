@@ -1,10 +1,10 @@
-use spacetimedb::{rand, table, Identity, ReducerContext, SpacetimeType, Table};
 use spacetimedb::rand::Rng;
+use spacetimedb::{rand, table, Identity, ReducerContext, SpacetimeType, Table};
 
 use crate::user::user as _;
 
-use super::user;
 use super::helpers;
+use super::user;
 
 #[derive(SpacetimeType, Clone, Debug, PartialEq)]
 pub enum OrbitState {
@@ -39,13 +39,15 @@ pub struct Moon {
     pub is_orbiting: bool,
 }
 
-
 pub fn spawn_moons(ctx: &ReducerContext) {
-    let num_moons = super::NUM_FREE_MOONS - ctx.db.moon().is_orbiting().filter(false).count() as u64;
+    let num_moons =
+        super::NUM_FREE_MOONS - ctx.db.moon().is_orbiting().filter(false).count() as u64;
     for _ in 0..num_moons {
         let x = ctx.rng().gen_range(0..=super::WORLD_WIDTH) as f32;
         let y = ctx.rng().gen_range(0..=super::WORLD_HEIGHT) as f32;
-        let size = ctx.rng().gen_range(super::MIN_FREE_MOON_SIZE..=super::MAX_FREE_MOON_SIZE);
+        let size = ctx
+            .rng()
+            .gen_range(super::MIN_FREE_MOON_SIZE..=super::MAX_FREE_MOON_SIZE);
         ctx.db.moon().insert(Moon {
             moon_id: 0,
             col_index: x.round() as i32,
@@ -69,7 +71,6 @@ pub fn spawn_moons(ctx: &ReducerContext) {
     }
 }
 
-
 pub fn update_moons(ctx: &ReducerContext) {
     update_free_moons_directions(ctx);
     update_oribiting_moons(ctx);
@@ -92,7 +93,7 @@ fn move_free_moons(ctx: &ReducerContext, moon: Moon) {
         moon.dy,
         moon.dir_vec_x,
         moon.dir_vec_y,
-        acceleration
+        acceleration,
     );
     ctx.db.moon().moon_id().update(Moon {
         col_index: upd.x.round() as i32,
@@ -105,7 +106,6 @@ fn move_free_moons(ctx: &ReducerContext, moon: Moon) {
     });
 }
 
-
 pub fn new_moon_params(ctx: &ReducerContext, color: &helpers::Color) -> (helpers::Color, f32) {
     let mut rng = ctx.rng();
     let clamp = |v: i32| v.clamp(0, 255);
@@ -116,7 +116,7 @@ pub fn new_moon_params(ctx: &ReducerContext, color: &helpers::Color) -> (helpers
         b: clamp(color.b + offset),
     };
     // Assign random orbital velocity between -1.0 and -0.5, or 0.5 and 1.0
-    let orbital_velocity =  if rng.gen_bool(0.5) {
+    let orbital_velocity = if rng.gen_bool(0.5) {
         rng.gen_range(-1.0..=-0.5)
     } else {
         rng.gen_range(0.5..=1.0)
@@ -135,14 +135,20 @@ fn update_oribiting_moons(ctx: &ReducerContext) {
                 let orbit_state: OrbitState;
                 let mut orbit_radius: f32 = user.size + moon.size;
                 let orbit_angular_vel: f32;
-                let orbit_radius_moon_size_factor = 1.0 - (moon.size - super::MIN_POSSIBLE_MOON_SIZE) / (super::MAX_POSSIBLE_MOON_SIZE - super::MIN_POSSIBLE_MOON_SIZE);
+                let orbit_radius_moon_size_factor = 1.0
+                    - (moon.size - super::MIN_POSSIBLE_MOON_SIZE)
+                        / (super::MAX_POSSIBLE_MOON_SIZE - super::MIN_POSSIBLE_MOON_SIZE);
                 if moving {
                     orbit_state = OrbitState::Moving;
-                    orbit_radius += super::ADDL_ORBIT_RADIUS_FAR_PER_USER_SIZE * orbit_radius_moon_size_factor * user.size;
+                    orbit_radius += super::ADDL_ORBIT_RADIUS_FAR_PER_USER_SIZE
+                        * orbit_radius_moon_size_factor
+                        * user.size;
                     orbit_angular_vel = super::ORBIT_ANGULAR_VEL_RADIUS_FACTOR_FAR * moon.size;
                 } else {
                     orbit_state = OrbitState::Stationary;
-                    orbit_radius += super::ADDL_ORBIT_RADIUS_CLOSE_PER_USER_SIZE * orbit_radius_moon_size_factor * user.size;
+                    orbit_radius += super::ADDL_ORBIT_RADIUS_CLOSE_PER_USER_SIZE
+                        * orbit_radius_moon_size_factor
+                        * user.size;
                     orbit_angular_vel = super::ORBIT_ANGULAR_VEL_RADIUS_FACTOR_CLOSE * moon.size;
                 };
 
@@ -170,7 +176,13 @@ fn update_oribiting_moons(ctx: &ReducerContext) {
 
                 // scale velocity increment by distance (clamped to avoid zero)
                 let distance_scale = dir_length.max(1.0); // minimum 1.0 to avoid division by zero
-                let acceleration = if moving { (super::ORBIT_MOVING_ACCELERATION_USER_SIZE_FACTOR * user.size) + super::ORBIT_MOVING_ACCELERATION_ADD } else { (super::ORBIT_STATIONARY_ACCELERATION_USER_SIZE_FACTOR * user.size) + super::ORBIT_STATIONARY_ACCELERATION_ADD };
+                let acceleration = if moving {
+                    (super::ORBIT_MOVING_ACCELERATION_USER_SIZE_FACTOR * user.size)
+                        + super::ORBIT_MOVING_ACCELERATION_ADD
+                } else {
+                    (super::ORBIT_STATIONARY_ACCELERATION_USER_SIZE_FACTOR * user.size)
+                        + super::ORBIT_STATIONARY_ACCELERATION_ADD
+                };
                 let scale = distance_scale / orbit_radius; // normalized, so it slows as it gets closer
 
                 // Calculate the velocity increment, but clamp so we don't overshoot
@@ -187,7 +199,8 @@ fn update_oribiting_moons(ctx: &ReducerContext) {
                 }
 
                 // Update moon with new position and velocity
-                let (updated_x, updated_y) = helpers::wrap_coords(moon.x + delta_vx, moon.y + delta_vy);
+                let (updated_x, updated_y) =
+                    helpers::wrap_coords(moon.x + delta_vx, moon.y + delta_vy);
                 ctx.db.moon().moon_id().update(Moon {
                     col_index: updated_x.round() as i32,
                     x: updated_x,
@@ -207,11 +220,17 @@ fn update_oribiting_moons(ctx: &ReducerContext) {
 }
 
 fn update_free_moons_directions(ctx: &ReducerContext) {
-    let mut free_moons: Vec<_> = ctx.db.moon().iter().filter(|b| b.orbiting.is_none()).collect();
+    let mut free_moons: Vec<_> = ctx
+        .db
+        .moon()
+        .iter()
+        .filter(|b| b.orbiting.is_none())
+        .collect();
     use rand::seq::SliceRandom;
     free_moons.as_mut_slice().shuffle(&mut ctx.rng());
-    
-    let num_to_update = ((free_moons.len() as f32) * super::PORTION_FREE_MOONS_DIRECTION_UPDATED_PER_TICK)
+
+    let num_to_update = ((free_moons.len() as f32)
+        * super::PORTION_FREE_MOONS_DIRECTION_UPDATED_PER_TICK)
         .ceil() as usize;
     for moon in free_moons.into_iter().take(num_to_update) {
         ctx.db.moon().moon_id().update(Moon {
@@ -243,13 +262,16 @@ fn animate_moon_color(ctx: &ReducerContext, moon: Moon) {
             let mut new_g = moon.color.g;
             let mut new_b = moon.color.b;
             if (target_color.r - moon.color.r).abs() > 0 {
-                new_r += (target_color.r - moon.color.r).signum() * super::MOON_COLOR_ANIMATION_SPEED;
+                new_r +=
+                    (target_color.r - moon.color.r).signum() * super::MOON_COLOR_ANIMATION_SPEED;
             }
             if (target_color.g - moon.color.g).abs() > 0 {
-                new_g += (target_color.g - moon.color.g).signum() * super::MOON_COLOR_ANIMATION_SPEED;
+                new_g +=
+                    (target_color.g - moon.color.g).signum() * super::MOON_COLOR_ANIMATION_SPEED;
             }
             if (target_color.b - moon.color.b).abs() > 0 {
-                new_b += (target_color.b - moon.color.b).signum() * super::MOON_COLOR_ANIMATION_SPEED;
+                new_b +=
+                    (target_color.b - moon.color.b).signum() * super::MOON_COLOR_ANIMATION_SPEED;
             }
             let new_color = helpers::Color {
                 r: new_r.clamp(0, 255),

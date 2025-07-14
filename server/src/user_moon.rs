@@ -1,16 +1,20 @@
-use spacetimedb::{ReducerContext, Table};
 use spacetimedb::rand::Rng;
+use spacetimedb::{ReducerContext, Table};
 
 use crate::bit::bit as _;
 use crate::moon::moon as _;
 use crate::user::user as _;
 
-use super::user;
-use super::moon;
-use super::helpers;
 use super::bit;
+use super::helpers;
+use super::moon;
+use super::user;
 
-pub fn handle_user_and_oribiting_moon_collision(ctx: &ReducerContext, user: &user::User, moon: moon::Moon) {
+pub fn handle_user_and_oribiting_moon_collision(
+    ctx: &ReducerContext,
+    user: &user::User,
+    moon: moon::Moon,
+) {
     let new_health = user.health - moon.size;
     let new_size = user::get_user_size(new_health);
 
@@ -58,7 +62,11 @@ pub fn handle_user_and_oribiting_moon_collision(ctx: &ReducerContext, user: &use
         if let Some(owner) = ctx.db.user().identity().find(owner_identity) {
             ctx.db.user().identity().update(user::User {
                 damage: owner.damage + moon.size,
-                kills: if new_health <= 0.0 { owner.kills + 1 } else { owner.kills },
+                kills: if new_health <= 0.0 {
+                    owner.kills + 1
+                } else {
+                    owner.kills
+                },
                 ..owner
             });
         }
@@ -85,7 +93,11 @@ pub fn handle_user_and_oribiting_moon_collision(ctx: &ReducerContext, user: &use
     }
 }
 
-pub fn handle_user_free_moon_collision(ctx: &ReducerContext, user: &user::User, moon: moon::Moon) -> f32 {
+pub fn handle_user_free_moon_collision(
+    ctx: &ReducerContext,
+    user: &user::User,
+    moon: moon::Moon,
+) -> f32 {
     // Pick a target color based on the user's color
     let (target_color, orbital_velocity) = moon::new_moon_params(ctx, &user.color);
     ctx.db.moon().moon_id().update(moon::Moon {
@@ -100,19 +112,29 @@ pub fn handle_user_free_moon_collision(ctx: &ReducerContext, user: &user::User, 
 }
 
 pub fn check_moon_user_collisions(ctx: &ReducerContext) {
-
     for user in ctx.db.user().iter() {
         if user.online || super::UPDATE_OFFLINE_PLAYERS {
             let mut new_user_moon_size = user.total_moon_size_orbiting;
-            for range in helpers::wrapped_ranges(user.x.round() as i32, (user.size + super::MAX_POSSIBLE_MOON_SIZE) as i32, super::WORLD_WIDTH) {
+            for range in helpers::wrapped_ranges(
+                user.x.round() as i32,
+                (user.size + super::MAX_POSSIBLE_MOON_SIZE) as i32,
+                super::WORLD_WIDTH,
+            ) {
                 for moon in ctx.db.moon().col_index().filter(range) {
-                    if moon.orbiting.is_none() && can_get_moon_into_orbit(&user, moon.size) && helpers::toroidal_distance(user.x, user.y, moon.x, moon.y) <= (user.size + moon.size) {
-                        new_user_moon_size += handle_user_free_moon_collision(ctx, &user, moon.clone());
+                    if moon.orbiting.is_none()
+                        && can_get_moon_into_orbit(&user, moon.size)
+                        && helpers::toroidal_distance(user.x, user.y, moon.x, moon.y)
+                            <= (user.size + moon.size)
+                    {
+                        new_user_moon_size +=
+                            handle_user_free_moon_collision(ctx, &user, moon.clone());
                     }
                     if !moon.is_orbiting || moon.orbiting == Some(user.identity) {
-                    continue;
+                        continue;
                     }
-                    if helpers::toroidal_distance(moon.x, moon.y, user.x, user.y) <= (moon.size + user.size) {
+                    if helpers::toroidal_distance(moon.x, moon.y, user.x, user.y)
+                        <= (moon.size + user.size)
+                    {
                         handle_user_and_oribiting_moon_collision(ctx, &user, moon);
                     }
                 }

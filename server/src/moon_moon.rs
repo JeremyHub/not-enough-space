@@ -1,14 +1,20 @@
-use spacetimedb::{ReducerContext};
+use spacetimedb::ReducerContext;
 
 use crate::moon::moon as _;
 use crate::user::user as _;
 
-use super::moon;
-use super::helpers;
 use super::bit;
+use super::helpers;
+use super::moon;
 use super::user;
 
-fn handle_moon_moon_collision(ctx: &ReducerContext, to_destroy: &mut Vec<i32>, explosions: &mut Vec<(f32, f32, f32, helpers::Color)>, moon: &moon::Moon, other: moon::Moon) {
+fn handle_moon_moon_collision(
+    ctx: &ReducerContext,
+    to_destroy: &mut Vec<i32>,
+    explosions: &mut Vec<(f32, f32, f32, helpers::Color)>,
+    moon: &moon::Moon,
+    other: moon::Moon,
+) {
     // Only destroy the smaller moon, reduce the size of the larger moon by the size of the smaller
     if moon.size > other.size {
         // Moon survives, other is destroyed
@@ -35,7 +41,8 @@ fn handle_moon_moon_collision(ctx: &ReducerContext, to_destroy: &mut Vec<i32>, e
             if let Some(other_owner) = other.orbiting {
                 if let Some(other_owner_obj) = ctx.db.user().identity().find(other_owner) {
                     ctx.db.user().identity().update(user::User {
-                        total_moon_size_orbiting: other_owner_obj.total_moon_size_orbiting - other.size,
+                        total_moon_size_orbiting: other_owner_obj.total_moon_size_orbiting
+                            - other.size,
                         ..other_owner_obj
                     });
                 }
@@ -66,7 +73,8 @@ fn handle_moon_moon_collision(ctx: &ReducerContext, to_destroy: &mut Vec<i32>, e
             if let Some(other_owner) = other.orbiting {
                 if let Some(other_owner_obj) = ctx.db.user().identity().find(other_owner) {
                     ctx.db.user().identity().update(user::User {
-                        total_moon_size_orbiting: other_owner_obj.total_moon_size_orbiting - moon.size,
+                        total_moon_size_orbiting: other_owner_obj.total_moon_size_orbiting
+                            - moon.size,
                         ..other_owner_obj
                     });
                 }
@@ -116,13 +124,18 @@ pub fn check_moon_moon_collisions(ctx: &ReducerContext) {
                 if other.moon_id == moon.moon_id {
                     continue;
                 }
-                if !other.is_orbiting || other.orbiting.is_none() || to_destroy.contains(&other.moon_id) {
+                if !other.is_orbiting
+                    || other.orbiting.is_none()
+                    || to_destroy.contains(&other.moon_id)
+                {
                     continue;
                 }
                 if moon.orbiting == other.orbiting {
                     continue;
                 }
-                if helpers::toroidal_distance(moon.x, moon.y, other.x, other.y) <= (moon.size + other.size) {
+                if helpers::toroidal_distance(moon.x, moon.y, other.x, other.y)
+                    <= (moon.size + other.size)
+                {
                     handle_moon_moon_collision(ctx, &mut to_destroy, &mut explosions, moon, other);
                 }
             }

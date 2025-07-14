@@ -1,21 +1,21 @@
-use spacetimedb::{rand, Identity, ReducerContext, Table};
 use spacetimedb::rand::Rng;
+use spacetimedb::{rand, Identity, ReducerContext, Table};
 
-use crate::user::user as _;
 use crate::game_loop::dynamic_metadata as _;
+use crate::user::user as _;
 
-use super::user;
-use super::pub_reducers;
-use super::helpers;
 use super::game_loop;
-
+use super::helpers;
+use super::pub_reducers;
+use super::user;
 
 pub fn update_ai_directions(ctx: &ReducerContext) {
     let mut ai_users: Vec<_> = ctx.db.user().is_ai().filter(true).collect();
     use rand::seq::SliceRandom;
     ai_users.as_mut_slice().shuffle(&mut ctx.rng());
-    
-    let num_to_update = ((ai_users.len() as f32) * super::PORTION_AI_USERS_DIRECTION_UPDATED_PER_TICK)
+
+    let num_to_update = ((ai_users.len() as f32)
+        * super::PORTION_AI_USERS_DIRECTION_UPDATED_PER_TICK)
         .ceil() as usize;
 
     for ai in ai_users.into_iter().take(num_to_update) {
@@ -25,7 +25,10 @@ pub fn update_ai_directions(ctx: &ReducerContext) {
             username: ai.username.clone(),
             ..ai
         });
-        if ctx.rng().gen_bool(super::CHANCE_UPDATED_AI_SPAWNS_MOON as f64) {
+        if ctx
+            .rng()
+            .gen_bool(super::CHANCE_UPDATED_AI_SPAWNS_MOON as f64)
+        {
             let _ = pub_reducers::sacrifice_health_for_moon(ctx, ai);
         }
     }
@@ -65,10 +68,13 @@ pub fn spawn_ai(ctx: &ReducerContext) {
                 seed: ctx.rng().gen(),
             });
         }
-        ctx.db.dynamic_metadata().id().update(game_loop::DynamicMetadata {
-            id: 0,
-            num_ais: metadata.num_ais + ais_to_spawn as u32,
-            total_users: metadata.total_users + ais_to_spawn as u32,
-        });
+        ctx.db
+            .dynamic_metadata()
+            .id()
+            .update(game_loop::DynamicMetadata {
+                id: 0,
+                num_ais: metadata.num_ais + ais_to_spawn as u32,
+                total_users: metadata.total_users + ais_to_spawn as u32,
+            });
     }
 }

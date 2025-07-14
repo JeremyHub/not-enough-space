@@ -57,7 +57,8 @@ pub fn update_users(ctx: &ReducerContext) {
             } else {
                 super::USER_ACCELERATION
             } + user.speed_boost;
-            let percent_moon_size_left = (1.0 - (user.total_moon_size_orbiting / user.size)) * super::MAX_ADDITIONAL_ACCELERATION_WHEN_MOONLESS;
+            let percent_moon_size_left = (1.0 - (user.total_moon_size_orbiting / user.size))
+                * super::MAX_ADDITIONAL_ACCELERATION_WHEN_MOONLESS;
             acceleration += percent_moon_size_left * acceleration;
             let upd = helpers::move_character(
                 user.x,
@@ -74,7 +75,11 @@ pub fn update_users(ctx: &ReducerContext) {
                 y: upd.y,
                 dx: upd.dx,
                 dy: upd.dy,
-                speed_boost: if user.speed_boost > 0.1 {user.speed_boost * super::SPEED_BOOST_DECAY} else {0.0},
+                speed_boost: if user.speed_boost > 0.1 {
+                    user.speed_boost * super::SPEED_BOOST_DECAY
+                } else {
+                    0.0
+                },
                 ..user
             });
         }

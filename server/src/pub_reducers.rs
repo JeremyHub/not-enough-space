@@ -1,12 +1,12 @@
-use spacetimedb::{reducer, ReducerContext, Table};
 use spacetimedb::rand::Rng;
+use spacetimedb::{reducer, ReducerContext, Table};
 
 use crate::moon::moon as _;
 use crate::user::user as _;
 
-use super::user;
-use super::moon;
 use super::helpers;
+use super::moon;
+use super::user;
 use super::user_moon;
 
 #[reducer]
@@ -28,8 +28,10 @@ pub fn sacrifice_health_for_moon(ctx: &ReducerContext, user: user::User) -> Resu
         return Err("You already have too many moons.".to_string());
     }
 
-    let moon_size = ctx.rng().gen_range(super::MIN_HEALTH_SACRIFICE..=super::MAX_HEALTH_SACRIFICE);
-    
+    let moon_size = ctx
+        .rng()
+        .gen_range(super::MIN_HEALTH_SACRIFICE..=super::MAX_HEALTH_SACRIFICE);
+
     let (moon_color, orbital_velocity) = moon::new_moon_params(ctx, &user.color);
 
     // Subtract health and update user, and add to total_moon_size_orbiting
@@ -69,11 +71,10 @@ pub fn sacrifice_health_for_moon(ctx: &ReducerContext, user: user::User) -> Resu
     Ok(())
 }
 
-
 #[reducer]
 pub fn set_dir_vec(ctx: &ReducerContext, dir_vec_x: f32, dir_vec_y: f32) -> Result<(), String> {
     if let Some(user) = ctx.db.user().identity().find(ctx.sender) {
-        ctx.db.user().identity().update(user::User { 
+        ctx.db.user().identity().update(user::User {
             dir_vec_x,
             dir_vec_y,
             ..user
@@ -85,9 +86,18 @@ pub fn set_dir_vec(ctx: &ReducerContext, dir_vec_x: f32, dir_vec_y: f32) -> Resu
 }
 
 #[reducer]
-pub fn set_user_meta(ctx: &ReducerContext, username: String, color: helpers::Color, seed: u64) -> Result<(), String> {
+pub fn set_user_meta(
+    ctx: &ReducerContext,
+    username: String,
+    color: helpers::Color,
+    seed: u64,
+) -> Result<(), String> {
     if username.len() < super::MIN_USERNAME_LENGTH {
-        log::warn!("User {} tried to connect with a too short username: {}", ctx.sender, username);
+        log::warn!(
+            "User {} tried to connect with a too short username: {}",
+            ctx.sender,
+            username
+        );
         return Err("Username is too short".to_string());
     }
 
@@ -97,12 +107,14 @@ pub fn set_user_meta(ctx: &ReducerContext, username: String, color: helpers::Col
     }
 
     if is_color_too_white_or_black(&color) {
-        log::warn!("User {username} tried to connect with a color that is too white or black: {color:?}");
+        log::warn!(
+            "User {username} tried to connect with a color that is too white or black: {color:?}"
+        );
         return Err("Invalid color".to_string());
     }
 
     if let Some(user) = ctx.db.user().identity().find(ctx.sender) {
-        ctx.db.user().identity().update(user::User { 
+        ctx.db.user().identity().update(user::User {
             username,
             color,
             seed,
@@ -117,7 +129,10 @@ pub fn set_user_meta(ctx: &ReducerContext, username: String, color: helpers::Col
 #[reducer(client_connected)]
 pub fn client_connected(ctx: &ReducerContext) {
     if let Some(user) = ctx.db.user().identity().find(ctx.sender) {
-        ctx.db.user().identity().update(user::User { online: true, ..user });
+        ctx.db.user().identity().update(user::User {
+            online: true,
+            ..user
+        });
     } else {
         let mut rng = ctx.rng();
         let x = rng.gen_range(0..=super::WORLD_WIDTH) as f32;
@@ -132,11 +147,7 @@ pub fn client_connected(ctx: &ReducerContext) {
             dy: 0.0,
             dir_vec_x: 0.0,
             dir_vec_y: 0.0,
-            color: helpers::Color {
-                r: 255,
-                g: 0,
-                b: 0,
-            },
+            color: helpers::Color { r: 255, g: 0, b: 0 },
             health: super::USER_STARTING_HEALTH,
             size: user::get_user_size(super::USER_STARTING_HEALTH),
             total_moon_size_orbiting: 0.0,
@@ -152,8 +163,14 @@ pub fn client_connected(ctx: &ReducerContext) {
 #[reducer(client_disconnected)]
 pub fn identity_disconnected(ctx: &ReducerContext) {
     if let Some(user) = ctx.db.user().identity().find(ctx.sender) {
-        ctx.db.user().identity().update(user::User { online: false, ..user });
+        ctx.db.user().identity().update(user::User {
+            online: false,
+            ..user
+        });
     } else {
-        log::warn!("Disconnect event for unknown user with identity {:?}", ctx.sender);
+        log::warn!(
+            "Disconnect event for unknown user with identity {:?}",
+            ctx.sender
+        );
     }
 }

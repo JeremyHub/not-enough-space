@@ -1,4 +1,4 @@
-use spacetimedb::{SpacetimeType};
+use spacetimedb::SpacetimeType;
 
 #[derive(SpacetimeType, Clone, Debug, PartialEq, Copy)]
 pub struct Color {
@@ -22,7 +22,15 @@ pub struct CharacterUpdate {
     pub dy: f32,
 }
 
-pub fn move_character(x: f32, y: f32, dx: f32, dy: f32, dir_vec_x: f32, dir_vec_y: f32, acceleration: f32) -> CharacterUpdate {
+pub fn move_character(
+    x: f32,
+    y: f32,
+    dx: f32,
+    dy: f32,
+    dir_vec_x: f32,
+    dir_vec_y: f32,
+    acceleration: f32,
+) -> CharacterUpdate {
     let mut new_dx: f32 = dx * super::FRICTION;
     let mut new_dy: f32 = dy * super::FRICTION;
 
@@ -42,25 +50,35 @@ pub fn move_character(x: f32, y: f32, dx: f32, dy: f32, dir_vec_x: f32, dir_vec_
 
     (new_x, new_y) = wrap_coords(after_move_x, after_move_y);
 
-    new_dx = if new_dx.abs() < 0.01 {0.0} else {new_dx};
-    new_dy = if new_dy.abs() < 0.01 {0.0} else {new_dy};
+    new_dx = if new_dx.abs() < 0.01 { 0.0 } else { new_dx };
+    new_dy = if new_dy.abs() < 0.01 { 0.0 } else { new_dy };
 
-    CharacterUpdate { x: new_x, y: new_y, dx: new_dx, dy: new_dy }
+    CharacterUpdate {
+        x: new_x,
+        y: new_y,
+        dx: new_dx,
+        dy: new_dy,
+    }
 }
 
 pub fn wrap_coords(x: f32, y: f32) -> (f32, f32) {
     let mut new_x = x;
     let mut new_y = y;
 
-    if new_x < 0.0 { new_x += super::WORLD_WIDTH as f32; }
-    else if new_x > super::WORLD_WIDTH as f32 { new_x -= super::WORLD_WIDTH as f32; }
+    if new_x < 0.0 {
+        new_x += super::WORLD_WIDTH as f32;
+    } else if new_x > super::WORLD_WIDTH as f32 {
+        new_x -= super::WORLD_WIDTH as f32;
+    }
 
-    if new_y < 0.0 { new_y += super::WORLD_HEIGHT as f32; }
-    else if new_y >= super::WORLD_HEIGHT as f32 { new_y -= super::WORLD_HEIGHT as f32; }
+    if new_y < 0.0 {
+        new_y += super::WORLD_HEIGHT as f32;
+    } else if new_y >= super::WORLD_HEIGHT as f32 {
+        new_y -= super::WORLD_HEIGHT as f32;
+    }
 
     (new_x, new_y)
 }
-
 
 pub fn wrapped_ranges(center: i32, radius: i32, world_max: i32) -> Vec<core::ops::Range<i32>> {
     let wrapped_center = if center < 0 {
@@ -73,18 +91,13 @@ pub fn wrapped_ranges(center: i32, radius: i32, world_max: i32) -> Vec<core::ops
     let range_bottom = wrapped_center - radius;
     let range_top = wrapped_center + radius;
     if range_bottom < 0 {
-        vec![
-            0..range_top+1,
-            (world_max + range_bottom)..world_max+1
-        ]
+        vec![0..range_top + 1, (world_max + range_bottom)..world_max + 1]
     } else if range_top > world_max {
-        vec![
-            range_bottom..world_max+1,
-            0..(range_top - world_max)+1
-        ]
+        vec![range_bottom..world_max + 1, 0..(range_top - world_max) + 1]
     } else {
-        #[allow(clippy::single_range_in_vec_init)] {
-            vec![range_bottom..range_top+1]
+        #[allow(clippy::single_range_in_vec_init)]
+        {
+            vec![range_bottom..range_top + 1]
         }
     }
 }

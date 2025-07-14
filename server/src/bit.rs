@@ -1,5 +1,5 @@
-use spacetimedb::{table, Identity, ReducerContext, Table};
 use spacetimedb::rand::Rng;
+use spacetimedb::{table, Identity, ReducerContext, Table};
 
 use super::helpers;
 
@@ -27,7 +27,9 @@ pub fn spawn_bits(ctx: &ReducerContext) {
     if current_num_bits < super::MAX_BITS {
         let bits_to_spawn = super::MAX_BITS - current_num_bits;
         for _ in 0..bits_to_spawn {
-            let worth = ctx.rng().gen_range(super::MIN_BIT_WORTH..=super::MAX_BIT_WORTH);
+            let worth = ctx
+                .rng()
+                .gen_range(super::MIN_BIT_WORTH..=super::MAX_BIT_WORTH);
             let size = worth;
             let x = ctx.rng().gen_range(0..=super::WORLD_WIDTH) as f32;
             let y = ctx.rng().gen_range(0..=super::WORLD_HEIGHT) as f32;
@@ -72,15 +74,7 @@ pub fn handle_explosion(ctx: &ReducerContext, x: f32, y: f32, worth: f32, color:
 
 pub fn update_bits(ctx: &ReducerContext) {
     for bit in ctx.db.bit().moving().filter(true) {
-        let upd = helpers::move_character(
-            bit.x,
-            bit.y,
-            bit.dx,
-            bit.dy,
-            0.0,
-            0.0,
-            0.0,
-        );
+        let upd = helpers::move_character(bit.x, bit.y, bit.dx, bit.dy, 0.0, 0.0, 0.0);
         let moving = bit.dx != 0.0 || bit.dy != 0.0;
         ctx.db.bit().bit_id().update(Bit {
             col_index: upd.x.round() as i32,
@@ -89,7 +83,7 @@ pub fn update_bits(ctx: &ReducerContext) {
             dx: upd.dx,
             dy: upd.dy,
             moving,
-            owned_by: if moving {bit.owned_by} else {None},
+            owned_by: if moving { bit.owned_by } else { None },
             ..bit
         });
     }

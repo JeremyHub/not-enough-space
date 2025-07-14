@@ -1,14 +1,14 @@
 use spacetimedb::{reducer, table, ReducerContext, ScheduleAt, Table, TimeDuration};
 
-use super::user;
-use super::moon;
+use super::ai;
 use super::bit;
+use super::leaderboard;
+use super::moon;
+use super::moon_moon;
+use super::user;
+use super::user_bit;
 use super::user_moon;
 use super::user_user;
-use super::moon_moon;
-use super::user_bit;
-use super::ai;
-use super::leaderboard;
 
 #[table(name = tick_schedule, scheduled(tick))]
 pub struct TickSchedule {
@@ -59,7 +59,7 @@ pub fn tick(ctx: &ReducerContext, tick_schedule: TickSchedule) -> Result<(), Str
     user_moon::check_moon_user_collisions(ctx);
 
     moon_moon::check_moon_moon_collisions(ctx);
-    
+
     user_bit::check_user_bit_collisions(ctx);
 
     user_user::check_user_user_collisions(ctx);
@@ -67,14 +67,24 @@ pub fn tick(ctx: &ReducerContext, tick_schedule: TickSchedule) -> Result<(), Str
     let last_tick = ctx.db.tick_meta().id().find(0);
     let mut next_tick_schedule = super::TICK_TIME;
     if let Some(meta) = last_tick {
-        let elapsed = ctx.timestamp.time_duration_since(meta.last_tick).unwrap().to_micros();
-        next_tick_schedule = super::TICK_TIME-elapsed;
-        ctx.db.tick_meta().id().update(TickMeta { id: 0, last_tick: ctx.timestamp });
-        if elapsed > super::TICK_TIME*2 {
+        let elapsed = ctx
+            .timestamp
+            .time_duration_since(meta.last_tick)
+            .unwrap()
+            .to_micros();
+        next_tick_schedule = super::TICK_TIME - elapsed;
+        ctx.db.tick_meta().id().update(TickMeta {
+            id: 0,
+            last_tick: ctx.timestamp,
+        });
+        if elapsed > super::TICK_TIME * 2 {
             log::info!("Tick {} at {}ms after last tick", tick_schedule.id, elapsed);
         }
     } else {
-        ctx.db.tick_meta().insert(TickMeta { id: 0, last_tick: ctx.timestamp });
+        ctx.db.tick_meta().insert(TickMeta {
+            id: 0,
+            last_tick: ctx.timestamp,
+        });
         log::info!("First tick!");
     }
 

@@ -1,15 +1,15 @@
+pub mod ai;
 pub mod bit;
-pub mod user;
-pub mod moon;
 pub mod game_loop;
 pub mod helpers;
+pub mod leaderboard;
+pub mod moon;
 pub mod moon_moon;
 pub mod pub_reducers;
+pub mod user;
 pub mod user_bit;
 pub mod user_moon;
-pub mod ai;
 pub mod user_user;
-pub mod leaderboard;
 
 // world
 pub const WORLD_WIDTH: i32 = 10000;
@@ -33,11 +33,15 @@ pub const MIN_USERNAME_LENGTH: usize = 2;
 pub const MOON_COLOR_DIFF: i32 = 50;
 pub const MOON_COLOR_ANIMATION_SPEED: i32 = 1;
 pub const USER_SECOND_COLOR_ABS_DIFF: i32 = 50;
-pub const STARTING_MOON_COLOR: helpers::Color = helpers::Color { r: 255, g: 255, b: 255 };
+pub const STARTING_MOON_COLOR: helpers::Color = helpers::Color {
+    r: 255,
+    g: 255,
+    b: 255,
+};
 
 // bits
 pub const MAX_AREA_PER_BIT: u64 = 10000;
-pub const MAX_BITS: u64 = (WORLD_HEIGHT as u64 *WORLD_WIDTH as u64)/MAX_AREA_PER_BIT;
+pub const MAX_BITS: u64 = (WORLD_HEIGHT as u64 * WORLD_WIDTH as u64) / MAX_AREA_PER_BIT;
 pub const MIN_BIT_WORTH: f32 = 0.5;
 pub const MAX_BIT_WORTH: f32 = 2.5;
 pub const MAX_BIT_SIZE: f32 = MAX_BIT_WORTH;
@@ -76,7 +80,7 @@ pub const MIN_POSSIBLE_MOON_SIZE: f32 = MIN_FREE_MOON_SIZE.min(MIN_HEALTH_SACRIF
 pub const PORTION_AI_USERS_DIRECTION_UPDATED_PER_TICK: f32 = 0.01 * GLOBAL_VELOCITY_MULTIPLIER;
 pub const CHANCE_UPDATED_AI_SPAWNS_MOON: f32 = 0.1;
 pub const NUM_AIS: usize = 50;
-pub const AI_ACCELERATION: f32 = USER_ACCELERATION/2.0;
+pub const AI_ACCELERATION: f32 = USER_ACCELERATION / 2.0;
 pub const AI_DRIFT: f32 = 0.1;
 
 // leaderboard
