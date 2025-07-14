@@ -45,7 +45,7 @@ pub fn spawn_moons(ctx: &ReducerContext) {
     for _ in 0..num_moons {
         let x = ctx.rng().gen_range(0..=super::WORLD_WIDTH) as f32;
         let y = ctx.rng().gen_range(0..=super::WORLD_HEIGHT) as f32;
-        let size = ctx.rng().gen_range(super::MIN_MOON_SIZE..=super::MAX_FREE_MOON_SIZE);
+        let size = ctx.rng().gen_range(super::MIN_FREE_MOON_SIZE..=super::MAX_FREE_MOON_SIZE);
         ctx.db.moon().insert(Moon {
             moon_id: 0,
             col_index: x.round() as i32,

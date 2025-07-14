@@ -43,6 +43,7 @@ export function useInputHandler(conn: DbConnection | undefined) {
 			}
 			pressed.add(key.toLowerCase());
 			updateDirection();
+			if (key == " ") e.preventDefault();
 		};
 
 		const handleKeyUp = (e: KeyboardEvent) => {
