@@ -28,7 +28,7 @@ export function getDefaultSettings(): z.infer<typeof SettingsSchema> {
 		auto_reconnect_on_death: true,
 		lerp_strength: 0.15,
 		show_world_boundaries: false,
-		upscaling_quality: 2,
+		upscaling_quality: 2.5,
 	};
 }
 
@@ -192,7 +192,7 @@ export function Settings({
 																		className="mt-2 text-muted-foreground hover:bg-zinc-800 border-muted-foreground bg-transparent"
 																		onClick={(e) => {
 																			e.preventDefault();
-																			field.onChange(2);
+																			field.onChange(2.5);
 																		}}
 																	>
 																		Reset to Default

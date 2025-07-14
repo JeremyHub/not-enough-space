@@ -131,8 +131,6 @@ export function Canvas() {
 			1;
 	}
 
-	console.log(upscaling_quality);
-
 	// --- UPDATE TARGET POSITIONS WHEN OBJECTS CHANGE ---
 	useEffect(() => {
 		setLerpedPositions((prev) => {
