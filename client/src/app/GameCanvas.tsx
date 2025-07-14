@@ -107,7 +107,7 @@ export function Canvas() {
 
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
-	const dpr = window.devicePixelRatio || 1;
+	const upscaling_quality = settings.upscaling_quality;
 
 	// --- UPDATE TARGET POSITIONS WHEN OBJECTS CHANGE ---
 	useEffect(() => {
@@ -313,7 +313,7 @@ export function Canvas() {
 		if (!context) return;
 
 		const render = () => {
-			context.setTransform(dpr, 0, 0, dpr, 0, 0);
+			context.setTransform(upscaling_quality, 0, 0, upscaling_quality, 0, 0);
 			draw(context, drawProps);
 			animationFrameId = window.requestAnimationFrame(render);
 		};
@@ -322,15 +322,15 @@ export function Canvas() {
 		return () => {
 			window.cancelAnimationFrame(animationFrameId);
 		};
-	}, [drawProps, dpr, animatedHeight, animatedWidth]);
+	}, [drawProps, upscaling_quality, animatedHeight, animatedWidth]);
 
 	return (
 		<Card className="border-4 border-zinc-800 bg-zinc-900 shadow-lg flex items-center justify-center w-full h-full max-h-[100vh] min-w-[100vh] min-h-[100vh] p-0">
 			<CardContent className="flex items-center justify-center p-0 min-w-[100vh] min-h-[100vh] max-w-[100vh]">
 				<canvas
 					ref={canvasRef}
-					width={(animatedWidth || viewportWorldWidth) * dpr}
-					height={(animatedHeight || viewportWorldHeight) * dpr}
+					width={(animatedWidth || viewportWorldWidth) * upscaling_quality}
+					height={(animatedHeight || viewportWorldHeight) * upscaling_quality}
 					className="min-w-[100vh] min-h-[100vh] block"
 				/>
 			</CardContent>
