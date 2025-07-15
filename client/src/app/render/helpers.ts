@@ -369,7 +369,7 @@ function drawPatchwork(
 
 export function drawUser(
 	ctx: CanvasRenderingContext2D,
-	user: { size: number; color: Color; seed: bigint; username?: string },
+	user: { size: number; color: Color; seed: bigint; username?: string, invincibilityTicksLeft: number },
 	px: number,
 	py: number,
 ) {
@@ -389,6 +389,15 @@ export function drawUser(
 		user.size / 10,
 		Number(user.seed),
 	);
+
+	if (user.invincibilityTicksLeft) {
+		// Draw invincibility effect start animation while invincibilityTicksLeft > 0 that flashes the user white
+		ctx.save();
+		let invincibilitySpeed = 80
+		ctx.globalAlpha = 0.5 + 0.5 * Math.sin(Date.now() / invincibilitySpeed);
+		renderCircle(ctx, user.size, px, py, { r: 255, g: 255, b: 255 });
+		ctx.restore();
+	}
 
 	// Draw username
 	if (user.username) {

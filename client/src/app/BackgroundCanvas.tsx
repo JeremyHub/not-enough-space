@@ -61,6 +61,7 @@ export function BackgroundCanvas({
 					},
 					seed: connectionForm.seed,
 					username: "",
+					invincibilityTicksLeft: 0,
 				},
 				0,
 				0,
