@@ -29,6 +29,7 @@ pub struct User {
     pub kills: u32,
     pub damage: f32,
     pub seed: u64,
+    pub invincibility_ticks_left: u32,
 }
 
 pub fn get_user_size(health: f32) -> f32 {
@@ -79,6 +80,11 @@ pub fn update_users(ctx: &ReducerContext) {
                     user.speed_boost * super::SPEED_BOOST_DECAY
                 } else {
                     0.0
+                },
+                invincibility_ticks_left: if user.invincibility_ticks_left > 0 {
+                    user.invincibility_ticks_left - 1
+                } else {
+                    0
                 },
                 ..user
             });

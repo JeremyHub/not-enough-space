@@ -132,10 +132,12 @@ pub fn check_moon_user_collisions(ctx: &ReducerContext) {
                     if !moon.is_orbiting || moon.orbiting == Some(user.identity) {
                         continue;
                     }
-                    if helpers::toroidal_distance(moon.x, moon.y, user.x, user.y)
-                        <= (moon.size + user.size)
-                    {
-                        handle_user_and_oribiting_moon_collision(ctx, &user, moon);
+                    if user.invincibility_ticks_left == 0 {
+                        if helpers::toroidal_distance(moon.x, moon.y, user.x, user.y)
+                            <= (moon.size + user.size)
+                        {
+                            handle_user_and_oribiting_moon_collision(ctx, &user, moon);
+                        }
                     }
                 }
             }

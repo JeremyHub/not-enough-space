@@ -29,6 +29,7 @@ pub struct TickMeta {
 struct StaticMetadata {
     world_height: i32,
     world_width: i32,
+    ticks_per_second: u32,
 }
 
 #[table(name = dynamic_metadata, public)]
@@ -102,6 +103,7 @@ pub fn init(ctx: &ReducerContext) -> Result<(), String> {
     ctx.db.static_metadata().insert(StaticMetadata {
         world_height: super::WORLD_HEIGHT,
         world_width: super::WORLD_WIDTH,
+        ticks_per_second: super::TICKS_PER_SECOND,
     });
     ctx.db.dynamic_metadata().insert(DynamicMetadata {
         id: 0,

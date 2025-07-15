@@ -35,6 +35,7 @@ import {
 export type StaticMetadata = {
   worldHeight: number,
   worldWidth: number,
+  ticksPerSecond: number,
 };
 
 /**
@@ -49,6 +50,7 @@ export namespace StaticMetadata {
     return AlgebraicType.createProductType([
       new ProductTypeElement("worldHeight", AlgebraicType.createI32Type()),
       new ProductTypeElement("worldWidth", AlgebraicType.createI32Type()),
+      new ProductTypeElement("ticksPerSecond", AlgebraicType.createU32Type()),
     ]);
   }
 

@@ -156,6 +156,7 @@ pub fn client_connected(ctx: &ReducerContext) {
             kills: 0,
             damage: 0.0,
             seed: rng.gen(),
+            invincibility_ticks_left: super::USER_STARTING_INVINCIBILITY_TICKS,
         });
     }
 }

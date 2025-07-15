@@ -14,9 +14,10 @@ pub mod user_user;
 // world
 pub const WORLD_WIDTH: i32 = 10000;
 pub const WORLD_HEIGHT: i32 = 10000;
-pub const TICK_TIME: i64 = 80000;
+pub const TICK_TIME: i64 = 80000; // microseconds between tick
 pub const GLOBAL_VELOCITY_MULTIPLIER: f32 = (TICK_TIME as f32 / 20000.0) * 1.0;
 pub const FRICTION: f32 = 0.85;
+pub const TICKS_PER_SECOND: u32 = 1_000_000 / TICK_TIME as u32;
 
 // debug
 pub const UPDATE_OFFLINE_PLAYERS: bool = true;
@@ -28,6 +29,9 @@ pub const USER_STARTING_HEALTH: f32 = 10.0;
 pub const SPEED_BOOST_DECAY: f32 = 0.95;
 pub const MAX_USER_SIZE: f32 = 200.0;
 pub const MIN_USERNAME_LENGTH: usize = 2;
+const USER_STARTING_INVINCIBILITY_SECONDS: u32 = 1;
+pub const USER_STARTING_INVINCIBILITY_TICKS: u32 =
+    TICKS_PER_SECOND * USER_STARTING_INVINCIBILITY_SECONDS;
 
 // moon spawning
 pub const MOON_COLOR_DIFF: i32 = 50;

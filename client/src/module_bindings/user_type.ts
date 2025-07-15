@@ -54,6 +54,7 @@ export type User = {
   kills: number,
   damage: number,
   seed: bigint,
+  invincibilityTicksLeft: number,
 };
 
 /**
@@ -85,6 +86,7 @@ export namespace User {
       new ProductTypeElement("kills", AlgebraicType.createU32Type()),
       new ProductTypeElement("damage", AlgebraicType.createF32Type()),
       new ProductTypeElement("seed", AlgebraicType.createU64Type()),
+      new ProductTypeElement("invincibilityTicksLeft", AlgebraicType.createU32Type()),
     ]);
   }
 

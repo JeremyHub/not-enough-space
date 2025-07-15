@@ -66,6 +66,7 @@ pub fn spawn_ai(ctx: &ReducerContext) {
                 kills: 0,
                 damage: 0.0,
                 seed: ctx.rng().gen(),
+                invincibility_ticks_left: super::USER_STARTING_INVINCIBILITY_TICKS,
             });
         }
         ctx.db
