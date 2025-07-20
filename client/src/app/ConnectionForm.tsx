@@ -82,7 +82,7 @@ export function ConnectionForm({
 		defaultValues: {
 			username: "test",
 			color: getRandomColor(),
-			uri: "ws://localhost:3000",
+			uri: "https://maincloud.spacetimedb.com",
 			seed: BigInt(Number(randBetween(0, 18446744073709551615n))),
 		},
 	});
@@ -193,7 +193,7 @@ export function ConnectionForm({
 						<FormItem>
 							<FormLabel>SpacetimeDB URI</FormLabel>
 							<FormControl>
-								<Input placeholder="ws://localhost:3000" {...field} />
+								<Input placeholder="https://maincloud.spacetimedb.com" {...field} />
 							</FormControl>
 							<FormDescription>
 								The WebSocket URI for your SpacetimeDB instance.
