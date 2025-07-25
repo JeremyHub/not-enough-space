@@ -38,17 +38,18 @@ function getRandomColor() {
 }
 
 export const ConnectionFormSchema = z.object({
-	username: z
-		.string()
-		.min(2, {
-			message: "Username must be at least 2 characters.",
-		})
-		.max(32, {
-			message: "Username must be at most 32 characters.",
-		})
-		.regex(/^[a-zA-Z0-9_]+$/, {
-			message: "Username can only contain letters, numbers, and underscores.",
-		}),
+   username: z
+	   .string()
+	   .min(2, {
+		   message: "Username must be at least 2 characters.",
+	   })
+	   .max(32, {
+		   message: "Username must be at most 32 characters.",
+	   })
+	   .regex(/^[a-zA-Z0-9_]+$/, {
+		   message: "Username can only contain letters, numbers, and underscores.",
+	   })
+	   .nullable(),
 	color: z
 		.string()
 		.regex(/^#([0-9A-Fa-f]{3}){1,2}$/, {
@@ -71,18 +72,24 @@ export const ConnectionFormSchema = z.object({
 });
 
 export function ConnectionForm({
-	onSubmit,
-	setConnectionForm,
+   onSubmit,
+   setConnectionForm,
 }: {
-	onSubmit: (data: z.infer<typeof ConnectionFormSchema>) => void;
-	setConnectionForm: (data: z.infer<typeof ConnectionFormSchema>) => void;
+   onSubmit: (data: Omit<z.infer<typeof ConnectionFormSchema>, 'username'> & { username: string | null }) => void;
+   setConnectionForm: (data: Omit<z.infer<typeof ConnectionFormSchema>, 'username'> & { username: string | null }) => void;
 }) {
-	const form = useForm<z.infer<typeof ConnectionFormSchema>>({
+   const form = useForm<Omit<z.infer<typeof ConnectionFormSchema>, 'username'> & { username: string | null }>({
 		resolver: zodResolver(ConnectionFormSchema),
 		defaultValues: {
-			username: "test",
+			username:
+				typeof import.meta !== "undefined" && import.meta.env && import.meta.env.MODE === "development"
+					? "test"
+					: null,
 			color: getRandomColor(),
-			uri: "https://maincloud.spacetimedb.com",
+			uri:
+				typeof import.meta !== "undefined" && import.meta.env && import.meta.env.MODE === "development"
+					? "ws://localhost:3000"
+					: "https://maincloud.spacetimedb.com",
 			seed: BigInt(Number(randBetween(0, 18446744073709551615n))),
 		},
 	});
@@ -103,7 +110,7 @@ export function ConnectionForm({
 		<Form {...form}>
 			<form
 				onSubmit={form.handleSubmit(onSubmit)}
-				className="w-2/3 space-y-6 z-1"
+				className="w-1/2 space-y-6 z-1"
 			>
 				<FormField
 					control={form.control}
@@ -112,7 +119,7 @@ export function ConnectionForm({
 						<FormItem>
 							<FormLabel>Username</FormLabel>
 							<FormControl>
-								<Input placeholder="shadcn" {...field} />
+							   <Input placeholder="my-username" {...field} value={field.value ?? ""} />
 							</FormControl>
 							<FormDescription>Your public display name.</FormDescription>
 							<FormMessage />
@@ -193,16 +200,16 @@ export function ConnectionForm({
 						<FormItem>
 							<FormLabel>SpacetimeDB URI</FormLabel>
 							<FormControl>
-								<Input placeholder="https://maincloud.spacetimedb.com" {...field} />
+								<Input {...field} />
 							</FormControl>
 							<FormDescription>
-								The WebSocket URI for your SpacetimeDB instance.
+								The WebSocket URI for the SpacetimeDB instance. Leave as default unless you are trying to connect ot a custom server.
 							</FormDescription>
 							<FormMessage />
 						</FormItem>
 					)}
 				/>
-				<Button type="submit" variant="outline" className="text-black">
+				<Button type="submit" variant="outline" className="text-black w-full">
 					Connect
 				</Button>
 			</form>

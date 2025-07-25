@@ -54,7 +54,7 @@ const ColorPicker = forwardRef<
 						<div />
 					</Button>
 				</PopoverTrigger>
-				<PopoverContent className="w-full">
+				<PopoverContent className="w-full bg-rgba(0, 0, 0, 0) backdrop-blur-md">
 					<HexColorPicker color={parsedValue} onChange={onChange} />
 					<Input
 						maxLength={7}
@@ -63,6 +63,7 @@ const ColorPicker = forwardRef<
 						}}
 						ref={ref}
 						value={parsedValue}
+						className="mt-2 w-full text-white"
 					/>
 				</PopoverContent>
 			</Popover>
