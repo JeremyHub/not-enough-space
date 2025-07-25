@@ -39,17 +39,18 @@ pub fn spawn_ai(ctx: &ReducerContext) {
     if current_num_ais < super::NUM_AIS {
         let ais_to_spawn = super::NUM_AIS - current_num_ais;
         let metadata = ctx.db.dynamic_metadata().id().find(0).unwrap();
-        for i in 0..ais_to_spawn {
+        for _ in 0..ais_to_spawn {
             let color = helpers::Color {
                 r: ctx.rng().gen_range(0..=255),
                 g: ctx.rng().gen_range(0..=255),
                 b: ctx.rng().gen_range(0..=255),
             };
             let x = ctx.rng().gen_range(0..=super::WORLD_WIDTH) as f32;
+            let name: String = names_generator::get_random(ctx.rng());
             ctx.db.user().insert(user::User {
                 identity: Identity::from_be_byte_array(ctx.rng().gen()),
                 online: true,
-                username: format!("AI_{}", metadata.num_ais + i as u32),
+                username: name,
                 x,
                 col_index: x.round() as i32,
                 y: ctx.rng().gen_range(0..=super::WORLD_HEIGHT) as f32,

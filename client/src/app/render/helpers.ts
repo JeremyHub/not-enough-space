@@ -34,14 +34,13 @@ function renderTextInCircle(
 	radius: number,
 	color = "#fff",
 ) {
-	const dpr = window.devicePixelRatio || 1;
-	const bestFontSize = Math.floor(radius * 0.8 * dpr) / text.length;
+	const bestFontSize = Math.floor(radius * 4) / text.length;
 	ctx.font = `bold ${bestFontSize}px sans-serif`;
 	ctx.fillStyle = color;
 	ctx.textAlign = "center";
 	ctx.textBaseline = "middle";
 	ctx.shadowColor = "rgba(0,0,0,0.7)";
-	ctx.shadowBlur = 4 * dpr;
+	ctx.shadowBlur = 4;
 	ctx.fillText(text, x, y);
 }
 
@@ -408,13 +407,7 @@ export function drawUser(
 	// Draw username
 	if (user.username) {
 		ctx.save();
-		renderTextInCircle(
-			ctx,
-			user.username,
-			px,
-			py,
-			user.size * (window.devicePixelRatio || 1),
-		);
+		renderTextInCircle(ctx, user.username, px, py, user.size);
 		ctx.restore();
 	}
 }

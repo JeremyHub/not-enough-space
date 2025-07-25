@@ -336,7 +336,7 @@ export function DBContextProvider({
 			);
 
 			conn.reducers.setUserMeta(
-				connectionForm.username,
+				connectionForm.username || "Anonymous",
 				{
 					r: parseInt(connectionForm.color.slice(1, 3), 16),
 					g: parseInt(connectionForm.color.slice(3, 5), 16),
