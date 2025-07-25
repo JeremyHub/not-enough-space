@@ -369,7 +369,13 @@ function drawPatchwork(
 
 export function drawUser(
 	ctx: CanvasRenderingContext2D,
-	user: { size: number; color: Color; seed: bigint; username?: string, invincibilityTicksLeft: number },
+	user: {
+		size: number;
+		color: Color;
+		seed: bigint;
+		username?: string;
+		invincibilityTicksLeft: number;
+	},
 	px: number,
 	py: number,
 ) {
@@ -393,7 +399,7 @@ export function drawUser(
 	if (user.invincibilityTicksLeft) {
 		// Draw invincibility effect start animation while invincibilityTicksLeft > 0 that flashes the user white
 		ctx.save();
-		let invincibilitySpeed = 80
+		const invincibilitySpeed = 120;
 		ctx.globalAlpha = 0.5 + 0.5 * Math.sin(Date.now() / invincibilitySpeed);
 		renderCircle(ctx, user.size, px, py, { r: 255, g: 255, b: 255 });
 		ctx.restore();
@@ -427,23 +433,29 @@ function drawUsers(
 	cameraX: number,
 	cameraY: number,
 ) {
-	users.forEach((user, key) => {
-		if (user.identity.data !== identity.data) {
-			const pos = lerpedPositions?.users.get(key) || user;
-			const { x, y } = toScreen(pos);
-			renderWithWrap(
-				(px, py) => {
-					drawUser(ctx, user, px, py);
-				},
-				staticMetadata,
-				canvasWidth,
-				canvasHeight,
-				renderBuffer,
-				{ ...self, x: cameraX, y: cameraY },
-				x,
-				y,
-			);
-		}
+	// Sort users by identity before drawing
+	const sortedUsers = Array.from(users.entries())
+		.filter((entry) => entry[1].identity.data !== identity.data)
+		.sort((a, b) => {
+			const idA = a[1].identity.toHexString();
+			const idB = b[1].identity.toHexString();
+			return idA.localeCompare(idB);
+		});
+	sortedUsers.forEach(([key, user]) => {
+		const pos = lerpedPositions?.users.get(key) || user;
+		const { x, y } = toScreen(pos);
+		renderWithWrap(
+			(px, py) => {
+				drawUser(ctx, user, px, py);
+			},
+			staticMetadata,
+			canvasWidth,
+			canvasHeight,
+			renderBuffer,
+			{ ...self, x: cameraX, y: cameraY },
+			x,
+			y,
+		);
 	});
 }
 

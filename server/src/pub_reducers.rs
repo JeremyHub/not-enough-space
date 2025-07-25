@@ -20,22 +20,22 @@ pub fn sacrifice_health_for_moon_reducer(ctx: &ReducerContext) -> Result<(), Str
 }
 
 pub fn sacrifice_health_for_moon(ctx: &ReducerContext, user: user::User) -> Result<(), String> {
-    if user.health < super::MAX_HEALTH_SACRIFICE {
+    if user.health < super::MAX_MOON_SACRIFICE_SIZE * super::USER_HEALTH_PER_MOON_SIZE {
         return Err("You don't have enough health to sacrifice for a moon.".to_string());
     }
 
-    if !user_moon::can_get_moon_into_orbit(&user, super::MAX_HEALTH_SACRIFICE) {
+    if !user_moon::can_get_moon_into_orbit(&user, super::MAX_MOON_SACRIFICE_SIZE) {
         return Err("You already have too many moons.".to_string());
     }
 
     let moon_size = ctx
         .rng()
-        .gen_range(super::MIN_HEALTH_SACRIFICE..=super::MAX_HEALTH_SACRIFICE);
+        .gen_range(super::MIN_MOON_SACRIFICE_SIZE..=super::MAX_MOON_SACRIFICE_SIZE);
 
     let (moon_color, orbital_velocity) = moon::new_moon_params(ctx, &user.color);
 
     // Subtract health and update user, and add to total_moon_size_orbiting
-    let new_health = user.health - moon_size;
+    let new_health = user.health - (moon_size * super::USER_HEALTH_PER_MOON_SIZE);
     let new_size = user::get_user_size(new_health);
     let new_total_moon_size_orbiting = user.total_moon_size_orbiting + moon_size;
     ctx.db.user().identity().update(user::User {

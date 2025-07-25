@@ -131,7 +131,8 @@ fn update_oribiting_moons(ctx: &ReducerContext) {
             if let Some(user) = user {
                 // Determine if user is moving
                 let user_speed = (user.dx.powi(2) + user.dy.powi(2)).sqrt();
-                let moving = user_speed > super::USER_SPEED_ORBIT_THRESHOLD;
+                let moving = (user_speed > super::USER_SPEED_ORBIT_THRESHOLD)
+                    || (user.dir_vec_x != 0.0 || user.dir_vec_y != 0.0);
                 let orbit_state: OrbitState;
                 let mut orbit_radius: f32 = user.size + moon.size;
                 let orbit_angular_vel: f32;
