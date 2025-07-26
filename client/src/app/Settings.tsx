@@ -28,7 +28,6 @@ export function getDefaultSettings(): z.infer<typeof SettingsSchema> {
 		auto_reconnect_on_death: true,
 		lerp_strength: 0.15,
 		show_world_boundaries: false,
-		upscaling_quality: 2.5,
 	};
 }
 
@@ -36,7 +35,6 @@ export const SettingsSchema = z.object({
 	auto_reconnect_on_death: z.boolean(),
 	lerp_strength: z.number().min(0).max(1),
 	show_world_boundaries: z.boolean(),
-	upscaling_quality: z.number(),
 });
 
 export function Settings({
@@ -156,48 +154,6 @@ export function Settings({
 																	checked={field.value}
 																	onCheckedChange={field.onChange}
 																/>
-															</FormControl>
-														</FormItem>
-													)}
-												/>
-												<FormField
-													control={form.control}
-													name="upscaling_quality"
-													render={({ field }) => (
-														<FormItem className="bg-zinc-900 flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-															<div className="space-y-1">
-																<FormLabel className="text-primary-foreground">
-																	Dynamic Upscaling Quality
-																</FormLabel>
-																<FormDescription>
-																	High values result in more detail but might
-																	have negative performance effects.
-																</FormDescription>
-															</div>
-															<FormControl>
-																<div className="flex flex-col items-end space-y-3">
-																	<Slider
-																		defaultValue={[field.value]}
-																		min={1}
-																		max={3}
-																		step={0.1}
-																		value={[field.value]}
-																		onValueChange={(value) => {
-																			field.onChange(value[0]);
-																		}}
-																		className={"w-full mt-1"}
-																	/>
-																	<Button
-																		variant="outline"
-																		className="mt-2 text-muted-foreground hover:bg-zinc-800 border-muted-foreground bg-transparent"
-																		onClick={(e) => {
-																			e.preventDefault();
-																			field.onChange(2.5);
-																		}}
-																	>
-																		Reset to Default
-																	</Button>
-																</div>
 															</FormControl>
 														</FormItem>
 													)}

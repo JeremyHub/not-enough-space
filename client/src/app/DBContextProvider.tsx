@@ -237,14 +237,16 @@ export function DBContextProvider({
 	connectionForm,
 	settings,
 	setCanvasOpen,
+	canvasAspectRatio,
 	children,
 }: {
 	connected: boolean;
 	setConnected: (connected: boolean) => void;
 	connectionForm: z.infer<typeof ConnectionFormSchema>;
 	settings: z.infer<typeof SettingsSchema>;
-	children: React.ReactNode;
 	setCanvasOpen: (open: boolean) => void;
+	canvasAspectRatio: number;
+	children: React.ReactNode;
 }) {
 	const [identity, setIdentity] = useState<Identity | null>(null);
 	const [conn, setConn] = useState<DbConnection | null>(null);
@@ -296,21 +298,21 @@ export function DBContextProvider({
 	const viewportWorldWidth = self?.size
 		? Math.round(
 				Math.min(
-					Math.max((self.size * 100) / 5) + MIN_VIEWPORT_WIDTH,
+					Math.max(self.size * 20) + MIN_VIEWPORT_WIDTH,
 					MAX_VIEWPORT_WIDTH,
-				),
+				) * (canvasAspectRatio > 1 ? canvasAspectRatio : 1),
 			)
 		: null;
 	const viewportWorldHeight = self?.size
 		? Math.round(
 				Math.min(
-					Math.max((self.size * 100) / 5) + MIN_VIEWPORT_HEIGHT,
+					Math.max(self.size * 20) + MIN_VIEWPORT_HEIGHT,
 					MAX_VIEWPORT_HEIGHT,
-				),
+				) * (canvasAspectRatio < 1 ? 1 / canvasAspectRatio : 1),
 			)
 		: null;
 	const renderBuffer = 200;
-	const extraUserRenderBuffer = 150;
+	const extraUserRenderBuffer = 250;
 
 	const subscribeToQueries = useCallback(
 		(conn: DbConnection, queries: string[]) => {

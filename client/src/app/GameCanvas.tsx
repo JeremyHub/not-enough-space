@@ -9,13 +9,12 @@ import {
 	LerpedPositions,
 	MoonTrails,
 } from "./render/helpers";
-import {
-	MAX_VIEWPORT_WIDTH,
-	MIN_VIEWPORT_HEIGHT,
-	MIN_VIEWPORT_WIDTH,
-} from "./DBContextProvider";
 
-export function Canvas() {
+export function Canvas({
+	setCanvasAspectRatio,
+}: {
+	setCanvasAspectRatio: (ratio: number) => void;
+}) {
 	const context = useContext(Context);
 	if (!context) {
 		throw new Error("DBContext is not available");
@@ -78,26 +77,27 @@ export function Canvas() {
 			});
 			return newTrails;
 		});
-		// Depend on lerpedPositions, moons, users
 	}, [moons, users, lerpedPositions]);
 
-	const [animatedWidth, setAnimatedWidth] = useState<number | null>(null);
-	const [animatedHeight, setAnimatedHeight] = useState<number | null>(null);
-
 	// --- ANIMATE CANVAS SIZE when user grows / shrinks in size---
+	const [animatedViewportWidth, setAnimatedViewportWidth] = useState<
+		number | null
+	>(null);
+	const [animatedViewportHeight, setAnimatedViewportHeight] = useState<
+		number | null
+	>(null);
 	useEffect(() => {
 		let raf: number;
 		const growSpeed = 0.5;
-
 		function animate() {
-			setAnimatedWidth((prev) => {
+			setAnimatedViewportWidth((prev) => {
 				const target = viewportWorldWidth;
 				if (prev === null) return target;
 				if (prev < target) return Math.min(prev + growSpeed, target);
 				if (prev > target) return Math.max(prev - growSpeed, target);
 				return prev;
 			});
-			setAnimatedHeight((prev) => {
+			setAnimatedViewportHeight((prev) => {
 				const target = viewportWorldHeight;
 				if (prev === null) return target;
 				if (prev < target) return Math.min(prev + growSpeed, target);
@@ -108,28 +108,46 @@ export function Canvas() {
 		}
 		raf = requestAnimationFrame(animate);
 		return () => cancelAnimationFrame(raf);
-	}, [viewportWorldHeight, viewportWorldWidth]);
+	}, [viewportWorldWidth, viewportWorldHeight]);
 
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
-	let upscaling_quality;
+	// --- Responsive canvas size ---
+	const [canvasSize, setCanvasSize] = useState<{
+		width: number;
+		height: number;
+	}>({ width: 100, height: 100 });
+	const containerRef = useRef<HTMLDivElement | null>(null);
+	useEffect(() => {
+		const observer = new ResizeObserver(() => {
+			if (containerRef.current) {
+				console.log(
+					"Updating canvas size to",
+					containerRef.current.clientWidth,
+					containerRef.current.clientHeight,
+				);
+				setCanvasSize({
+					width: containerRef.current.clientWidth,
+					height: containerRef.current.clientHeight,
+				});
+				setCanvasAspectRatio(
+					containerRef.current.clientWidth / containerRef.current.clientHeight,
+				);
+			}
+		});
+		if (containerRef.current) observer.observe(containerRef.current);
+		return () => observer.disconnect();
+	}, [setCanvasAspectRatio]);
 
-	// when zoomed in (ratio of (viewport-minviewport)/(maxviewport-minviewport) is small) then it should be the value of settings, otherwise gets closer to 1 as the ratio gets larger
-	if (viewportWorldWidth > viewportWorldHeight) {
-		upscaling_quality =
-			(1 -
-				(viewportWorldWidth - MIN_VIEWPORT_WIDTH) /
-					(MAX_VIEWPORT_WIDTH - MIN_VIEWPORT_WIDTH)) *
-				settings.upscaling_quality +
-			1;
-	} else {
-		upscaling_quality =
-			(1 -
-				(viewportWorldHeight - MIN_VIEWPORT_HEIGHT) /
-					(MAX_VIEWPORT_WIDTH - MIN_VIEWPORT_HEIGHT)) *
-				settings.upscaling_quality +
-			1;
-	}
+	// --- Compute scale and offset to fit virtual viewport into canvas ---
+	const virtualWidth = animatedViewportWidth ?? viewportWorldWidth;
+	const virtualHeight = animatedViewportHeight ?? viewportWorldHeight;
+	const scale = Math.min(
+		canvasSize.width / virtualWidth,
+		canvasSize.height / virtualHeight,
+	);
+	const offsetX = (canvasSize.width - virtualWidth * scale) / 2;
+	const offsetY = (canvasSize.height - virtualHeight * scale) / 2;
 
 	// --- UPDATE TARGET POSITIONS WHEN OBJECTS CHANGE ---
 	useEffect(() => {
@@ -197,7 +215,6 @@ export function Canvas() {
 	useEffect(() => {
 		let raf: number;
 		const lerpSpeed = settings.lerp_strength; // 0..1, higher is snappier
-
 		function animateLerp() {
 			setLerpedPositions((prev) => {
 				const next: LerpedPositions = {
@@ -292,11 +309,12 @@ export function Canvas() {
 		settings.lerp_strength,
 	]);
 
+	// --- Draw Props ---
 	const drawProps = useMemo(
 		() => ({
 			staticMetadata,
-			canvasWidth: animatedWidth ?? viewportWorldWidth,
-			canvasHeight: animatedHeight ?? viewportWorldHeight,
+			canvasWidth: virtualWidth,
+			canvasHeight: virtualHeight,
 			renderBuffer,
 			users,
 			self,
@@ -310,10 +328,8 @@ export function Canvas() {
 		}),
 		[
 			staticMetadata,
-			animatedWidth,
-			viewportWorldWidth,
-			animatedHeight,
-			viewportWorldHeight,
+			virtualWidth,
+			virtualHeight,
 			renderBuffer,
 			users,
 			self,
@@ -335,7 +351,10 @@ export function Canvas() {
 		if (!context) return;
 
 		const render = () => {
-			context.setTransform(upscaling_quality, 0, 0, upscaling_quality, 0, 0);
+			// Reset transform, then apply scale and offset
+			context.setTransform(1, 0, 0, 1, 0, 0);
+			context.clearRect(0, 0, canvas.width, canvas.height);
+			context.setTransform(scale, 0, 0, scale, offsetX, offsetY);
 			draw(context, drawProps);
 			animationFrameId = window.requestAnimationFrame(render);
 		};
@@ -344,16 +363,20 @@ export function Canvas() {
 		return () => {
 			window.cancelAnimationFrame(animationFrameId);
 		};
-	}, [drawProps, upscaling_quality, animatedHeight, animatedWidth]);
+	}, [drawProps, canvasSize.width, canvasSize.height, scale, offsetX, offsetY]);
 
 	return (
-		<Card className="border-4 border-zinc-800 bg-zinc-900 shadow-lg flex items-center justify-center w-full h-full max-h-[100vh] min-w-[100vh] min-h-[100vh] p-0">
-			<CardContent className="flex items-center justify-center p-0 min-w-[100vh] min-h-[100vh] max-w-[100vh]">
+		<Card className="border-4 border-zinc-800 bg-[rgb(23,23,23)] shadow-lg flex items-center justify-center w-full h-full p-0">
+			<CardContent
+				ref={containerRef}
+				className="flex items-center justify-center p-0 w-full h-full overflow-hidden max-w-[100vw] max-h-[100vh]"
+				style={{ width: "100%", height: "100%" }}
+			>
 				<canvas
 					ref={canvasRef}
-					width={(animatedWidth || viewportWorldWidth) * upscaling_quality}
-					height={(animatedHeight || viewportWorldHeight) * upscaling_quality}
-					className="min-w-[100vh] min-h-[100vh] block"
+					width={canvasSize.width}
+					height={canvasSize.height}
+					className="w-full h-full"
 				/>
 			</CardContent>
 		</Card>

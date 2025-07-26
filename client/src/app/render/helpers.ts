@@ -568,9 +568,6 @@ export const draw = (
 	const cameraX = lerpedCamera?.x ?? self.x;
 	const cameraY = lerpedCamera?.y ?? self.y;
 
-	ctx.fillStyle = "rgb(23, 23, 23)";
-	ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-
 	drawGrid(ctx, cameraX, cameraY, canvasWidth, canvasHeight);
 
 	if (settings.show_world_boundaries) {

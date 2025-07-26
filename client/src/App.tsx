@@ -28,6 +28,8 @@ function App() {
 		height: window.innerHeight,
 	});
 
+	const [canvasAspectRatio, setCanvasAspectRatio] = useState<number>(1);
+
 	useEffect(() => {
 		function handleResize() {
 			setWindowSize({ width: window.innerWidth, height: window.innerHeight });
@@ -69,6 +71,7 @@ function App() {
 					connectionForm={connectionForm}
 					settings={settings}
 					setCanvasOpen={setCanvasOpen}
+					canvasAspectRatio={canvasAspectRatio}
 				>
 					{connected && (
 						<ResizablePanelGroup
@@ -96,7 +99,9 @@ function App() {
 							<ResizableHandle className="bg-zinc-900 border-none" />
 							<ResizablePanel minSize={40}>
 								<div className="flex flex-col h-full items-center justify-center">
-									<CanvasWithInputHandler />
+									<CanvasWithInputHandler
+										setCanvasAspectRatio={setCanvasAspectRatio}
+									/>
 								</div>
 							</ResizablePanel>
 						</ResizablePanelGroup>
@@ -107,11 +112,15 @@ function App() {
 	);
 }
 
-function CanvasWithInputHandler() {
+function CanvasWithInputHandler({
+	setCanvasAspectRatio,
+}: {
+	setCanvasAspectRatio: (ratio: number) => void;
+}) {
 	const context = useContext(Context);
 	const conn = context?.conn;
 	useInputHandler(conn);
-	return <Canvas />;
+	return <Canvas setCanvasAspectRatio={setCanvasAspectRatio} />;
 }
 
 export default App;
