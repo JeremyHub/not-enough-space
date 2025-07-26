@@ -48,8 +48,7 @@ export const ConnectionFormSchema = z.object({
 		})
 		.regex(/^[a-zA-Z0-9_]+$/, {
 			message: "Username can only contain letters, numbers, and underscores.",
-		})
-		.nullable(),
+		}),
 	color: z
 		.string()
 		.regex(/^#([0-9A-Fa-f]{3}){1,2}$/, {
@@ -77,18 +76,18 @@ export function ConnectionForm({
 }: {
 	onSubmit: (
 		data: Omit<z.infer<typeof ConnectionFormSchema>, "username"> & {
-			username: string | null;
+			username: string;
 		},
 	) => void;
 	setConnectionForm: (
 		data: Omit<z.infer<typeof ConnectionFormSchema>, "username"> & {
-			username: string | null;
+			username: string;
 		},
 	) => void;
 }) {
 	const form = useForm<
 		Omit<z.infer<typeof ConnectionFormSchema>, "username"> & {
-			username: string | null;
+			username: string;
 		}
 	>({
 		resolver: zodResolver(ConnectionFormSchema),
@@ -98,7 +97,7 @@ export function ConnectionForm({
 				import.meta.env &&
 				import.meta.env.MODE === "development"
 					? "test"
-					: null,
+					: "",
 			color: getRandomColor(),
 			uri:
 				typeof import.meta !== "undefined" &&
