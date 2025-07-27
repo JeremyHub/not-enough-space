@@ -13,8 +13,6 @@ import {
 } from "@/components/ui/form";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent } from "@/components/ui/card";
-import { Slider } from "@/components/ui/slider";
-import { Button } from "@/components/ui/button";
 import {
 	Accordion,
 	AccordionContent,
@@ -26,14 +24,12 @@ import {
 export function getDefaultSettings(): z.infer<typeof SettingsSchema> {
 	return {
 		auto_reconnect_on_death: true,
-		lerp_strength: 0.15,
 		show_world_boundaries: false,
 	};
 }
 
 export const SettingsSchema = z.object({
 	auto_reconnect_on_death: z.boolean(),
-	lerp_strength: z.number().min(0).max(1),
 	show_world_boundaries: z.boolean(),
 });
 
@@ -83,48 +79,6 @@ export function Settings({
 													checked={field.value}
 													onCheckedChange={field.onChange}
 												/>
-											</FormControl>
-										</FormItem>
-									)}
-								/>
-								<FormField
-									control={form.control}
-									name="lerp_strength"
-									render={({ field }) => (
-										<FormItem className="bg-zinc-900 flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-											<div className="space-y-1">
-												<FormLabel className="text-primary-foreground">
-													Lag Compensation Strength
-												</FormLabel>
-												<FormDescription>
-													High values make for smoother movement but may
-													introduce more input lag.
-												</FormDescription>
-											</div>
-											<FormControl>
-												<div className="flex flex-col items-end space-y-3">
-													<Slider
-														defaultValue={[1 - field.value]}
-														min={0}
-														max={0.99}
-														step={0.01}
-														value={[1 - field.value]}
-														onValueChange={(value) => {
-															field.onChange(1 - value[0]);
-														}}
-														className={"w-full mt-1"}
-													/>
-													<Button
-														variant="outline"
-														className="mt-2 text-muted-foreground hover:bg-zinc-800 border-muted-foreground bg-transparent"
-														onClick={(e) => {
-															e.preventDefault();
-															field.onChange(0.2);
-														}}
-													>
-														Reset to Default
-													</Button>
-												</div>
 											</FormControl>
 										</FormItem>
 									)}

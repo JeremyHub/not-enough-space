@@ -214,8 +214,13 @@ export function Canvas({
 	// --- LERP ANIMATION LOOP ---
 	useEffect(() => {
 		let raf: number;
-		const lerpSpeed = settings.lerp_strength; // 0..1, higher is snappier
-		function animateLerp() {
+		let lastTime = performance.now();
+		function animateLerp(now: number) {
+			const dt = (now - lastTime) / 1000; // seconds
+			lastTime = now;
+			const duration = 1 / staticMetadata.ticksPerSecond;
+			// Lerp factor for this frame so that interpolation completes in 'duration' seconds
+			const lerpFactor = 1 - Math.exp(-dt / duration);
 			setLerpedPositions((prev) => {
 				const next: LerpedPositions = {
 					users: new Map(),
@@ -228,13 +233,13 @@ export function Canvas({
 					const newX = lerpWrapped(
 						prevPos.x,
 						user.x,
-						lerpSpeed,
+						lerpFactor,
 						staticMetadata.worldWidth,
 					);
 					const newY = lerpWrapped(
 						prevPos.y,
 						user.y,
-						lerpSpeed,
+						lerpFactor,
 						staticMetadata.worldHeight,
 					);
 					next.users.set(key, { x: newX, y: newY });
@@ -245,13 +250,13 @@ export function Canvas({
 					const newX = lerpWrapped(
 						prevPos.x,
 						bit.x,
-						lerpSpeed,
+						lerpFactor,
 						staticMetadata.worldWidth,
 					);
 					const newY = lerpWrapped(
 						prevPos.y,
 						bit.y,
-						lerpSpeed,
+						lerpFactor,
 						staticMetadata.worldHeight,
 					);
 					next.bits.set(key, { x: newX, y: newY });
@@ -262,13 +267,13 @@ export function Canvas({
 					const newX = lerpWrapped(
 						prevPos.x,
 						moon.x,
-						lerpSpeed,
+						lerpFactor,
 						staticMetadata.worldWidth,
 					);
 					const newY = lerpWrapped(
 						prevPos.y,
 						moon.y,
-						lerpSpeed,
+						lerpFactor,
 						staticMetadata.worldHeight,
 					);
 					next.moons.set(key, { x: newX, y: newY });
@@ -283,19 +288,23 @@ export function Canvas({
 		users,
 		bits,
 		moons,
-		settings.lerp_strength,
+		staticMetadata.ticksPerSecond,
 		staticMetadata.worldWidth,
 		staticMetadata.worldHeight,
 	]);
 
-	// Lerp camera position
+	// Lerp camera position (time-based, determined by ticksPerSecond)
 	useEffect(() => {
 		let raf: number;
-		const lerpSpeed = settings.lerp_strength;
-		function animateCamera() {
+		let lastTime = performance.now();
+		function animateCamera(now: number) {
+			const dt = (now - lastTime) / 1000; // seconds
+			lastTime = now;
+			const duration = 1 / staticMetadata.ticksPerSecond;
+			const lerpFactor = 1 - Math.exp(-dt / duration);
 			setLerpedCamera((prev) => ({
-				x: lerpWrapped(prev.x, self.x, lerpSpeed, staticMetadata.worldWidth),
-				y: lerpWrapped(prev.y, self.y, lerpSpeed, staticMetadata.worldHeight),
+				x: lerpWrapped(prev.x, self.x, lerpFactor, staticMetadata.worldWidth),
+				y: lerpWrapped(prev.y, self.y, lerpFactor, staticMetadata.worldHeight),
 			}));
 			raf = requestAnimationFrame(animateCamera);
 		}
@@ -306,7 +315,7 @@ export function Canvas({
 		self.y,
 		staticMetadata.worldWidth,
 		staticMetadata.worldHeight,
-		settings.lerp_strength,
+		staticMetadata.ticksPerSecond,
 	]);
 
 	// --- Draw Props ---
