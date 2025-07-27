@@ -530,7 +530,7 @@ export function DBContextProvider({
 					Connecting to server...
 				</h2>
 				<p className="text-lg text-muted-foreground mb-4">
-					If this takes more than a couple seconds, the server is probably down.
+					If this takes more than a few seconds, the server is probably down.
 				</p>
 			</>
 		);
