@@ -467,47 +467,50 @@ function drawMoonTrails(
 	moonTrails: MoonTrails | undefined,
 	lerpedPositions: LerpedPositions | undefined,
 	toScreen: (obj: { x: number; y: number }) => { x: number; y: number },
-	staticMetadata: StaticMetadata,
-	canvasWidth: number,
-	canvasHeight: number,
-	renderBuffer: number,
-	self: User,
-	cameraX: number,
-	cameraY: number,
 ) {
 	if (!moonTrails) return;
 	moons.forEach((moon) => {
 		const trail = moonTrails.get(moon.moonId) || [];
-		trail.forEach((trailPoint, idx) => {
-			let posX: number, posY: number;
-			if (trailPoint.parentId) {
-				const parent = lerpedPositions?.users.get(trailPoint.parentId);
-				if (!parent) return;
-				posX = parent.x + trailPoint.x;
-				posY = parent.y + trailPoint.y;
-			} else {
-				posX = trailPoint.x;
-				posY = trailPoint.y;
-			}
-			const { x, y } = toScreen({ x: posX, y: posY });
-			renderWithWrap(
-				(px, py) => {
-					ctx.save();
-					const alpha = (0.2 * (idx + 1)) / trail.length;
-					ctx.globalAlpha = alpha;
-					renderCircle(ctx, moon.size, px, py, moon.color);
-					ctx.globalAlpha = 1.0;
-					ctx.restore();
-				},
-				staticMetadata,
-				canvasWidth,
-				canvasHeight,
-				renderBuffer,
-				{ ...self, x: cameraX, y: cameraY },
-				x,
-				y,
-			);
-		});
+		if (trail.length < 2) return;
+
+		// Build screen positions for the trail
+		const screenTrail = trail
+			.map((trailPoint) => {
+				let posX: number, posY: number;
+				if (trailPoint.parentId) {
+					const parent = lerpedPositions?.users.get(trailPoint.parentId);
+					if (!parent) return null;
+					posX = parent.x + trailPoint.x;
+					posY = parent.y + trailPoint.y;
+				} else {
+					posX = trailPoint.x;
+					posY = trailPoint.y;
+				}
+				return toScreen({ x: posX, y: posY });
+			})
+			.filter(Boolean) as { x: number; y: number }[];
+
+		if (screenTrail.length < 2) return;
+
+		// Draw a comet-like trail: taper width and alpha toward the end
+		// Draw from tail (oldest) to head (moon, newest)
+		for (let i = 1; i < screenTrail.length; i++) {
+			// t=0 at tail (far from moon), t=1 at head (moon)
+			const t = i / (screenTrail.length - 1);
+			// Reverse the taper: widest/most opaque at the head (moon)
+			const width = lerp(2, moon.size * 1.7, t); // thin at tail, wide at head
+			const alpha = lerp(0.0, 0.7, t); // transparent at tail, opaque at head
+			ctx.save();
+			ctx.lineCap = "round";
+			ctx.lineJoin = "round";
+			ctx.strokeStyle = `rgba(${moon.color.r},${moon.color.g},${moon.color.b},${alpha})`;
+			ctx.lineWidth = width;
+			ctx.beginPath();
+			ctx.moveTo(screenTrail[i - 1].x, screenTrail[i - 1].y);
+			ctx.lineTo(screenTrail[i].x, screenTrail[i].y);
+			ctx.stroke();
+			ctx.restore();
+		}
 	});
 }
 
@@ -617,20 +620,7 @@ export const draw = (
 
 	drawSelf(ctx, self, canvasWidth, canvasHeight);
 
-	drawMoonTrails(
-		ctx,
-		moons,
-		moonTrails,
-		lerpedPositions,
-		toScreen,
-		metadata,
-		canvasWidth,
-		canvasHeight,
-		renderBuffer,
-		self,
-		cameraX,
-		cameraY,
-	);
+	drawMoonTrails(ctx, moons, moonTrails, lerpedPositions, toScreen);
 
 	drawMoons(
 		ctx,
