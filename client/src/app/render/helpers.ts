@@ -65,15 +65,14 @@ export function renderCircle(
 	ctx.closePath();
 }
 
-function renderWithWrap(
-	renderFn: (x: number, y: number) => void,
+function wrapCoords(
+	self: User,
+	x: number,
+	y: number,
 	staticMetadata: StaticMetadata,
 	canvasWidth: number,
 	canvasHeight: number,
 	renderBuffer: number,
-	self: User,
-	x: number,
-	y: number,
 ) {
 	let new_x: number = x;
 	let new_y: number = y;
@@ -97,7 +96,28 @@ function renderWithWrap(
 			new_y = y + staticMetadata.worldHeight;
 		}
 	}
+	return { x: new_x, y: new_y };
+}
 
+function renderWithWrap(
+	renderFn: (x: number, y: number) => void,
+	staticMetadata: StaticMetadata,
+	canvasWidth: number,
+	canvasHeight: number,
+	renderBuffer: number,
+	self: User,
+	x: number,
+	y: number,
+) {
+	const { x: new_x, y: new_y } = wrapCoords(
+		self,
+		x,
+		y,
+		staticMetadata,
+		canvasWidth,
+		canvasHeight,
+		renderBuffer,
+	);
 	renderFn(new_x, new_y);
 }
 
@@ -467,6 +487,11 @@ function drawMoonTrails(
 	moonTrails: MoonTrails | undefined,
 	lerpedPositions: LerpedPositions | undefined,
 	toScreen: (obj: { x: number; y: number }) => { x: number; y: number },
+	staticMetadata: StaticMetadata,
+	canvasWidth: number,
+	canvasHeight: number,
+	renderBuffer: number,
+	self: User,
 ) {
 	if (!moonTrails) return;
 	moons.forEach((moon) => {
@@ -500,14 +525,47 @@ function drawMoonTrails(
 			// Reverse the taper: widest/most opaque at the head (moon)
 			const width = lerp(2, moon.size * 1.7, t); // thin at tail, wide at head
 			const alpha = lerp(0.0, 0.7, t); // transparent at tail, opaque at head
+
+			// Check if the segment is too large (wrap artifact)
+			// const p1 = screenTrail[i - 1];
+			// const p2 = screenTrail[i];
+			const p1 = wrapCoords(
+				self,
+				screenTrail[i - 1].x,
+				screenTrail[i - 1].y,
+				staticMetadata,
+				canvasWidth,
+				canvasHeight,
+				renderBuffer,
+			);
+			const p2 = wrapCoords(
+				self,
+				screenTrail[i].x,
+				screenTrail[i].y,
+				staticMetadata,
+				canvasWidth,
+				canvasHeight,
+				renderBuffer,
+			);
+			if (!p1 || !p2) continue;
+			const dx = Math.abs(p2.x - p1.x);
+			const dy = Math.abs(p2.y - p1.y);
+			// Skip if segment is too large (e.g., > half world width/height)
+			if (
+				dx >= staticMetadata.worldWidth / 2 ||
+				dy >= staticMetadata.worldHeight / 2
+			)
+				continue;
+
+			// Wrap the trail segment using renderWithWrap
 			ctx.save();
 			ctx.lineCap = "round";
 			ctx.lineJoin = "round";
 			ctx.strokeStyle = `rgba(${moon.color.r},${moon.color.g},${moon.color.b},${alpha})`;
 			ctx.lineWidth = width;
 			ctx.beginPath();
-			ctx.moveTo(screenTrail[i - 1].x, screenTrail[i - 1].y);
-			ctx.lineTo(screenTrail[i].x, screenTrail[i].y);
+			ctx.moveTo(p1.x, p1.y);
+			ctx.lineTo(p2.x, p2.y);
 			ctx.stroke();
 			ctx.restore();
 		}
@@ -620,7 +678,18 @@ export const draw = (
 
 	drawSelf(ctx, self, canvasWidth, canvasHeight);
 
-	drawMoonTrails(ctx, moons, moonTrails, lerpedPositions, toScreen);
+	drawMoonTrails(
+		ctx,
+		moons,
+		moonTrails,
+		lerpedPositions,
+		toScreen,
+		metadata,
+		canvasWidth,
+		canvasHeight,
+		renderBuffer,
+		self,
+	);
 
 	drawMoons(
 		ctx,
