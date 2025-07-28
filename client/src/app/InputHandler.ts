@@ -10,10 +10,10 @@ export function useInputHandler(conn: DbConnection | undefined) {
 		let lastDirVecY: number | undefined = undefined;
 
 		const getDirection = (): { dirVecX: number; dirVecY: number } => {
-			const up = pressed.has("w") || pressed.has("ArrowUp");
-			const down = pressed.has("s") || pressed.has("ArrowDown");
-			const left = pressed.has("a") || pressed.has("ArrowLeft");
-			const right = pressed.has("d") || pressed.has("ArrowRight");
+			const up = pressed.has("w") || pressed.has("arrowup");
+			const down = pressed.has("s") || pressed.has("arrowdown");
+			const left = pressed.has("a") || pressed.has("arrowleft");
+			const right = pressed.has("d") || pressed.has("arrowright");
 
 			if (up && right && !left && !down) return { dirVecX: 1, dirVecY: -1 };
 			if (up && left && !right && !down) return { dirVecX: -1, dirVecY: -1 };
@@ -48,7 +48,7 @@ export function useInputHandler(conn: DbConnection | undefined) {
 
 		const handleKeyUp = (e: KeyboardEvent) => {
 			const key = e.key;
-			pressed.delete(key);
+			pressed.delete(key.toLowerCase());
 			updateDirection();
 		};
 
