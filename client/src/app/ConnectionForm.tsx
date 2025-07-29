@@ -138,6 +138,7 @@ export function ConnectionForm({
 									placeholder="my-username"
 									{...field}
 									value={field.value ?? ""}
+									className="selection:bg-blue-200"
 								/>
 							</FormControl>
 							<FormDescription>Your public display name.</FormDescription>
@@ -177,7 +178,7 @@ export function ConnectionForm({
 							<FormControl>
 								<div className="flex flex-row space-x-2 items-center">
 									<Input
-										className="flex-1"
+										className="flex-1 selection:bg-blue-200"
 										value={field.value.toString()}
 										onChange={(e) => {
 											const val = e.target.value;
@@ -219,7 +220,7 @@ export function ConnectionForm({
 						<FormItem>
 							<FormLabel>SpacetimeDB URI</FormLabel>
 							<FormControl>
-								<Input {...field} />
+								<Input {...field} className="selection:bg-blue-200" />
 							</FormControl>
 							<FormDescription>
 								The WebSocket URI for the SpacetimeDB instance. Leave as default
