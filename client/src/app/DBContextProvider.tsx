@@ -17,6 +17,8 @@ import { ConnectionFormSchema } from "./ConnectionForm";
 import z from "zod";
 import { SettingsSchema } from "./Settings";
 
+export const BIT_REMOVE_ANIMATION_DURATION = 600; // ms
+
 // Helper hook to manage all DB state and provide reset capability
 function useDBState(
 	conn: DbConnection | null,
@@ -130,6 +132,10 @@ function useDBState(
 
 	// --- Bits ---
 	const [bits, setBits] = useState<Map<number, Bit>>(new Map());
+	const [removingBits, setRemovingBits] = useState<
+		Map<number, { bit: Bit; start: number }>
+	>(new Map());
+
 	useEffect(() => {
 		if (!conn) return;
 		const onInsert = (_ctx: EventContext, bit: Bit) => {
@@ -149,6 +155,11 @@ function useDBState(
 			setBits((prev) => {
 				prev.delete(bit.bitId);
 				return new Map(prev);
+			});
+			setRemovingBits((prev) => {
+				const newMap = new Map(prev);
+				newMap.set(bit.bitId, { bit, start: Date.now() });
+				return newMap;
 			});
 		};
 		conn.db.bit.onDelete(onDelete);
@@ -220,6 +231,8 @@ function useDBState(
 		setMoons,
 		bits,
 		setBits,
+		removingBits,
+		setRemovingBits,
 		leaderboardEntries,
 		setLeaderboardEntries,
 		resetDBState,
@@ -279,6 +292,8 @@ export function DBContextProvider({
 		moons,
 		leaderboardEntries,
 		resetDBState,
+		removingBits,
+		setRemovingBits,
 	} = useDBState(conn, identity, onDeath);
 
 	const self = identity ? users.get(identity.toHexString()) : null;
@@ -514,6 +529,29 @@ export function DBContextProvider({
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [viewportWorldHeight, viewportWorldWidth, staticMetadata, self]);
 
+	// Animation cleanup for removingBits
+	useEffect(() => {
+		if (removingBits.size === 0) return;
+		let raf: number;
+		const cleanup = () => {
+			const now = Date.now();
+			let changed = false;
+			const newMap = new Map(removingBits);
+			for (const [id, { start }] of removingBits) {
+				if (now - start > BIT_REMOVE_ANIMATION_DURATION) {
+					newMap.delete(id);
+					changed = true;
+				}
+			}
+			if (changed) setRemovingBits(newMap);
+			if (newMap.size > 0) {
+				raf = requestAnimationFrame(cleanup);
+			}
+		};
+		raf = requestAnimationFrame(cleanup);
+		return () => cancelAnimationFrame(raf);
+	}, [removingBits, setRemovingBits]);
+
 	if (
 		!conn ||
 		!connected ||
@@ -552,6 +590,7 @@ export function DBContextProvider({
 				viewportWorldHeight,
 				renderBuffer,
 				settings,
+				removingBits,
 			}}
 		>
 			{children}

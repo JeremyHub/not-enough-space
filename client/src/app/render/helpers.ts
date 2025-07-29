@@ -2,6 +2,7 @@ import { Bit, Moon, Color, StaticMetadata, User } from "../../module_bindings";
 import { Identity } from "@clockworklabs/spacetimedb-sdk";
 import { SettingsSchema } from "../Settings";
 import z from "zod";
+import { BIT_REMOVE_ANIMATION_DURATION } from "../DBContextProvider";
 
 export type MoonTrails = Map<
 	number,
@@ -20,6 +21,7 @@ type DrawProps = {
 	identity: Identity;
 	moonTrails?: MoonTrails;
 	settings: z.infer<typeof SettingsSchema>;
+	removingBits?: Map<number, { bit: Bit; start: number }>;
 };
 
 export function lerp(a: number, b: number, t: number) {
@@ -234,7 +236,9 @@ export function drawBits(
 	self: User,
 	cameraX: number,
 	cameraY: number,
+	removingBits?: Map<number, { bit: Bit; start: number }>,
 ) {
+	// Draw normal bits
 	bits.forEach((bit, key) => {
 		const pos = lerpedPositions?.bits.get(key) || bit;
 		const { x, y } = toScreen(pos);
@@ -249,6 +253,32 @@ export function drawBits(
 			y,
 		);
 	});
+
+	// Draw removing bits with shrinking animation
+	console.log("Drawing removing bits", removingBits);
+	if (removingBits) {
+		const now = Date.now();
+		removingBits.forEach(({ bit, start }, key) => {
+			const t = Math.min((now - start) / BIT_REMOVE_ANIMATION_DURATION, 1);
+			const shrinkSize = bit.size * (1 - t);
+			const pos = lerpedPositions?.bits.get(key) || bit;
+			const { x, y } = toScreen(pos);
+			renderWithWrap(
+				(px, py) => {
+					if (shrinkSize > 0) {
+						renderCircle(ctx, shrinkSize, px, py, bit.color, true);
+					}
+				},
+				staticMetadata,
+				canvasWidth,
+				canvasHeight,
+				renderBuffer,
+				{ ...self, x: cameraX, y: cameraY },
+				x,
+				y,
+			);
+		});
+	}
 }
 
 function drawGravityWell(
@@ -622,6 +652,7 @@ export const draw = (
 		lerpedPositions,
 		lerpedCamera,
 		settings,
+		removingBits,
 	} = props;
 	if (!ctx) return;
 
@@ -659,6 +690,7 @@ export const draw = (
 		self,
 		cameraX,
 		cameraY,
+		removingBits,
 	);
 
 	drawUsers(

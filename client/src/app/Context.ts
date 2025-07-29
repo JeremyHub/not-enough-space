@@ -26,6 +26,7 @@ type ContextType = {
 	viewportWorldHeight: number;
 	renderBuffer: number;
 	settings: z.infer<typeof SettingsSchema>;
+	removingBits: Map<number, { bit: Bit; start: number }>;
 };
 
 export const Context = createContext<ContextType | undefined>(undefined);

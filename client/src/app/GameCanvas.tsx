@@ -30,6 +30,7 @@ export function Canvas({
 		viewportWorldHeight,
 		renderBuffer,
 		settings,
+		removingBits,
 	} = context;
 
 	// --- LERPED POSITIONS STATE ---
@@ -334,6 +335,7 @@ export function Canvas({
 			lerpedPositions,
 			lerpedCamera,
 			settings,
+			removingBits,
 		}),
 		[
 			staticMetadata,
@@ -349,6 +351,7 @@ export function Canvas({
 			lerpedPositions,
 			lerpedCamera,
 			settings,
+			removingBits,
 		],
 	);
 
