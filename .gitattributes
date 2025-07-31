@@ -1,4 +1,5 @@
 assets/* linguist-generated
 client/src/components/ui/* linguist-generated
+client/src/app/render/helpers.ts linguist-generated
 client/src/module_bindings/* linguist-generated
 client/* linguist-generated
