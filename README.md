@@ -17,7 +17,7 @@ The client only subscribes to updates from the server for objects that it needs 
 
 ## Developing
 
-If you want to develop, checkout the Makefile (it assumes unix. It has all the helpful commands that you need to get started!
+If you want to develop, checkout the Makefile (it assumes unix, so use WSL if you are on Windows). It has all the helpful commands that you need to get started!
 
 To get setup you should install [SpacetimeDB](https://spacetimedb.com/install), [npm](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm), and [Rust](https://www.rust-lang.org/tools/install), then clone this repository. Next, go to the root of the project and run `make setup`.
 
