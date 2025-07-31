@@ -11,7 +11,7 @@ The world wraps around and the borders are invisible to the player (yes, you can
 
 There is client side lag compensation which changes based on the tick rate of the game. The tick rate of the server is currently ~12 ticks per second. The lag compensation is simply linearly interpolating between updates that it gets from the server. There is no client side prediction, only compensation.
 
-You can pick your color and your moons will match (roughly) the color you pick.
+You choose the look of your player!
 
 There is a live updating leaderboard with trackers for damage, kills, and size.
 
