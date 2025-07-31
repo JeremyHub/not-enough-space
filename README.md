@@ -17,6 +17,8 @@ The client only subscribes to updates from the server for objects that it needs 
 
 ## Developing
 
-If you want to develop, checkout the Makefile. It has all the helpful commands that you need to get started!
+If you want to develop, checkout the Makefile (it assumes unix. It has all the helpful commands that you need to get started!
 
-You should start by opening 3 terminal windows to the root of the project. In one, run `make start-server`, in another run `make dev-client` and in the last one run `make publish-server`. You can then go to http://localhost:5173/not-enough-space/client and start playing!
+To get setup you should install [SpacetimeDB](https://spacetimedb.com/install), [npm](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm), and [Rust](https://www.rust-lang.org/tools/install), then clone this repository. Next, go to the root of the project and run `make setup`.
+
+To start developing, you should open 3 terminal windows to the root of the project. In one, run `make start-server`, in another run `make dev-client` and in the last one run `make publish-server`. You can then go to http://localhost:5173/not-enough-space/client and start playing!
