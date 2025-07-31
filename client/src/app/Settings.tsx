@@ -25,12 +25,14 @@ export function getDefaultSettings(): z.infer<typeof SettingsSchema> {
 	return {
 		auto_reconnect_on_death: true,
 		show_world_boundaries: false,
+		clear_local_storage_on_refresh: true,
 	};
 }
 
 export const SettingsSchema = z.object({
 	auto_reconnect_on_death: z.boolean(),
 	show_world_boundaries: z.boolean(),
+	clear_local_storage_on_refresh: z.boolean(),
 });
 
 export function Settings({
@@ -101,6 +103,29 @@ export function Settings({
 																</FormLabel>
 																<FormDescription>
 																	Display the world boundaries overlay in-game.
+																</FormDescription>
+															</div>
+															<FormControl>
+																<Switch
+																	checked={field.value}
+																	onCheckedChange={field.onChange}
+																/>
+															</FormControl>
+														</FormItem>
+													)}
+												/>
+												<FormField
+													control={form.control}
+													name="clear_local_storage_on_refresh"
+													render={({ field }) => (
+														<FormItem className="bg-zinc-900 flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm mt-2">
+															<div className="space-y-1">
+																<FormLabel className="text-primary-foreground">
+																	Save User Settings
+																</FormLabel>
+																<FormDescription>
+																	Turn off if you want to connect as a different
+																	user each time you reload the game.
 																</FormDescription>
 															</div>
 															<FormControl>

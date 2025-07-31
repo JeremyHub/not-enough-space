@@ -2,6 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { randBetween } from "big-integer";
+import { useEffect } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -15,7 +16,6 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { ColorPicker } from "@/components/ui/color-picker";
-import { useEffect } from "react";
 
 function isColorTooWhiteOrBlack(hex: string) {
 	const clean = hex.replace("#", "");
@@ -68,6 +68,7 @@ export const ConnectionFormSchema = z.object({
 		.max(BigInt("18446744073709551615"), {
 			message: "Seed must be at most 18446744073709551615.",
 		}),
+	recconnect: z.boolean(),
 });
 
 export function ConnectionForm({
@@ -85,6 +86,9 @@ export function ConnectionForm({
 		},
 	) => void;
 }) {
+	const hasAuthToken =
+		typeof window !== "undefined" && !!localStorage.getItem("auth_token");
+
 	const form = useForm<
 		Omit<z.infer<typeof ConnectionFormSchema>, "username"> & {
 			username: string;
@@ -106,6 +110,7 @@ export function ConnectionForm({
 					? "ws://localhost:3000"
 					: "https://maincloud.spacetimedb.com",
 			seed: BigInt(Number(randBetween(0, 18446744073709551615n))),
+			recconnect: true,
 		},
 	});
 
@@ -120,6 +125,11 @@ export function ConnectionForm({
 		});
 		return () => subscription.unsubscribe();
 	}, [form, setConnectionForm]);
+
+	const handleConnectAsNewUser = () => {
+		form.setValue("recconnect", false);
+		form.handleSubmit(onSubmit)();
+	};
 
 	return (
 		<Form {...form}>
@@ -231,8 +241,18 @@ export function ConnectionForm({
 					)}
 				/>
 				<Button type="submit" variant="outline" className="text-black w-full">
-					Connect
+					{hasAuthToken ? "Reconnect" : "Connect"}
 				</Button>
+				{hasAuthToken && (
+					<Button
+						type="button"
+						variant="ghost"
+						className="w-full text-xs bg-transparent"
+						onClick={handleConnectAsNewUser}
+					>
+						Connect as new user
+					</Button>
+				)}
 			</form>
 		</Form>
 	);

@@ -17,7 +17,7 @@ import { ConnectionFormSchema } from "./ConnectionForm";
 import z from "zod";
 import { SettingsSchema } from "./Settings";
 
-export const BIT_REMOVE_ANIMATION_DURATION = 600; // ms
+export const BIT_REMOVE_ANIMATION_DURATION = 200; // ms
 
 // Helper hook to manage all DB state and provide reset capability
 function useDBState(
@@ -396,23 +396,29 @@ export function DBContextProvider({
 			DbConnection.builder()
 				.withUri(connectionForm.uri)
 				.withModuleName("nes")
-				// .withToken(localStorage.getItem('auth_token') || '')
-				.withToken("") // use the above line instead for persisting connection across refreshes
+				.withToken(
+					connectionForm.recconnect
+						? localStorage.getItem("auth_token") || ""
+						: "",
+				)
 				.onConnect(onConnect)
 				.onDisconnect(onDisconnect)
 				.onConnectError(onConnectError)
 				.build(),
 		);
-	}, [connectionForm, onConnect, onDisconnect, onConnectError]);
+	}, [
+		connectionForm,
+		onConnect,
+		onDisconnect,
+		onConnectError,
+		connectionForm.recconnect,
+	]);
 
 	const reconnect = useCallback(() => {
 		setTimeout(() => {
 			setConn(null);
 			connectingRef.current = false;
 			resetDBState();
-			// TODO make the below a setting
-			// setIdentity(null);
-			// localStorage.removeItem('auth_token');
 			console.log("Reconnecting...");
 			setConnected(false);
 			connectRef.current();
