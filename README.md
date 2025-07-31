@@ -9,7 +9,7 @@ The whole game is fully server-authoritative meaning that the server makes all t
 
 The world wraps around and the borders are invisible to the player (yes, you can pickup bits and attack other players around the "edges" of the world.)
 
-There is client side lag compensation which changes based on the tick rate of the game. The tick rate of the server is currently ~12 ticks per second. The lag compensation is simply linearly interpolating between updates that it gets from the server, that means the client is at most 1 tick behind and at least up to date with the server. There is no client side prediction, only compensation.
+There is client side lag compensation which changes based on the tick rate of the game. The tick rate of the server is currently ~12 ticks per second. The lag compensation is simply linearly interpolating between updates that it gets from the server. There is no client side prediction, only compensation.
 
 The screen grows as your player gets larger. This means you can see more of what is around you.
 
