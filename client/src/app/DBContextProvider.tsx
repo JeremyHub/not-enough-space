@@ -392,12 +392,14 @@ export function DBContextProvider({
 		console.log("Connecting to SpacetimeDB...");
 		connectingRef.current = true;
 
+		console.log("Connection form data:", connectionForm.reconnect);
+
 		setConn(
 			DbConnection.builder()
 				.withUri(connectionForm.uri)
 				.withModuleName("nes")
 				.withToken(
-					connectionForm.recconnect
+					connectionForm.reconnect
 						? localStorage.getItem("auth_token") || ""
 						: "",
 				)
@@ -406,13 +408,7 @@ export function DBContextProvider({
 				.onConnectError(onConnectError)
 				.build(),
 		);
-	}, [
-		connectionForm,
-		onConnect,
-		onDisconnect,
-		onConnectError,
-		connectionForm.recconnect,
-	]);
+	}, [connectionForm, onConnect, onDisconnect, onConnectError]);
 
 	const reconnect = useCallback(() => {
 		setTimeout(() => {

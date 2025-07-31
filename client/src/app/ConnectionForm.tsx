@@ -68,8 +68,10 @@ export const ConnectionFormSchema = z.object({
 		.max(BigInt("18446744073709551615"), {
 			message: "Seed must be at most 18446744073709551615.",
 		}),
-	recconnect: z.boolean(),
+	reconnect: z.boolean(),
 });
+
+const CONNECTION_FORM_KEY = "connection_form";
 
 export function ConnectionForm({
 	onSubmit,
@@ -95,39 +97,54 @@ export function ConnectionForm({
 		}
 	>({
 		resolver: zodResolver(ConnectionFormSchema),
-		defaultValues: {
-			username:
-				typeof import.meta !== "undefined" &&
-				import.meta.env &&
-				import.meta.env.MODE === "development"
-					? "test"
-					: "",
-			color: getRandomColor(),
-			uri:
-				typeof import.meta !== "undefined" &&
-				import.meta.env &&
-				import.meta.env.MODE === "development"
-					? "ws://localhost:3000"
-					: "https://maincloud.spacetimedb.com",
-			seed: BigInt(Number(randBetween(0, 18446744073709551615n))),
-			recconnect: true,
-		},
+		defaultValues: (() => {
+			const stored = localStorage.getItem(CONNECTION_FORM_KEY);
+			if (stored) {
+				const parsed = JSON.parse(stored);
+				if (parsed.seed && typeof parsed.seed === "string") {
+					parsed.seed = BigInt(parsed.seed);
+				}
+				return parsed;
+			}
+			return {
+				username:
+					typeof import.meta !== "undefined" &&
+					import.meta.env &&
+					import.meta.env.MODE === "development"
+						? "test"
+						: "",
+				color: getRandomColor(),
+				uri:
+					typeof import.meta !== "undefined" &&
+					import.meta.env &&
+					import.meta.env.MODE === "development"
+						? "ws://localhost:3000"
+						: "https://maincloud.spacetimedb.com",
+				seed: BigInt(Number(randBetween(0, 18446744073709551615n))),
+				reconnect: true,
+			};
+		})(),
 	});
 
 	useEffect(() => {
 		setConnectionForm(form.getValues());
+		form.setValue("reconnect", true);
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
 	useEffect(() => {
 		const subscription = form.watch((values) => {
 			setConnectionForm(values as z.infer<typeof ConnectionFormSchema>);
+			// Save to localStorage, convert BigInt to string for serialization
+			const toSave = { ...values, seed: values.seed?.toString() };
+			localStorage.setItem(CONNECTION_FORM_KEY, JSON.stringify(toSave));
 		});
 		return () => subscription.unsubscribe();
 	}, [form, setConnectionForm]);
 
 	const handleConnectAsNewUser = () => {
-		form.setValue("recconnect", false);
+		form.setValue("reconnect", false);
+		console.log("Connecting as new user");
 		form.handleSubmit(onSubmit)();
 	};
 
@@ -163,14 +180,28 @@ export function ConnectionForm({
 						<FormItem>
 							<FormLabel>Color</FormLabel>
 							<FormControl>
-								<ColorPicker
-									value={form.watch("color")}
-									onChange={(value) => {
-										if (typeof value === "string") {
-											form.setValue("color", value);
-										}
-									}}
-								/>
+								<div className="flex flex-row space-x-2 items-center">
+									<ColorPicker
+										value={form.watch("color")}
+										onChange={(value) => {
+											if (typeof value === "string") {
+												form.setValue("color", value);
+											}
+										}}
+										className="flex-1"
+									/>
+									<Button
+										type="button"
+										variant="outline"
+										className="flex-1 text-xs text-white border-white bg-transparent"
+										onClick={() => {
+											const newColor = getRandomColor();
+											form.setValue("color", newColor);
+										}}
+									>
+										Randomize Color
+									</Button>
+								</div>
 							</FormControl>
 							<FormDescription>
 								The color of your character. Click to change it.
@@ -240,19 +271,36 @@ export function ConnectionForm({
 						</FormItem>
 					)}
 				/>
-				<Button type="submit" variant="outline" className="text-black w-full">
-					{hasAuthToken ? "Reconnect" : "Connect"}
+				<Button
+					type="button"
+					variant="outline"
+					className="w-full text-xs text-white border-white bg-transparent"
+					onClick={() => {
+						const newColor = getRandomColor();
+						const newSeed = BigInt(
+							Number(randBetween(0, 18446744073709551615n)),
+						);
+						form.setValue("color", newColor);
+						form.setValue("seed", newSeed);
+					}}
+				>
+					Randomize Player
 				</Button>
-				{hasAuthToken && (
-					<Button
-						type="button"
-						variant="ghost"
-						className="w-full text-xs bg-transparent"
-						onClick={handleConnectAsNewUser}
-					>
-						Connect as new user
+				<div className="flex flex-col gap-2">
+					<Button type="submit" variant="outline" className="text-black w-full">
+						{hasAuthToken ? "Reconnect" : "Connect"}
 					</Button>
-				)}
+					{hasAuthToken && (
+						<Button
+							type="button"
+							variant="ghost"
+							className="w-full text-xs bg-transparent hover:bg-white/30"
+							onClick={handleConnectAsNewUser}
+						>
+							Connect as new user
+						</Button>
+					)}
+				</div>
 			</form>
 		</Form>
 	);

@@ -255,7 +255,6 @@ export function drawBits(
 	});
 
 	// Draw removing bits with shrinking animation
-	console.log("Drawing removing bits", removingBits);
 	if (removingBits) {
 		const now = Date.now();
 		removingBits.forEach(({ bit, start }, key) => {
