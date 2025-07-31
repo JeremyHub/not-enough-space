@@ -122,11 +122,6 @@ export function Canvas({
 	useEffect(() => {
 		const observer = new ResizeObserver(() => {
 			if (containerRef.current) {
-				console.log(
-					"Updating canvas size to",
-					containerRef.current.clientWidth,
-					containerRef.current.clientHeight,
-				);
 				setCanvasSize({
 					width: containerRef.current.clientWidth,
 					height: containerRef.current.clientHeight,
