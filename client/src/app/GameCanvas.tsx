@@ -7,7 +7,6 @@ import {
 	getPositionsFromObjects,
 	lerp,
 	LerpedPositions,
-	MoonTrails,
 } from "./render/helpers";
 
 export function Canvas({
@@ -47,38 +46,6 @@ export function Canvas({
 		x: self.x,
 		y: self.y,
 	});
-
-	// --- MOON TRAILS BASED ON LERPED POSITIONS ---
-	const [moonTrails, setMoonTrails] = useState<MoonTrails>(new Map());
-
-	useEffect(() => {
-		setMoonTrails((prev) => {
-			const newTrails = new Map(prev);
-			moons.forEach((moon, moonId) => {
-				const lerpedMoon = lerpedPositions.moons.get(moonId) || moon;
-				const parentId = moon.orbiting?.toHexString?.() || null;
-				let x;
-				let y;
-				if (!parentId) {
-					x = lerpedMoon.x;
-					y = lerpedMoon.y;
-				} else {
-					const parent = lerpedPositions.users.get(parentId);
-					if (!parent) return;
-					x = lerpedMoon.x - parent.x;
-					y = lerpedMoon.y - parent.y;
-				}
-				const prevTrail = newTrails.get(moon.moonId) || [];
-				const updatedTrail = [...prevTrail, { x, y, parentId }].slice(-20);
-				newTrails.set(moon.moonId, updatedTrail);
-			});
-			// Remove trails for moons that no longer exist
-			Array.from(newTrails.keys()).forEach((moonId) => {
-				if (!moons.has(moonId)) newTrails.delete(moonId);
-			});
-			return newTrails;
-		});
-	}, [moons, users, lerpedPositions]);
 
 	// --- ANIMATE CANVAS SIZE when user grows / shrinks in size---
 	const [animatedViewportWidth, setAnimatedViewportWidth] = useState<
@@ -326,7 +293,6 @@ export function Canvas({
 			bits,
 			moons,
 			identity,
-			moonTrails,
 			lerpedPositions,
 			lerpedCamera,
 			settings,
@@ -342,7 +308,6 @@ export function Canvas({
 			bits,
 			moons,
 			identity,
-			moonTrails,
 			lerpedPositions,
 			lerpedCamera,
 			settings,

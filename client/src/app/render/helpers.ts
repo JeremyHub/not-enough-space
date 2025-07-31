@@ -4,11 +4,6 @@ import { SettingsSchema } from "../Settings";
 import z from "zod";
 import { BIT_REMOVE_ANIMATION_DURATION } from "../DBContextProvider";
 
-export type MoonTrails = Map<
-	number,
-	Array<{ x: number; y: number; parentId: string | null }>
->;
-
 type DrawProps = {
 	staticMetadata: StaticMetadata;
 	canvasWidth: number;
@@ -19,7 +14,6 @@ type DrawProps = {
 	bits: Map<number, Bit>;
 	moons: Map<number, Moon>;
 	identity: Identity;
-	moonTrails?: MoonTrails;
 	settings: z.infer<typeof SettingsSchema>;
 	removingBits?: Map<number, { bit: Bit; start: number }>;
 };
@@ -513,91 +507,62 @@ function drawSelf(
 function drawMoonTrails(
 	ctx: CanvasRenderingContext2D,
 	moons: Map<number, Moon>,
-	moonTrails: MoonTrails | undefined,
 	lerpedPositions: LerpedPositions | undefined,
 	toScreen: (obj: { x: number; y: number }) => { x: number; y: number },
-	staticMetadata: StaticMetadata,
-	canvasWidth: number,
-	canvasHeight: number,
-	renderBuffer: number,
-	self: User,
+	users: Map<string, User>,
 ) {
-	if (!moonTrails) return;
-	moons.forEach((moon) => {
-		const trail = moonTrails.get(moon.moonId) || [];
-		if (trail.length < 2) return;
+	moons.forEach((moon, key) => {
+		// Only draw trail if moon is orbiting a user
+		if (!moon.orbiting) return;
 
-		// Build screen positions for the trail
-		const screenTrail = trail
-			.map((trailPoint) => {
-				let posX: number, posY: number;
-				if (trailPoint.parentId) {
-					const parent = lerpedPositions?.users.get(trailPoint.parentId);
-					if (!parent) return null;
-					posX = parent.x + trailPoint.x;
-					posY = parent.y + trailPoint.y;
-				} else {
-					posX = trailPoint.x;
-					posY = trailPoint.y;
-				}
-				return toScreen({ x: posX, y: posY });
-			})
-			.filter(Boolean) as { x: number; y: number }[];
+		const user = users.get(moon.orbiting.toHexString());
+		if (!user) return;
+		const userPos =
+			lerpedPositions?.users.get(moon.orbiting.toHexString()) || user;
+		const moonPos = lerpedPositions?.moons.get(key) || moon;
 
-		if (screenTrail.length < 2) return;
+		// Calculate orbit center and moon position in screen coords
+		const centerScreen = toScreen(userPos);
 
-		// Draw a comet-like trail: taper width and alpha toward the end
-		// Draw from tail (oldest) to head (moon, newest)
-		for (let i = 1; i < screenTrail.length; i++) {
-			// t=0 at tail (far from moon), t=1 at head (moon)
-			const t = i / (screenTrail.length - 1);
-			// Reverse the taper: widest/most opaque at the head (moon)
-			const width = lerp(2, moon.size * 1.7, t); // thin at tail, wide at head
-			const alpha = lerp(0.0, 0.7, t); // transparent at tail, opaque at head
+		// Calculate orbit radius and angle dynamically
+		const dx = moonPos.x - userPos.x;
+		const dy = moonPos.y - userPos.y;
+		const orbitRadius = Math.sqrt(dx * dx + dy * dy);
+		const orbitAngle = Math.atan2(dy, dx);
 
-			// Check if the segment is too large (wrap artifact)
-			// const p1 = screenTrail[i - 1];
-			// const p2 = screenTrail[i];
-			const p1 = wrapCoords(
-				self,
-				screenTrail[i - 1].x,
-				screenTrail[i - 1].y,
-				staticMetadata,
-				canvasWidth,
-				canvasHeight,
-				renderBuffer,
-			);
-			const p2 = wrapCoords(
-				self,
-				screenTrail[i].x,
-				screenTrail[i].y,
-				staticMetadata,
-				canvasWidth,
-				canvasHeight,
-				renderBuffer,
-			);
-			if (!p1 || !p2) continue;
-			const dx = Math.abs(p2.x - p1.x);
-			const dy = Math.abs(p2.y - p1.y);
-			// Skip if segment is too large (e.g., > half world width/height)
-			if (
-				dx >= staticMetadata.worldWidth / 2 ||
-				dy >= staticMetadata.worldHeight / 2
-			)
-				continue;
+		// Trail length in radians is now based on moon size
+		const trailLength = moon.size * 0.05;
 
-			// Wrap the trail segment using renderWithWrap
-			ctx.save();
-			ctx.lineCap = "round";
-			ctx.lineJoin = "round";
-			ctx.strokeStyle = `rgba(${moon.color.r},${moon.color.g},${moon.color.b},${alpha})`;
-			ctx.lineWidth = width;
-			ctx.beginPath();
-			ctx.moveTo(p1.x, p1.y);
-			ctx.lineTo(p2.x, p2.y);
-			ctx.stroke();
-			ctx.restore();
+		let startAngle: number, endAngle: number, counterclockwise: boolean;
+
+		if (typeof moon.orbitalVelocity === "number" && moon.orbitalVelocity < 0) {
+			// Clockwise orbit: trail is behind, so arc goes forward in angle (increasing)
+			startAngle = orbitAngle;
+			endAngle = orbitAngle + trailLength;
+			counterclockwise = false;
+		} else {
+			// Counterclockwise orbit: trail is behind, so arc goes backward in angle (decreasing)
+			startAngle = orbitAngle;
+			endAngle = orbitAngle - trailLength;
+			counterclockwise = true;
 		}
+
+		ctx.save();
+		ctx.beginPath();
+		ctx.strokeStyle = `rgba(${moon.color.r},${moon.color.g},${moon.color.b},0.35)`;
+		ctx.lineWidth = Math.max(2, moon.size * 0.5);
+
+		// Draw arc in screen space, centered at user
+		ctx.arc(
+			centerScreen.x,
+			centerScreen.y,
+			orbitRadius,
+			startAngle,
+			endAngle,
+			counterclockwise,
+		);
+		ctx.stroke();
+		ctx.restore();
 	});
 }
 
@@ -647,7 +612,6 @@ export const draw = (
 		bits,
 		moons,
 		identity,
-		moonTrails,
 		lerpedPositions,
 		lerpedCamera,
 		settings,
@@ -712,14 +676,9 @@ export const draw = (
 	drawMoonTrails(
 		ctx,
 		moons,
-		moonTrails,
 		lerpedPositions,
 		toScreen,
-		metadata,
-		canvasWidth,
-		canvasHeight,
-		renderBuffer,
-		self,
+		users, // pass users map for orbit center lookup
 	);
 
 	drawMoons(
