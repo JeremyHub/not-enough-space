@@ -1,1 +1,22 @@
 # not-enough-space
+
+## About
+Not Enough Space is a multiplayer web game built using [SpacetimeDB](https://spacetimedb.com/home). You play as a planet who can grow in size by picking up bits floating in space. You gain moons as you play which you can use to attack other players.
+
+## Key features
+
+The whole game is fully server-authoritative meaning that the server makes all the descsions about what happens in the game (ie you cant cheat.) The client sends updates about what direction it wants to move and then recieves updates about what actually happened from the server.
+
+The world wraps around and the borders are invisible to the player (yes, you can pickup bits and attack other players around the "edges" of the world.)
+
+There is client side lag compensation which changes based on the tick rate of the game. The tick rate of the server is currently ~12 ticks per second. The lag compensation is simply linearly interpolating between updates that it gets from the server, that means the client is at most 1 tick behind and at least up to date with the server. There is no client side prediction, only compensation.
+
+The screen grows as your player gets larger. This means you can see more of what is around you.
+
+The client only subscribes to updates from the server for objects that it needs to render and no more (with some buffer.)
+
+## Developing
+
+If you want to develop, checkout the Makefile. It has all the helpful commands that you need to get started!
+
+You should start by opening 3 terminal windows to the root of the project. In one, run `make start-server`, in another run `make dev-client` and in the last one run `make publish-server`. You can then go to http://localhost:5173/not-enough-space/client and start playing!
