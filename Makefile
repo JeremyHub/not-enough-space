@@ -29,3 +29,6 @@ delete-server:
 
 generate-client:
 	spacetime generate --lang typescript --out-dir client/src/module_bindings --project-path server
+
+push-server-to-maincloud:
+	spacetime publish --project-path server -s maincloud nes
