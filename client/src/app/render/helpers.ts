@@ -530,8 +530,11 @@ function drawMoonTrails(
 		const orbitRadius = Math.sqrt(dx * dx + dy * dy);
 		const orbitAngle = Math.atan2(dy, dx);
 
-		// Trail length in radians is now based on moon size
-		const trailLength = moon.size * 0.05;
+		// Trail length in radians is now based on a fixed visual length
+		const desiredTrailLength = moon.size * 5; // pixels
+		const minRadius = 8; // avoid division by zero or tiny orbits
+		const safeRadius = Math.max(orbitRadius, minRadius);
+		const trailLength = desiredTrailLength / safeRadius;
 
 		let startAngle: number, endAngle: number, counterclockwise: boolean;
 
