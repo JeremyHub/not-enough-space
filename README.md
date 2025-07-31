@@ -1,7 +1,7 @@
 # not-enough-space
 
 ## About
-Not Enough Space is a multiplayer web game built using [SpacetimeDB](https://spacetimedb.com/home). You play as a planet who can grow in size by picking up bits floating in space. You gain moons as you play which you can use to attack other players.
+Not Enough Space is a multiplayer web game built using [SpacetimeDB](https://spacetimedb.com/home) for the server and React + HTML Canvas for the client. You play as a planet who can grow in size by picking up bits floating in space. You gain moons as you play which you can use to attack other players.
 
 ## Key features
 
