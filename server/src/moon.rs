@@ -147,9 +147,7 @@ fn update_oribiting_moons(ctx: &ReducerContext) {
                     orbit_angular_vel = super::ORBIT_ANGULAR_VEL_RADIUS_FACTOR_FAR * moon.size;
                 } else {
                     orbit_state = OrbitState::Stationary;
-                    orbit_radius += super::ADDL_ORBIT_RADIUS_CLOSE_PER_USER_SIZE
-                        * orbit_radius_moon_size_factor
-                        * user.size;
+                    orbit_radius += super::ADDL_ORBIT_RADIUS_CLOSE_PER_USER_SIZE * user.size;
                     orbit_angular_vel = super::ORBIT_ANGULAR_VEL_RADIUS_FACTOR_CLOSE * moon.size;
                 };
 
