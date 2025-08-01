@@ -5,17 +5,17 @@ Not Enough Space is a multiplayer web game built using [SpacetimeDB](https://spa
 
 ## Key features
 
-The whole game is fully server-authoritative meaning that the server makes all the descsions about what happens in the game (ie you cant cheat.) The client sends updates about what direction it wants to move and then recieves updates about what actually happened from the server.
-
 The world wraps around and the borders are invisible to the player (yes, you can pickup bits and attack other players around the "edges" of the world.)
-
-There is client side lag compensation which changes based on the tick rate of the game. The tick rate of the server is currently ~12 ticks per second. The lag compensation is simply linearly interpolating between updates that it gets from the server. There is no client side prediction, only compensation.
 
 You choose the look of your player!
 
 There is a live updating leaderboard with trackers for damage, kills, and size.
 
 The screen grows as your player gets larger. This means you can see more of what is around you.
+
+The whole game is fully server-authoritative meaning that the server makes all the descsions about what happens in the game (ie you cant cheat.) The client sends updates about what direction it wants to move and then recieves updates about what actually happened from the server.
+
+There is client side lag compensation which changes based on the tick rate of the game. The tick rate of the server is currently ~12 ticks per second. The lag compensation is simply linearly interpolating between updates that it gets from the server. There is no client side prediction, only compensation.
 
 The client only subscribes to updates from the server for objects that it needs to render and no more (with some buffer.)
 
