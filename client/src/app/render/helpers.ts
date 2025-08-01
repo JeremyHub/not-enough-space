@@ -531,40 +531,52 @@ function drawMoonTrails(
 		const orbitAngle = Math.atan2(dy, dx);
 
 		// Trail length in radians is now based on a fixed visual length
-		const desiredTrailLength = moon.size * 5; // pixels
-		const minRadius = 8; // avoid division by zero or tiny orbits
-		const safeRadius = Math.max(orbitRadius, minRadius);
-		const trailLength = desiredTrailLength / safeRadius;
+		const trailLength = moon.size / 3; // pixels
 
-		let startAngle: number, endAngle: number, counterclockwise: boolean;
+		let startAngle: number, counterclockwise: boolean, direction: number;
 
 		if (typeof moon.orbitalVelocity === "number" && moon.orbitalVelocity < 0) {
 			// Clockwise orbit: trail is behind, so arc goes forward in angle (increasing)
 			startAngle = orbitAngle;
-			endAngle = orbitAngle + trailLength;
 			counterclockwise = false;
+			direction = 1;
 		} else {
 			// Counterclockwise orbit: trail is behind, so arc goes backward in angle (decreasing)
 			startAngle = orbitAngle;
-			endAngle = orbitAngle - trailLength;
 			counterclockwise = true;
+			direction = -1;
 		}
 
-		ctx.save();
-		ctx.beginPath();
-		ctx.strokeStyle = `rgba(${moon.color.r},${moon.color.g},${moon.color.b},0.35)`;
-		ctx.lineWidth = Math.max(2, moon.size * 0.5);
+		// Draw tapered arc (cone)
+		const steps = 24;
+		const baseWidth = moon.size * 1.8;
+		const tipWidth = Math.max(1, moon.size * 0.2);
+		const baseAlpha = 0.35;
+		const tipAlpha = 0.01;
+		const color = moon.color;
 
-		// Draw arc in screen space, centered at user
-		ctx.arc(
-			centerScreen.x,
-			centerScreen.y,
-			orbitRadius,
-			startAngle,
-			endAngle,
-			counterclockwise,
-		);
-		ctx.stroke();
+		ctx.save();
+		for (let i = 0; i < steps; i++) {
+			const t0 = i / steps;
+			const t1 = (i + 1) / steps;
+			const angle0 = startAngle + direction * trailLength * t0;
+			const angle1 = startAngle + direction * trailLength * t1;
+			const width = baseWidth * (1 - t0) + tipWidth * t0;
+			const alpha = baseAlpha * (1 - t0) + tipAlpha * t0;
+
+			ctx.beginPath();
+			ctx.strokeStyle = `rgba(${color.r},${color.g},${color.b},${alpha})`;
+			ctx.lineWidth = width;
+			ctx.arc(
+				centerScreen.x,
+				centerScreen.y,
+				orbitRadius,
+				angle0,
+				angle1,
+				counterclockwise,
+			);
+			ctx.stroke();
+		}
 		ctx.restore();
 	});
 }
