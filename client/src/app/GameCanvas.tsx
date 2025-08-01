@@ -182,7 +182,6 @@ export function Canvas({
 			const dt = (now - lastTime) / 1000; // seconds
 			lastTime = now;
 			const duration = 1 / staticMetadata.ticksPerSecond;
-			// Lerp factor for this frame so that interpolation completes in 'duration' seconds
 			const lerpFactor = 1 - Math.exp(-dt / duration);
 			setLerpedPositions((prev) => {
 				const next: LerpedPositions = {
@@ -227,19 +226,71 @@ export function Canvas({
 				// Moons
 				moons.forEach((moon, key) => {
 					const prevPos = prev.moons.get(key) || { x: moon.x, y: moon.y };
-					const newX = lerpWrapped(
-						prevPos.x,
-						moon.x,
-						lerpFactor,
-						staticMetadata.worldWidth,
-					);
-					const newY = lerpWrapped(
-						prevPos.y,
-						moon.y,
-						lerpFactor,
-						staticMetadata.worldHeight,
-					);
-					next.moons.set(key, { x: newX, y: newY });
+					// --- ARC LERP FOR ORBITING MOONS ---
+					if (moon.orbiting && users.has(moon.orbiting.toHexString())) {
+						const user = users.get(moon.orbiting.toHexString())!;
+						const prevUserPos = prev.users.get(moon.orbiting.toHexString()) || {
+							x: user.x,
+							y: user.y,
+						};
+						const nextUserPos = { x: user.x, y: user.y };
+						// Compute prev/next angles from user to moon
+						// --- Compute wrapped dx/dy for prev and next ---
+						const worldWidth = staticMetadata.worldWidth;
+						const worldHeight = staticMetadata.worldHeight;
+						function wrappedDelta(a: number, b: number, size: number) {
+							let d = a - b;
+							if (d > size / 2) d -= size;
+							if (d < -size / 2) d += size;
+							return d;
+						}
+						const prevDx = wrappedDelta(prevPos.x, prevUserPos.x, worldWidth);
+						const prevDy = wrappedDelta(prevPos.y, prevUserPos.y, worldHeight);
+						const nextDx = wrappedDelta(moon.x, nextUserPos.x, worldWidth);
+						const nextDy = wrappedDelta(moon.y, nextUserPos.y, worldHeight);
+						const prevAngle = Math.atan2(prevDy, prevDx);
+						const nextAngle = Math.atan2(nextDy, nextDx);
+						// Lerp angle, handling wrapping
+						let deltaAngle = nextAngle - prevAngle;
+						if (deltaAngle > Math.PI) deltaAngle -= 2 * Math.PI;
+						if (deltaAngle < -Math.PI) deltaAngle += 2 * Math.PI;
+						const lerpedAngle = prevAngle + deltaAngle * lerpFactor;
+						// Lerp user position
+						const lerpedUserX = lerpWrapped(
+							prevUserPos.x,
+							nextUserPos.x,
+							lerpFactor,
+							worldWidth,
+						);
+						const lerpedUserY = lerpWrapped(
+							prevUserPos.y,
+							nextUserPos.y,
+							lerpFactor,
+							worldHeight,
+						);
+						// --- Calculate radius as lerped distance between moon and user, with wrapping ---
+						const prevR = Math.sqrt(prevDx * prevDx + prevDy * prevDy);
+						const nextR = Math.sqrt(nextDx * nextDx + nextDy * nextDy);
+						const r = lerp(prevR, nextR, lerpFactor);
+						const newX = lerpedUserX + Math.cos(lerpedAngle) * r;
+						const newY = lerpedUserY + Math.sin(lerpedAngle) * r;
+						next.moons.set(key, { x: newX, y: newY });
+					} else {
+						// Default lerp
+						const newX = lerpWrapped(
+							prevPos.x,
+							moon.x,
+							lerpFactor,
+							staticMetadata.worldWidth,
+						);
+						const newY = lerpWrapped(
+							prevPos.y,
+							moon.y,
+							lerpFactor,
+							staticMetadata.worldHeight,
+						);
+						next.moons.set(key, { x: newX, y: newY });
+					}
 				});
 				return next;
 			});

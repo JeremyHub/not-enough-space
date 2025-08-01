@@ -504,83 +504,6 @@ function drawSelf(
 	drawUser(ctx, self, canvasWidth / 2, canvasHeight / 2);
 }
 
-function drawMoonTrails(
-	ctx: CanvasRenderingContext2D,
-	moons: Map<number, Moon>,
-	lerpedPositions: LerpedPositions | undefined,
-	toScreen: (obj: { x: number; y: number }) => { x: number; y: number },
-	users: Map<string, User>,
-) {
-	moons.forEach((moon, key) => {
-		// Only draw trail if moon is orbiting a user
-		if (!moon.orbiting) return;
-
-		const user = users.get(moon.orbiting.toHexString());
-		if (!user) return;
-		const userPos =
-			lerpedPositions?.users.get(moon.orbiting.toHexString()) || user;
-		const moonPos = lerpedPositions?.moons.get(key) || moon;
-
-		// Calculate orbit center and moon position in screen coords
-		const centerScreen = toScreen(userPos);
-
-		// Calculate orbit radius and angle dynamically
-		const dx = moonPos.x - userPos.x;
-		const dy = moonPos.y - userPos.y;
-		const orbitRadius = Math.sqrt(dx * dx + dy * dy);
-		const orbitAngle = Math.atan2(dy, dx);
-
-		// Trail length in radians is now based on a fixed visual length
-		const trailLength = moon.size / 3; // pixels
-
-		let startAngle: number, counterclockwise: boolean, direction: number;
-
-		if (typeof moon.orbitalVelocity === "number" && moon.orbitalVelocity < 0) {
-			// Clockwise orbit: trail is behind, so arc goes forward in angle (increasing)
-			startAngle = orbitAngle;
-			counterclockwise = false;
-			direction = 1;
-		} else {
-			// Counterclockwise orbit: trail is behind, so arc goes backward in angle (decreasing)
-			startAngle = orbitAngle;
-			counterclockwise = true;
-			direction = -1;
-		}
-
-		// Draw tapered arc (cone)
-		const steps = 24;
-		const baseWidth = moon.size * 1.8;
-		const tipWidth = Math.max(1, moon.size * 0.2);
-		const baseAlpha = 0.35;
-		const tipAlpha = 0.01;
-		const color = moon.color;
-
-		ctx.save();
-		for (let i = 0; i < steps; i++) {
-			const t0 = i / steps;
-			const t1 = (i + 1) / steps;
-			const angle0 = startAngle + direction * trailLength * t0;
-			const angle1 = startAngle + direction * trailLength * t1;
-			const width = baseWidth * (1 - t0) + tipWidth * t0;
-			const alpha = baseAlpha * (1 - t0) + tipAlpha * t0;
-
-			ctx.beginPath();
-			ctx.strokeStyle = `rgba(${color.r},${color.g},${color.b},${alpha})`;
-			ctx.lineWidth = width;
-			ctx.arc(
-				centerScreen.x,
-				centerScreen.y,
-				orbitRadius,
-				angle0,
-				angle1,
-				counterclockwise,
-			);
-			ctx.stroke();
-		}
-		ctx.restore();
-	});
-}
-
 function drawMoons(
 	ctx: CanvasRenderingContext2D,
 	moons: Map<number, Moon>,
@@ -687,14 +610,6 @@ export const draw = (
 	);
 
 	drawSelf(ctx, self, canvasWidth, canvasHeight);
-
-	drawMoonTrails(
-		ctx,
-		moons,
-		lerpedPositions,
-		toScreen,
-		users, // pass users map for orbit center lookup
-	);
 
 	drawMoons(
 		ctx,
