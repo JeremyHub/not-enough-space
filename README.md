@@ -5,9 +5,15 @@ Not Enough Space is a multiplayer web game built using [SpacetimeDB](https://spa
 
 ## Key features
 
-The world wraps around and the borders are invisible to the player (yes, you can pickup bits and attack other players around the "edges" of the world.)
+Grow in size by picking up bits!
+
+Gain moons as you grow larger!
+
+Attack other players and steal their health by hitting them with moons!
 
 You choose the look of your player!
+
+The world wraps around and the borders are invisible to the player (yes, you can pickup bits and attack other players around the "edges" of the world.)
 
 There is a live updating leaderboard with trackers for damage, kills, and size.
 
