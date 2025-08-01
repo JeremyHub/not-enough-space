@@ -17,7 +17,7 @@ dev-client:
 start-server:
 	spacetime start --in-memory
 
-delete-and-restart-server:	
+delete-and-publish-server:	
 	spacetime delete nes
 	make publish-server
 
@@ -30,5 +30,8 @@ delete-server:
 generate-client:
 	spacetime generate --lang typescript --out-dir client/src/module_bindings --project-path server
 
-push-server-to-maincloud:
+publish-server-to-maincloud:
 	spacetime publish --project-path server -s maincloud nes
+
+delete-server-from-maincloud:
+	spacetime delete nes -s maincloud
