@@ -40,7 +40,7 @@ function App() {
 	}, []);
 
 	return (
-		<div className="flex min-h-svh flex-col items-center justify-center bg-zinc-950 text-primary-foreground">
+		<div className="flex min-h-svh max-h-screen flex-col items-center justify-center bg-zinc-950 text-primary-foreground">
 			{!connected && connectionForm && (
 				<BackgroundCanvas
 					connectionForm={connectionForm}
