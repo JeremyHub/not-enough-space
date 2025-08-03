@@ -25,7 +25,8 @@ pub fn init_game_reset_schedule(ctx: &ReducerContext) -> Result<(), String> {
     ctx.db.game_reset_schedule().insert(GameResetSchedule {
         id: 0,
         scheduled_at: ScheduleAt::Time(
-            ctx.timestamp + TimeDuration::from_micros(super::GAME_RESET_UPDATE_INTERVAL_MICROS),
+            ctx.timestamp
+                + TimeDuration::from_micros(super::GAME_RESET_UPDATE_INTERVAL_MICROS as i64),
         ),
     });
     Ok(())
@@ -94,7 +95,7 @@ pub fn game_reset(
             });
     }
 
-    let interval = TimeDuration::from_micros(super::GAME_RESET_UPDATE_INTERVAL_MICROS);
+    let interval = TimeDuration::from_micros(super::GAME_RESET_UPDATE_INTERVAL_MICROS as i64);
     ctx.db.game_reset_schedule().insert(GameResetSchedule {
         id: 0,
         scheduled_at: ScheduleAt::Time(ctx.timestamp + interval),

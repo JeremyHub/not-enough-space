@@ -6,6 +6,7 @@ import { Context } from "./app/Context";
 import { ConnectionForm, ConnectionFormSchema } from "./app/ConnectionForm";
 import z from "zod";
 import { Leaderboard } from "./app/Leaderboard";
+import { ResetCountdown } from "./app/ResetCountdown";
 import {
 	ResizableHandle,
 	ResizablePanel,
@@ -86,6 +87,12 @@ function App() {
 									<ResizablePanel defaultSize={50} minSize={15}>
 										<div className="flex flex-col h-full">
 											<Leaderboard />
+										</div>
+									</ResizablePanel>
+									<ResizableHandle className="bg-zinc-900 border-none" />
+									<ResizablePanel defaultSize={20} minSize={15}>
+										<div className="flex flex-col h-full">
+											<ResetCountdown />
 										</div>
 									</ResizablePanel>
 									<ResizableHandle className="bg-zinc-900 border-none" />

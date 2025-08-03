@@ -36,7 +36,7 @@ export type StaticMetadata = {
   worldHeight: number,
   worldWidth: number,
   ticksPerSecond: number,
-  gameResetUpdatesPerSecond: bigint,
+  gameResetUpdatesPerSecond: number,
 };
 
 /**
@@ -52,7 +52,7 @@ export namespace StaticMetadata {
       new ProductTypeElement("worldHeight", AlgebraicType.createI32Type()),
       new ProductTypeElement("worldWidth", AlgebraicType.createI32Type()),
       new ProductTypeElement("ticksPerSecond", AlgebraicType.createU32Type()),
-      new ProductTypeElement("gameResetUpdatesPerSecond", AlgebraicType.createI64Type()),
+      new ProductTypeElement("gameResetUpdatesPerSecond", AlgebraicType.createU32Type()),
     ]);
   }
 

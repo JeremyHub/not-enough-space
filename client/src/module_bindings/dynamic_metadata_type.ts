@@ -36,7 +36,7 @@ export type DynamicMetadata = {
   id: bigint,
   numAis: number,
   totalUsers: number,
-  gameResetUpdatesUntilReset: bigint,
+  gameResetUpdatesUntilReset: number,
 };
 
 /**
@@ -52,7 +52,7 @@ export namespace DynamicMetadata {
       new ProductTypeElement("id", AlgebraicType.createU64Type()),
       new ProductTypeElement("numAis", AlgebraicType.createU32Type()),
       new ProductTypeElement("totalUsers", AlgebraicType.createU32Type()),
-      new ProductTypeElement("gameResetUpdatesUntilReset", AlgebraicType.createU64Type()),
+      new ProductTypeElement("gameResetUpdatesUntilReset", AlgebraicType.createU32Type()),
     ]);
   }
 

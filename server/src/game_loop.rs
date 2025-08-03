@@ -31,7 +31,7 @@ pub struct StaticMetadata {
     world_height: i32,
     world_width: i32,
     ticks_per_second: u32,
-    game_reset_updates_per_second: i64,
+    game_reset_updates_per_second: u32,
 }
 
 #[table(name = dynamic_metadata, public)]
@@ -40,7 +40,7 @@ pub struct DynamicMetadata {
     pub id: u64,
     pub num_ais: u32,
     pub total_users: u32,
-    pub game_reset_updates_until_reset: u64,
+    pub game_reset_updates_until_reset: u32,
 }
 
 #[reducer]
