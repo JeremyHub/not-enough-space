@@ -93,5 +93,5 @@ pub const AI_DRIFT: f32 = 0.1;
 pub const LEADERBOARD_UPDATE_INTERVAL_MICROS: i64 = 500_000; // 0.5 seconds
 
 // game reset
-pub const GAME_RESET_UPDATE_INTERVAL_MICROS: i64 = 60_000_000; // 60 seconds
-pub const GAME_RESET_UPDATES_TO_RESET: u64 = 60; // 1 hour
+pub const GAME_RESET_UPDATE_INTERVAL_MICROS: i64 = 1_000_000; // 1 second
+pub const GAME_RESET_UPDATES_TO_RESET: u64 = 60 * 60; // 1 hour

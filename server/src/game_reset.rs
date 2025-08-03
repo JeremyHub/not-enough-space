@@ -78,7 +78,7 @@ pub fn game_reset(
 
     let metadata = ctx.db.dynamic_metadata().id().find(0);
     if let Some(metadata) = metadata {
-        if metadata.game_reset_updates_since_last_update >= super::GAME_RESET_UPDATES_TO_RESET {
+        if metadata.game_reset_updates_until_reset == 0 {
             delete_all_from_table(ctx);
             game_loop::init(ctx)?;
             return Ok(());
@@ -90,8 +90,7 @@ pub fn game_reset(
                 id: 0,
                 num_ais: metadata.num_ais,
                 total_users: metadata.total_users,
-                game_reset_updates_since_last_update: metadata.game_reset_updates_since_last_update
-                    + 1,
+                game_reset_updates_until_reset: metadata.game_reset_updates_until_reset - 1,
             });
     }
 
