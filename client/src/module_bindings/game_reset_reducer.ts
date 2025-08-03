@@ -32,38 +32,34 @@ import {
   type ReducerEventContextInterface,
   type SubscriptionEventContextInterface,
 } from "@clockworklabs/spacetimedb-sdk";
-export type DynamicMetadata = {
-  id: bigint,
-  numAis: number,
-  totalUsers: number,
-  gameResetUpdatesSinceLastUpdate: bigint,
+
+import { GameResetSchedule as __GameResetSchedule } from "./game_reset_schedule_type";
+
+export type GameReset = {
+  gameResetSchedule: __GameResetSchedule,
 };
 
 /**
  * A namespace for generated helper functions.
  */
-export namespace DynamicMetadata {
+export namespace GameReset {
   /**
   * A function which returns this type represented as an AlgebraicType.
   * This function is derived from the AlgebraicType used to generate this type.
   */
   export function getTypeScriptAlgebraicType(): AlgebraicType {
     return AlgebraicType.createProductType([
-      new ProductTypeElement("id", AlgebraicType.createU64Type()),
-      new ProductTypeElement("numAis", AlgebraicType.createU32Type()),
-      new ProductTypeElement("totalUsers", AlgebraicType.createU32Type()),
-      new ProductTypeElement("gameResetUpdatesSinceLastUpdate", AlgebraicType.createU64Type()),
+      new ProductTypeElement("gameResetSchedule", __GameResetSchedule.getTypeScriptAlgebraicType()),
     ]);
   }
 
-  export function serialize(writer: BinaryWriter, value: DynamicMetadata): void {
-    DynamicMetadata.getTypeScriptAlgebraicType().serialize(writer, value);
+  export function serialize(writer: BinaryWriter, value: GameReset): void {
+    GameReset.getTypeScriptAlgebraicType().serialize(writer, value);
   }
 
-  export function deserialize(reader: BinaryReader): DynamicMetadata {
-    return DynamicMetadata.getTypeScriptAlgebraicType().deserialize(reader);
+  export function deserialize(reader: BinaryReader): GameReset {
+    return GameReset.getTypeScriptAlgebraicType().deserialize(reader);
   }
 
 }
-
 

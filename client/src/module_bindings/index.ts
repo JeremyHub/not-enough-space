@@ -36,6 +36,8 @@ import {
 // Import and reexport all reducer arg types
 import { ClientConnected } from "./client_connected_reducer.ts";
 export { ClientConnected };
+import { GameReset } from "./game_reset_reducer.ts";
+export { GameReset };
 import { IdentityDisconnected } from "./identity_disconnected_reducer.ts";
 export { IdentityDisconnected };
 import { SacrificeHealthForMoonReducer } from "./sacrifice_health_for_moon_reducer_reducer.ts";
@@ -54,6 +56,8 @@ import { BitTableHandle } from "./bit_table.ts";
 export { BitTableHandle };
 import { DynamicMetadataTableHandle } from "./dynamic_metadata_table.ts";
 export { DynamicMetadataTableHandle };
+import { GameResetScheduleTableHandle } from "./game_reset_schedule_table.ts";
+export { GameResetScheduleTableHandle };
 import { LeaderboardEntryTableHandle } from "./leaderboard_entry_table.ts";
 export { LeaderboardEntryTableHandle };
 import { LeaderboardUpdateScheduleTableHandle } from "./leaderboard_update_schedule_table.ts";
@@ -76,6 +80,8 @@ import { Color } from "./color_type.ts";
 export { Color };
 import { DynamicMetadata } from "./dynamic_metadata_type.ts";
 export { DynamicMetadata };
+import { GameResetSchedule } from "./game_reset_schedule_type.ts";
+export { GameResetSchedule };
 import { LeaderboardEntry } from "./leaderboard_entry_type.ts";
 export { LeaderboardEntry };
 import { LeaderboardUpdateSchedule } from "./leaderboard_update_schedule_type.ts";
@@ -111,6 +117,15 @@ const REMOTE_MODULE = {
       primaryKeyInfo: {
         colName: "id",
         colType: DynamicMetadata.getTypeScriptAlgebraicType().product.elements[0].algebraicType,
+      },
+    },
+    game_reset_schedule: {
+      tableName: "game_reset_schedule",
+      rowType: GameResetSchedule.getTypeScriptAlgebraicType(),
+      primaryKey: "id",
+      primaryKeyInfo: {
+        colName: "id",
+        colType: GameResetSchedule.getTypeScriptAlgebraicType().product.elements[0].algebraicType,
       },
     },
     leaderboard_entry: {
@@ -177,6 +192,10 @@ const REMOTE_MODULE = {
       reducerName: "client_connected",
       argsType: ClientConnected.getTypeScriptAlgebraicType(),
     },
+    game_reset: {
+      reducerName: "game_reset",
+      argsType: GameReset.getTypeScriptAlgebraicType(),
+    },
     identity_disconnected: {
       reducerName: "identity_disconnected",
       argsType: IdentityDisconnected.getTypeScriptAlgebraicType(),
@@ -232,6 +251,7 @@ const REMOTE_MODULE = {
 // A type representing all the possible variants of a reducer.
 export type Reducer = never
 | { name: "ClientConnected", args: ClientConnected }
+| { name: "GameReset", args: GameReset }
 | { name: "IdentityDisconnected", args: IdentityDisconnected }
 | { name: "SacrificeHealthForMoonReducer", args: SacrificeHealthForMoonReducer }
 | { name: "SetDirVec", args: SetDirVec }
@@ -249,6 +269,22 @@ export class RemoteReducers {
 
   removeOnClientConnected(callback: (ctx: ReducerEventContext) => void) {
     this.connection.offReducer("client_connected", callback);
+  }
+
+  gameReset(gameResetSchedule: GameResetSchedule) {
+    const __args = { gameResetSchedule };
+    let __writer = new BinaryWriter(1024);
+    GameReset.getTypeScriptAlgebraicType().serialize(__writer, __args);
+    let __argsBuffer = __writer.getBuffer();
+    this.connection.callReducer("game_reset", __argsBuffer, this.setCallReducerFlags.gameResetFlags);
+  }
+
+  onGameReset(callback: (ctx: ReducerEventContext, gameResetSchedule: GameResetSchedule) => void) {
+    this.connection.onReducer("game_reset", callback);
+  }
+
+  removeOnGameReset(callback: (ctx: ReducerEventContext, gameResetSchedule: GameResetSchedule) => void) {
+    this.connection.offReducer("game_reset", callback);
   }
 
   onIdentityDisconnected(callback: (ctx: ReducerEventContext) => void) {
@@ -338,6 +374,11 @@ export class RemoteReducers {
 }
 
 export class SetReducerFlags {
+  gameResetFlags: CallReducerFlags = 'FullUpdate';
+  gameReset(flags: CallReducerFlags) {
+    this.gameResetFlags = flags;
+  }
+
   sacrificeHealthForMoonReducerFlags: CallReducerFlags = 'FullUpdate';
   sacrificeHealthForMoonReducer(flags: CallReducerFlags) {
     this.sacrificeHealthForMoonReducerFlags = flags;
@@ -374,6 +415,10 @@ export class RemoteTables {
 
   get dynamicMetadata(): DynamicMetadataTableHandle {
     return new DynamicMetadataTableHandle(this.connection.clientCache.getOrCreateTable<DynamicMetadata>(REMOTE_MODULE.tables.dynamic_metadata));
+  }
+
+  get gameResetSchedule(): GameResetScheduleTableHandle {
+    return new GameResetScheduleTableHandle(this.connection.clientCache.getOrCreateTable<GameResetSchedule>(REMOTE_MODULE.tables.game_reset_schedule));
   }
 
   get leaderboardEntry(): LeaderboardEntryTableHandle {

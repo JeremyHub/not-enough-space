@@ -77,6 +77,7 @@ pub fn spawn_ai(ctx: &ReducerContext) {
                 id: 0,
                 num_ais: metadata.num_ais + ais_to_spawn as u32,
                 total_users: metadata.total_users + ais_to_spawn as u32,
+                game_reset_updates_since_last_update: metadata.game_reset_updates_since_last_update,
             });
     }
 }

@@ -2,6 +2,7 @@ use spacetimedb::{reducer, table, ReducerContext, ScheduleAt, Table, TimeDuratio
 
 use super::ai;
 use super::bit;
+use super::game_reset;
 use super::leaderboard;
 use super::moon;
 use super::moon_moon;
@@ -26,7 +27,7 @@ pub struct TickMeta {
 }
 
 #[table(name = static_metadata, public)]
-struct StaticMetadata {
+pub struct StaticMetadata {
     world_height: i32,
     world_width: i32,
     ticks_per_second: u32,
@@ -38,6 +39,7 @@ pub struct DynamicMetadata {
     pub id: u64,
     pub num_ais: u32,
     pub total_users: u32,
+    pub game_reset_updates_since_last_update: u64,
 }
 
 #[reducer]
@@ -109,11 +111,13 @@ pub fn init(ctx: &ReducerContext) -> Result<(), String> {
         id: 0,
         num_ais: 0,
         total_users: 0,
+        game_reset_updates_since_last_update: 0,
     });
     ctx.db.tick_schedule().insert(TickSchedule {
         id: 0,
         scheduled_at: ScheduleAt::Time(ctx.timestamp),
     });
     leaderboard::init_leaderboard_schedule(ctx)?;
+    game_reset::init_game_reset_schedule(ctx)?;
     Ok(())
 }
