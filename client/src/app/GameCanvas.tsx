@@ -9,6 +9,111 @@ import {
 	LerpedPositions,
 } from "./render/helpers";
 
+function WASDAndSpaceOverlay() {
+	const [pressed, setPressed] = useState<{ [key: string]: boolean }>({
+		w: false,
+		a: false,
+		s: false,
+		d: false,
+	});
+
+	useEffect(() => {
+		function handleKeyDown(e: KeyboardEvent) {
+			const key = e.key.toLowerCase();
+			if (["w", "a", "s", "d"].includes(key)) {
+				setPressed((prev) => ({ ...prev, [key]: true }));
+			}
+		}
+		function handleKeyUp(e: KeyboardEvent) {
+			const key = e.key.toLowerCase();
+			if (["w", "a", "s", "d"].includes(key)) {
+				setPressed((prev) => ({ ...prev, [key]: false }));
+			}
+		}
+		window.addEventListener("keydown", handleKeyDown);
+		window.addEventListener("keyup", handleKeyUp);
+		return () => {
+			window.removeEventListener("keydown", handleKeyDown);
+			window.removeEventListener("keyup", handleKeyUp);
+		};
+	}, []);
+	return (
+		<div className="absolute left-4 bottom-4 flex flex-row items-end pointer-events-none select-none">
+			<div className="flex flex-col items-center">
+				<KeyBox label="W" active={pressed.w} className="mb-2" />
+				<div className="flex flex-row items-center">
+					<KeyBox label="A" active={pressed.a} className="mr-2" />
+					<KeyBox label="S" active={pressed.s} className="mx-2" />
+					<KeyBox label="D" active={pressed.d} className="ml-2" />
+				</div>
+			</div>
+			<SpaceBarOverlay />
+		</div>
+	);
+}
+
+function KeyBox({
+	label,
+	active,
+	className,
+}: {
+	label: string;
+	active: boolean;
+	className?: string;
+}) {
+	return (
+		<div
+			className={`w-20 h-20 rounded-lg flex items-center justify-center font-bold text-lg transition-all
+				${
+					active
+						? "bg-[rgba(220,220,255,0.25)] border-2 border-[#88aaff] text-[#e0eaff] shadow-[0_0_4px_#88aaff]"
+						: "bg-[rgba(40,40,60,0.18)] border-2 border-[#444] text-[#bbb]"
+				}
+				${className ?? ""}
+			`}
+		>
+			{label}
+		</div>
+	);
+}
+
+// --- SpaceBarOverlay ---
+function SpaceBarOverlay() {
+	const [pressed, setPressed] = useState(false);
+
+	useEffect(() => {
+		function handleKeyDown(e: KeyboardEvent) {
+			if (e.code === "Space") setPressed(true);
+		}
+		function handleKeyUp(e: KeyboardEvent) {
+			if (e.code === "Space") setPressed(false);
+		}
+		window.addEventListener("keydown", handleKeyDown);
+		window.addEventListener("keyup", handleKeyUp);
+		return () => {
+			window.removeEventListener("keydown", handleKeyDown);
+			window.removeEventListener("keyup", handleKeyUp);
+		};
+	}, []);
+
+	return (
+		<div className="flex flex-col items-center ml-6">
+			<div
+				className={`w-64 h-20 rounded-lg flex flex-col items-center justify-center font-bold text-lg transition-all
+					${
+						pressed
+							? "bg-[rgba(220,220,255,0.25)] border-2 border-[#88aaff] text-[#e0eaff] shadow-[0_0_4px_#88aaff]"
+							: "bg-[rgba(40,40,60,0.18)] border-2 border-[#444] text-[#bbb]"
+					}
+				`}
+			>
+				<div>Space</div>
+				<div className="text-xs font-normal mt-1">spawn moon</div>
+			</div>
+		</div>
+	);
+}
+
 export function Canvas({
 	setCanvasAspectRatio,
 }: {
@@ -389,11 +494,14 @@ export function Canvas({
 	}, [drawProps, canvasSize.width, canvasSize.height, scale, offsetX, offsetY]);
 
 	return (
-		<Card className="border-4 border-zinc-800 bg-[rgb(23,23,23)] shadow-lg flex items-center justify-center w-full h-full p-0">
+		<Card
+			className="border-4 border-zinc-800 bg-[rgb(23,23,23)] shadow-lg flex items-center justify-center w-full h-full p-0"
+			style={{ position: "relative" }}
+		>
 			<CardContent
 				ref={containerRef}
 				className="flex items-center justify-center p-0 w-full h-full overflow-hidden max-w-[100vw] max-h-[100vh]"
-				style={{ width: "100%", height: "100%" }}
+				style={{ width: "100%", height: "100%", position: "relative" }}
 			>
 				<canvas
 					ref={canvasRef}
@@ -401,6 +509,7 @@ export function Canvas({
 					height={canvasSize.height}
 					className="w-full h-full"
 				/>
+				<WASDAndSpaceOverlay />
 			</CardContent>
 		</Card>
 	);
