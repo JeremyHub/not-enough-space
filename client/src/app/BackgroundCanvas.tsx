@@ -65,6 +65,7 @@ export function BackgroundCanvas({
 				},
 				0,
 				0,
+				false,
 			);
 			ctx.restore();
 			requestRef.current = requestAnimationFrame(animate);

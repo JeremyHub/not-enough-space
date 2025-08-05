@@ -420,6 +420,7 @@ export function drawUser(
 	},
 	px: number,
 	py: number,
+	doDrawGravityWell = true,
 ) {
 	// Draw outer circle
 	renderCircle(ctx, user.size, px, py, user.color);
@@ -427,16 +428,18 @@ export function drawUser(
 	// Draw patchwork inside circle
 	drawPatchwork(ctx, px, py, user.size, user.color, Number(user.seed));
 
-	// Draw gravity well effect
-	drawGravityWell(
-		ctx,
-		px,
-		py,
-		user.size,
-		user.size / 20,
-		user.size / 10,
-		Number(user.seed),
-	);
+	if (doDrawGravityWell) {
+		// Draw gravity well effect
+		drawGravityWell(
+			ctx,
+			px,
+			py,
+			user.size,
+			user.size / 20,
+			user.size / 10,
+			Number(user.seed),
+		);
+	}
 
 	if (user.invincibilityTicksLeft) {
 		// Draw invincibility effect start animation while invincibilityTicksLeft > 0 that flashes the user white
